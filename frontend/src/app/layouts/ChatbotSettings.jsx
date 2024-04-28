@@ -8,8 +8,31 @@ const ChatbotSettings = ({
   temperature,
   setTemperature,
 }) => {
+  /**
+   * Form to change the chatbot settings.
+   *
+   * The component includes drop-downs for selecting a prompt template and model version,
+   * and a slider to adjust the "temperature" (variation in responses).
+   *
+   * Props:
+   * - promptTemplate: (string) Currently selected prompt template.
+   * - setPromptTemplate: (function) Setter to update the prompt template.
+   *
+   * - model: (string) Currently selected AI model.
+   * - setModel: (function) Setter to update the AI model.
+   *
+   * - temperature: (number) Currently selected temperature value.
+   * - setTemperature: (function) Setter to update the temperature value.
+   *
+   * To add new form fields:
+   * 1. Create a new useState variable in the parent component `const [field, setField] = useState(initialValue)`
+   * 2. Pass the new props into this component
+   * 3. Extend the HTML below, ensuring you link the `value` to the `field` and `onChange` to the `setField`
+   */
+
   return (
     <div className="space-y-6">
+      {/* Change the Prompt Template */}
       <div className="p-4 bg-white shadow rounded-lg">
         <label
           htmlFor="prompt-template"
@@ -31,7 +54,7 @@ const ChatbotSettings = ({
           <option value="therapist">🧑‍💼 Therapist</option>
         </select>
       </div>
-
+      {/* Change the Model Name - GPT 3.5 or GPT 4 */}
       <div className="p-4 bg-white shadow rounded-lg">
         <label
           htmlFor="model"
@@ -52,7 +75,7 @@ const ChatbotSettings = ({
           <option value="gpt-4">🧠 GPT-4</option>
         </select>
       </div>
-
+      {/* Temperature: Sliding Track */}
       <div className="p-4 bg-white shadow rounded-lg">
         <label
           htmlFor="temperature"
@@ -71,7 +94,7 @@ const ChatbotSettings = ({
           step="0.01"
           value={temperature}
           onChange={(e) => setTemperature(e.target.value)}
-          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700" // Basic styling for the slider track
+          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
         />
       </div>
     </div>

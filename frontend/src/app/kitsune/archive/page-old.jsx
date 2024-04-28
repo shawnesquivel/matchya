@@ -19,7 +19,6 @@ import {
  *
  * KitsuneAI, V1. Single react page for simplicity.
  *
- *
  *  */
 
 const LOCAL_ENDPOINT = "http://127.0.0.1:8000";

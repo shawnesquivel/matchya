@@ -152,28 +152,7 @@ const HamburgerMenu = () => {
               </span>
             </a>
           </li>
-          <li className="flex flex-col gap-4">
-            <a href="content-generator">
-              <span>
-                <div className=" rounded-xl overflow-hidden h-40 w-32 drop-shadow">
-                  <div className="absolute inset-0">
-                    <Image
-                      src="/assets/images/wizard.png"
-                      alt="robot reading newspaper"
-                      fill
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                      style={{ objectFit: "cover" }}
-                    />
-                  </div>
-                </div>
-                <p
-                  className={`text-m font-bold text-gray-200 ${sourceCodePro.className}`}
-                >
-                  Content Wiz
-                </p>
-              </span>
-            </a>
-          </li>
+
           <li className="flex flex-col gap-4">
             <a href="resume-reader">
               <span>
@@ -197,6 +176,28 @@ const HamburgerMenu = () => {
             </a>
           </li>
           <li className="flex flex-col gap-4">
+            <a href="content-generator">
+              <span>
+                <div className=" rounded-xl overflow-hidden h-40 w-32 drop-shadow">
+                  <div className="absolute inset-0">
+                    <Image
+                      src="/assets/images/wizard.png"
+                      alt="robot reading newspaper"
+                      fill
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                      style={{ objectFit: "cover" }}
+                    />
+                  </div>
+                </div>
+                <p
+                  className={`text-m font-bold text-gray-200 ${sourceCodePro.className}`}
+                >
+                  Content Wiz
+                </p>
+              </span>
+            </a>
+          </li>
+          <li className="flex flex-col gap-4">
             <a href="chatcompletions">
               <span>
                 <div className=" rounded-xl overflow-hidden h-40 w-32 drop-shadow">
@@ -213,7 +214,7 @@ const HamburgerMenu = () => {
                 <p
                   className={`text-m font-bold text-gray-200 ${sourceCodePro.className}`}
                 >
-                  Function Call
+                  Fine Tuning
                 </p>
               </span>
             </a>

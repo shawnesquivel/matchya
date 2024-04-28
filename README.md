@@ -111,25 +111,3 @@ Production (Example)
 ```
 https://dm9k979b9h.execute-api.us-west-2.amazonaws.com/api
 ```
-
-const getBackendBaseUrl = (mode) => {
-/\*_ Switches the endpoint for various routes. No leading slash. _/
-let endpoint;
-if (mode === "local") {
-endpoint = "http://127.0.0.1:8000";
-} else if (mode === "tutorial") {
-endpoint = "";
-} else if (mode === "production") {
-endpoint = "";
-} else {
-console.log("could not find endpoint, using local");
-endpoint = "http://127.0.0.1:8000";
-}
-
-if (debug) {
-console.log({ endpoint });
-}
-
-return endpoint;
-
-};

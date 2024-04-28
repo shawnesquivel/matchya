@@ -10,17 +10,21 @@ import {
 
 const useChatbot = (baseUrl = "http://127.0.0.1:8000", debug = false) => {
   const [chatId, setChatId] = useState(getChatID());
-
+  // ChatMessages
   const [userMessage, setUserMessage] = useState("");
   const [messages, setMessages] = useState([]);
   const [error, setError] = useState(null);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
+  // Chatbot Form
   const [model, setModel] = useState("gpt-3.5-turbo");
   const [promptTemplate, setPromptTemplate] = useState("girlfriend");
   const [temperature, setTemperature] = useState(0.5);
 
   useEffect(() => {
-    // Check cookies for ChatID
+    /**
+     *  When the component is 'mounted' we check if the ChatID is present.
+     *  If it's present, we should fetch any messages from the database.
+     */
     if (!chatId) {
       const newChatId = generateUniqueID();
       console.log({ newChatId });
@@ -42,6 +46,9 @@ const useChatbot = (baseUrl = "http://127.0.0.1:8000", debug = false) => {
   }, [chatId]);
 
   useEffect(() => {
+    /**
+     *   Helper function, tests if the server is online..
+     */
     async function testLambda() {
       await testEndpoint();
     }
@@ -65,22 +72,31 @@ const useChatbot = (baseUrl = "http://127.0.0.1:8000", debug = false) => {
     }
   }, []);
 
-  useEffect(() => {
-    // Define the async function inside the effect
-  }, [chatId]); // Dependencies array
-
   const handlePromptChange = (e) => {
     setUserMessage(e.target.value);
   };
 
   const handleSubmit = async () => {
+    /**
+     * Run the chat function
+     *
+     * 1. Update the `messages` array with the USER's message.
+     * 2. Send the USER's message to the backend.
+     * 3. Update the `messages` array with the BOT's message.
+     */
     try {
       const chatId = getChatID();
       const timestamp = generateTimeStamp();
 
       setMessages((prevMessages) => [
         ...prevMessages,
-        { message: userMessage, type: "user", sourceDocuments: null },
+        {
+          message: userMessage,
+          type: "user",
+          sourceDocuments: null,
+          timestamp: timestamp,
+          ChatId: chatId,
+        },
       ]);
 
       const body = JSON.stringify({
@@ -90,13 +106,16 @@ const useChatbot = (baseUrl = "http://127.0.0.1:8000", debug = false) => {
         model: model,
         prompt_template: promptTemplate,
         temperature: temperature,
+        apiKey: null,
       });
 
       console.log("sending request", { body });
 
       setUserMessage("");
 
-      const response = await fetch(`${baseUrl}/chat`, {
+      const url = `${baseUrl}/chat`;
+
+      const response = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -110,10 +129,12 @@ const useChatbot = (baseUrl = "http://127.0.0.1:8000", debug = false) => {
 
       const resJson = await response.json();
 
+      console.log(`Response from ${url}`, { resJson });
+
       setMessages((prevMessages) => [
         ...prevMessages,
         {
-          message: resJson?.data?.response,
+          message: resJson?.data?.message,
           type: "bot",
           audio_file_url: resJson?.audio_file_url,
         },
@@ -127,6 +148,13 @@ const useChatbot = (baseUrl = "http://127.0.0.1:8000", debug = false) => {
   };
 
   const handleClearChat = () => {
+    /**
+     * Clears the chat.
+     *
+     * 1. Clear the cookies.
+     * 2. Reset the `messages` state.
+     * 3. Remove any errors.
+     */
     clearChatIDCookie();
     setMessages([]);
     setError(null);
@@ -150,20 +178,21 @@ const useChatbot = (baseUrl = "http://127.0.0.1:8000", debug = false) => {
   };
 
   const fetchPreviousMessages = async () => {
-    /** Note: This will not work unless the endpoint is created.. */
+    /**
+     * Get old messages based on the current ChatID, then update the `messages` state.
+     *
+     *  Note: This will not work unless the endpoint is created and running.
+     */
     try {
+      // Get the messages using the ChatID
       setIsLoadingMessages(true);
-
       const chatId = getChatID();
-
       const response = await fetch(`${baseUrl}/chat/messages/${chatId}`, {
         method: "GET",
       });
-
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-
       const resJson = await response.json();
 
       if (debug) {
@@ -173,11 +202,9 @@ const useChatbot = (baseUrl = "http://127.0.0.1:8000", debug = false) => {
         console.log(`Retrieved messages: ${resJson.data}`);
       }
 
-      // Push the response into the messages array
+      // Update messages array, and turn off loading state.
       setMessages(resJson.data);
-
       setError("");
-
       setIsLoadingMessages(false);
     } catch (err) {
       console.error(err);
@@ -186,9 +213,9 @@ const useChatbot = (baseUrl = "http://127.0.0.1:8000", debug = false) => {
   };
 
   useEffect(() => {
+    /** Helper function to check a ChatID is set. */
     if (debug) {
-      console.log({ chatId });
-      console.log(messages.reverse());
+      console.log(`Found messages for ${chatId}`, { messages });
     }
   }, [chatId, messages]);
 

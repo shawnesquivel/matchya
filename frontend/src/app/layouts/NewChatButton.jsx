@@ -1,6 +1,9 @@
 import React from "react";
 
 const NewChatButton = ({ handleClearChat }) => {
+  /**
+   *  Allows users to clear the chat messages / create a new chat ID.
+   */
   return (
     <div className=" flex flex-col justify-end items-end">
       <button

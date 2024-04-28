@@ -1,6 +1,9 @@
 import React from "react";
 
 const Title = ({ emoji, headingText }) => {
+  /**
+   * Displays text.
+   */
   return (
     <>
       <p className="text-center mb-4 text-2xl">{emoji}</p>

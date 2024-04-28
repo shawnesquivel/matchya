@@ -42,6 +42,7 @@ const Chatbot = ({
 
   return (
     <>
+      {/* Simple JSX - Can just show, no need to write from scratch. */}
       <Title emoji={emoji} headingText={headingText} />
       <TwoColumnLayout
         leftColumn={
@@ -63,12 +64,16 @@ const Chatbot = ({
         }
         rightColumn={
           <>
+            {/* This should be explained */}
             <NewChatButton handleClearChat={newChat} />
+            {/* Explain how messages get put into this container. */}
             <ChatMessages
               messages={messages}
               isLoadingMessages={isLoadingMessages}
               botPngFile={botPngFile}
             />
+            {/* Explain how the user's message gets changed inside this component with useState */}
+            {/* Write the handleSubmit function. */}
             <ChatInput
               prompt={userMessage}
               handlePromptChange={handlePromptChange}

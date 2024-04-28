@@ -2,6 +2,9 @@ import React from "react";
 import { pressStart2P, instrumentSans } from "../styles/fonts";
 
 const PageHeader = ({ heading, boldText, description }) => {
+  /**
+   * Displays text at the top of the page.
+   */
   return (
     <>
       <h1 className={`${pressStart2P.className} mb-10 text-6xl uppercase`}>

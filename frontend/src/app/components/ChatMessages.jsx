@@ -41,10 +41,12 @@ const MessageItem = memo(({ message, botPngFile, isLast }) => {
   const userImage = "/assets/images/green-square.png";
   const botImage = `/assets/images/${botPngFile}.png`;
   const [showSources, setShowSources] = useState(false);
+
   const playAudio = useCallback((audioUrl) => {
+    /** Play an audio object from a given URL. Created on first render only. */
     const audio = new Audio(audioUrl);
-    // console.log({ audioUrl });
     audio.play().catch((e) => console.error("Playback failed:", e));
+    // console.log({ audioUrl });
   }, []);
   // console.log({ message });
   return (
@@ -107,16 +109,34 @@ const MessageItem = memo(({ message, botPngFile, isLast }) => {
 });
 
 const ChatMessages = ({ messages, botPngFile, maxMsgs, isLoadingMessages }) => {
+  /**
+   * 
+   * The useRef hook in React is used to access a DOM element directly and persist values across renders without triggering a re-render of the component.
+
+      In your ChatMessages component, useRef is used to create a ref object (messagesContainerRef) that is attached to the chat messages container DOM element. This allows your code to directly manipulate the DOM element.
+
+      The useEffect hook in your code is used to scroll the container to the bottom every time the messages array changes, ensuring the latest message is visible. Here's how it works:
+
+      1. A new message is added to the messages array, the component re-renders.
+      2. The useEffect hook runs because its dependency array includes [messages].
+      3. The useEffect hook accesses messagesContainerRef.current, which is the container div.
+      4. It sets the `scrollTop` to the `scrollHeight` of the container -> scrolls to the bottom.
+      
+      There is no other way to directly manipulate the DOM for scrolling purposes in React's declarative paradigm. 
+      The ref persists throughout the life of the component, allowing direct access to the DOM node without causing additional renders, which would happen if you were to use state for this purpose.
+    */
   const messagesContainerRef = useRef();
 
   useEffect(() => {
+    // On new message, scroll to the bottom.
     if (messagesContainerRef.current) {
       const element = messagesContainerRef.current;
       element.scrollTop = element.scrollHeight;
     }
   }, [messages]);
 
-  // E.g. Before we reach the max messages, we should add the justify-end property, which pushes messages to the bottom
+  // E.g. If we have less than {5} messages, the messages won't take up the full container.
+  //      We add the justify-end property to pushes messages to the bottom
   const maxMsgToScroll = maxMsgs || 5;
   return (
     <div
@@ -134,13 +154,18 @@ const ChatMessages = ({ messages, botPngFile, maxMsgs, isLoadingMessages }) => {
 
       {/* Display messages if isLoadingMessages is false, regardless of messages count */}
       {!isLoadingMessages &&
-        messages.map((message, index) => (
-          <MessageItem
-            key={`${message.chatId}-${message.timestamp}`} // Ensuring unique key
-            message={message}
-            botPngFile={botPngFile}
-          />
-        ))}
+        messages.map((message, index) => {
+          // DEBUG: See every individual message
+          // console.log({ message });
+          return (
+            <MessageItem
+              // Ensuring unique key
+              key={`idts-${message.ChatID}-${message.timestamp}`}
+              message={message}
+              botPngFile={botPngFile}
+            />
+          );
+        })}
     </div>
   );
 };
