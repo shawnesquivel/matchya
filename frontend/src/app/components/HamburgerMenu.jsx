@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-import styles from "./hamburgerMenu.css";
 import Image from "next/image";
 import { pressStart2P, sourceCodePro } from "../styles/fonts";
 
