@@ -70,7 +70,7 @@ const MessageItem = memo(({ message, botPngFile, isLast }) => {
         {/* PHASE 1: How we get the messages parameter. */}
         <div className="flex justify-center align-middle gap-4">
           <p className={`max-w-96 ${message.type === "user" ? "user" : "bot"}`}>
-            {message.message}
+            {message.message ? message.message : "No message found."}
           </p>
           {/* PHASE 2: Show the audio if it's present */}
           {message.audio_file_url && (

@@ -10,29 +10,34 @@ def send_message_to_openai(user_message, prompt_template, model, temperature):
 
     print(f"Received request {user_message} {prompt_template} {model} {temperature}")
 
-    system_prompt = fetch_system_prompt(prompt_template)
+    try:
 
-    response = client.chat.completions.create(
-        # We pass the model here, the list of models can be found here:
-        # https://platform.openai.com/docs/models/gpt-4-and-gpt-4-turbo
-        model=model,
-        temperature=temperature,
-        # The messages must have this format: https://platform.openai.com/docs/api-reference/chat/create
-        messages=[
-            {
-                "role": "system",
-                "content": system_prompt,
-            },
-            # Put the latest message here.
-            {"role": "user", "content": user_message},
-            # new messages will be added to the end
-        ],
-    )
+        system_prompt = fetch_system_prompt(prompt_template)
 
-    # This will always pass back an 'assistant' message
-    last_message = response.choices[0].message.content
-    print("last message", last_message)
+        response = client.chat.completions.create(
+            # We pass the model here, the list of models can be found here:
+            # https://platform.openai.com/docs/models/gpt-4-and-gpt-4-turbo
+            model=model,
+            temperature=temperature,
+            # The messages must have this format: https://platform.openai.com/docs/api-reference/chat/create
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_prompt,
+                },
+                # Put the latest message here.
+                {"role": "user", "content": user_message},
+                # new messages will be added to the end
+            ],
+        )
 
+        # This will always pass back an 'assistant' message
+        last_message = response.choices[0].message.content
+        print("last message", last_message)
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        last_message = f"An error occurred: {str(e)}"
     return last_message
 
 
