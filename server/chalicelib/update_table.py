@@ -50,7 +50,7 @@ def get_all_messages_for_chat(chat_id):
     Retrieve chat messages from DynamoDB.
     """
     response = table.query(
-        KeyConditionExpression=boto3.dynamodb.conditions.Key("ChatID").eq(chat_id)
+        KeyConditionExpression=boto3.dynamodb.conditions.Key("chat_id").eq(chat_id)
     )
     return response["Items"]
 
