@@ -86,8 +86,6 @@ To set up your AWS credentials for deploying the backend:
      ```
 4. Verify that AWS CLI is configured correctly by running `aws configure list`.
 
-This README is structured to guide even beginners through the setup and deployment process. Good luck with your project!
-
 ## Deploy Backend
 
 Before deploying, ensure you have set up an AWS account and configured your credentials as described below.
