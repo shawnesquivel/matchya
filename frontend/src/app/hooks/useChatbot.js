@@ -22,8 +22,10 @@ const useChatbot = (baseUrl = "http://127.0.0.1:8000", debug = false) => {
 
   useEffect(() => {
     /**
-     *  When the component is 'mounted' we check if the ChatID is present.
-     *  If it's present, we should fetch any messages from the database.
+     *  Fetch old messages on page load.
+     *
+     * 1. When the component is 'mounted' we check if the ChatID is present.
+     * 2. If present, get old from the database.
      */
     if (!chatId) {
       const newChatId = generateUniqueID();
@@ -100,12 +102,15 @@ const useChatbot = (baseUrl = "http://127.0.0.1:8000", debug = false) => {
       ]);
 
       const body = JSON.stringify({
+        // message settings
         chat_id: chatId,
         timestamp: timestamp,
         message: userMessage,
+        // chatbot settings
         model: model,
         prompt_template: promptTemplate,
         temperature: temperature,
+        // additional settings, add as necesary.
         apiKey: null,
       });
 
@@ -134,7 +139,7 @@ const useChatbot = (baseUrl = "http://127.0.0.1:8000", debug = false) => {
       setMessages((prevMessages) => [
         ...prevMessages,
         {
-          message: resJson?.data?.message,
+          message: resJson?.message,
           type: "bot",
           audio_file_url: resJson?.audio_file_url,
         },
@@ -178,39 +183,43 @@ const useChatbot = (baseUrl = "http://127.0.0.1:8000", debug = false) => {
   };
 
   const fetchPreviousMessages = async () => {
-    /**
-     * Get old messages based on the current ChatID, then update the `messages` state.
-     *
-     *  Note: This will not work unless the endpoint is created and running.
-     */
-    try {
-      // Get the messages using the ChatID
-      setIsLoadingMessages(true);
-      const chatId = getChatID();
-      const response = await fetch(`${baseUrl}/chat/messages/${chatId}`, {
-        method: "GET",
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const resJson = await response.json();
-
-      if (debug) {
-        console.log("useChatbot, fetchPreviousMessages");
-        console.log({ response });
-        console.log("chat/messages response", { resJson });
-        console.log(`Retrieved messages: ${resJson.data}`);
-      }
-
-      // Update messages array, and turn off loading state.
-      setMessages(resJson.data);
-      setError("");
-      setIsLoadingMessages(false);
-    } catch (err) {
-      console.error(err);
-      setError("Error fetching messages.");
-    }
+    /** Phase 1: No need to use. */
+    return;
   };
+  // const fetchPreviousMessages = async () => {
+  //   /**
+  //    * Get old messages based on the current ChatID, then update the `messages` state.
+  //    *
+  //    *  Note: This will not work unless the endpoint is created and running.
+  //    */
+  //   try {
+  //     // Get the messages using the ChatID
+  //     setIsLoadingMessages(true);
+  //     const chatId = getChatID();
+  //     const response = await fetch(`${baseUrl}/chat/messages/${chatId}`, {
+  //       method: "GET",
+  //     });
+  //     if (!response.ok) {
+  //       throw new Error(`HTTP error! status: ${response.status}`);
+  //     }
+  //     const resJson = await response.json();
+
+  //     if (debug) {
+  //       console.log("useChatbot, fetchPreviousMessages");
+  //       console.log({ response });
+  //       console.log("chat/messages response", { resJson });
+  //       console.log(`Retrieved messages: ${resJson.data}`);
+  //     }
+
+  //     // Update messages array, and turn off loading state.
+  //     setMessages(resJson.data);
+  //     setError("");
+  //     setIsLoadingMessages(false);
+  //   } catch (err) {
+  //     console.error(err);
+  //     setError("Error fetching messages.");
+  //   }
+  // };
 
   useEffect(() => {
     /** Helper function to check a ChatID is set. */

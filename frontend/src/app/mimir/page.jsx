@@ -117,7 +117,7 @@ const Chatbot = () => {
       setError("");
     } catch (err) {
       console.error(err);
-      setError("Error fetching transcript. Please try again.");
+      setError(`Error getting response ${toString(err)}`);
     }
   };
   const handleClearChat = () => {

@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef, useCallback, memo } from "react";
 import Image from "next/image";
 import styles from "../styles/spinner.module.css";
+import { generateTimeStamp } from "../utils/chatHelpers";
 
 // Memo: Do not re-render the component if props havent changed between re-renders
 const MessageItem = memo(({ message, botPngFile, isLast }) => {
@@ -38,10 +39,12 @@ const MessageItem = memo(({ message, botPngFile, isLast }) => {
    * />
    */
 
+  /** PHASE 1: Define the URLs for the profile picture for the user and bot */
   const userImage = "/assets/images/green-square.png";
   const botImage = `/assets/images/${botPngFile}.png`;
   const [showSources, setShowSources] = useState(false);
 
+  /* PHASE 2: Play the audio if it's present */
   const playAudio = useCallback((audioUrl) => {
     /** Play an audio object from a given URL. Created on first render only. */
     const audio = new Audio(audioUrl);
@@ -53,6 +56,7 @@ const MessageItem = memo(({ message, botPngFile, isLast }) => {
     <div className={`flex flex-col ${isLast ? "flex-grow" : ""}`}>
       <div className="flex mb-4 w-full">
         <div className="rounded mr-4 h-10 w-10 relative overflow-hidden">
+          {/* PHASE 1: How we choose between the user and bot image. */}
           <Image
             src={message.type === "user" ? userImage : botImage}
             alt={`${message.type}'s profile`}
@@ -63,14 +67,19 @@ const MessageItem = memo(({ message, botPngFile, isLast }) => {
             unoptimized
           />
         </div>
+        {/* PHASE 1: How we get the messages parameter. */}
         <div className="flex justify-center align-middle gap-4">
           <p className={`max-w-96 ${message.type === "user" ? "user" : "bot"}`}>
             {message.message}
           </p>
+          {/* PHASE 2: Show the audio if it's present */}
           {message.audio_file_url && (
             // Repositioned the play button to be inline with the message, making it a part of the message flow
             <button
-              onClick={() => playAudio(message.audio_file_url)}
+              onClick={() => {
+                console.log("Playing audio");
+                playAudio(message.audio_file_url);
+              }}
               className="items-center rounded-full bg-gray-200 text-blue-500 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 h-8 w-8 text-center"
               aria-label="Play Audio"
             >
@@ -79,7 +88,7 @@ const MessageItem = memo(({ message, botPngFile, isLast }) => {
           )}
         </div>
       </div>
-
+      {/* MIMIR: Show source documents */}
       {message.sourceDocuments && (
         <div className="mb-6">
           <button
@@ -135,7 +144,7 @@ const ChatMessages = ({ messages, botPngFile, maxMsgs, isLoadingMessages }) => {
     }
   }, [messages]);
 
-  // E.g. If we have less than {5} messages, the messages won't take up the full container.
+  // E.g. If we have less than {5} messages, the messages won'ts take up the full container.
   //      We add the justify-end property to pushes messages to the bottom
   const maxMsgToScroll = maxMsgs || 5;
   return (
@@ -160,7 +169,7 @@ const ChatMessages = ({ messages, botPngFile, maxMsgs, isLoadingMessages }) => {
           return (
             <MessageItem
               // Ensuring unique key
-              key={`idts-${message.ChatID}-${message.timestamp}`}
+              key={`idts-${message.chatID}-${message.timestamp}`}
               message={message}
               botPngFile={botPngFile}
             />
