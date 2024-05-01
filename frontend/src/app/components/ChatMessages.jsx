@@ -170,7 +170,7 @@ const ChatMessages = ({ messages, botPngFile, maxMsgs, isLoadingMessages }) => {
           return (
             <MessageItem
               // Ensuring unique key
-              key={`idts-${message?.chat_id}-${message?.timestamp}`}
+              key={index}
               message={message}
               botPngFile={botPngFile}
             />
