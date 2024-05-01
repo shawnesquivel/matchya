@@ -4,9 +4,9 @@ import { pressStart2P, sourceCodePro, instrumentSans } from "./styles/fonts";
 export default function Home() {
   return (
     <div className="w-11/12 m-auto flex-col my-6 ">
-      <h1 className={`text-center ${instrumentSans.className} mb-4`}>
+      {/* <h1 className={`text-center ${instrumentSans.className} mb-4`}>
         The Generative AI Masterclass
-      </h1>
+      </h1> */}
       <div className="flex flex-row justify-start ">
         <div className="flex flex-col items-start justify-center  text-gray-800 py-4 px-4 sm:px-6 lg:px-8 w-6/12">
           <h2

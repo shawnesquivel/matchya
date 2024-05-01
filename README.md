@@ -1,5 +1,3 @@
-Here's a beginner-friendly README for your project that includes all the necessary steps to get started with both the frontend and backend:
-
 # Project Organization
 
 Welcome to our project! Below you'll find step-by-step instructions to set up and run the frontend and backend components.
