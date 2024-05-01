@@ -52,14 +52,15 @@ const MessageItem = memo(({ message, botPngFile, isLast }) => {
     // console.log({ audioUrl });
   }, []);
   // console.log({ message });
+
   return (
     <div className={`flex flex-col ${isLast ? "flex-grow" : ""}`}>
       <div className="flex mb-4 w-full">
         <div className="rounded mr-4 h-10 w-10 relative overflow-hidden">
           {/* PHASE 1: How we choose between the user and bot image. */}
           <Image
-            src={message.type === "user" ? userImage : botImage}
-            alt={`${message.type}'s profile`}
+            src={message.role === "user" ? userImage : botImage}
+            alt={`${message.role}'s profile`}
             width={32}
             height={32}
             className="rounded"
@@ -69,8 +70,8 @@ const MessageItem = memo(({ message, botPngFile, isLast }) => {
         </div>
         {/* PHASE 1: How we get the messages parameter. */}
         <div className="flex justify-center align-middle gap-4">
-          <p className={`max-w-96 ${message.type === "user" ? "user" : "bot"}`}>
-            {message.message ? message.message : "No message found."}
+          <p className={`max-w-96 ${message.role === "user" ? "user" : "bot"}`}>
+            {message.content ? message.content : "No message found."}
           </p>
           {/* PHASE 2: Show the audio if it's present */}
           {message.audio_file_url && (
@@ -169,7 +170,7 @@ const ChatMessages = ({ messages, botPngFile, maxMsgs, isLoadingMessages }) => {
           return (
             <MessageItem
               // Ensuring unique key
-              key={`idts-${message.chatID}-${message.timestamp}`}
+              key={`idts-${message?.chat_id}-${message?.timestamp}`}
               message={message}
               botPngFile={botPngFile}
             />

@@ -4,6 +4,7 @@ import logging
 from chalicelib.chatbot import text_generation_with_function_call
 from chalicelib.kitsune_1_chatbot import send_message_to_openai
 from chalicelib.utils import current_epoch_time
+from chalicelib.update_table import store_message
 
 app = Chalice(app_name="mimir-backend")
 
@@ -54,11 +55,55 @@ def hello_name(name):
 #
 
 
+# @app.route("/chat", methods=["POST"], cors=cors_config)
+# def kitsune_chatbot_1():
+#     """Kitsune 1: Chatbot"""
+#     try:
+#         user_message = app.current_request.json_body["message"]
+#         # Add more settings from the frontend
+#         user_temperature = app.current_request.json_body["temperature"]
+#         user_model = app.current_request.json_body["model"]
+#         user_prompt_template = app.current_request.json_body["prompt_template"]
+
+#         bot_response = send_message_to_openai(
+#             user_message, user_prompt_template, user_model, user_temperature
+#         )
+
+#         # We will continue adding keys here later, for now it will simply be the bot_response
+#         response_object = {
+#             "message": bot_response,
+#             "timestamp": current_epoch_time(),
+#             "chatId": app.current_request.json_body["chat_id"],
+#         }
+
+#         print(f"Returning object: {response_object}")
+#         return Response(
+#             body=response_object,
+#             status_code=200,
+#         )
+
+#     except Exception as e:
+#         logging.error(f"An error occurred: {str(e)}")
+#         return Response(body={"error": str(e)}, status_code=500)
+
+
 @app.route("/chat", methods=["POST"], cors=cors_config)
-def kitsune_chatbot_1():
-    """Kitsune 1: Chatbot"""
+def kitsune_chatbot_2():
+    """Kitsune 2: Messages"""
     try:
         user_message = app.current_request.json_body["message"]
+        """
+        TUTORIAL: Store the user message in the backend.
+        1. Get chat ID
+        2. Store message as user
+        """
+        user_chat_id = app.current_request.json_body["chat_id"]
+        store_message(chat_id=user_chat_id, content=user_message, role="user")
+
+        """
+        TUTORIAL: Fetch old messages
+        """
+
         # Add more settings from the frontend
         user_temperature = app.current_request.json_body["temperature"]
         user_model = app.current_request.json_body["model"]
@@ -67,17 +112,20 @@ def kitsune_chatbot_1():
         bot_response = send_message_to_openai(
             user_message, user_prompt_template, user_model, user_temperature
         )
+        """
+        TUTORIAL: Store the bot resposne in the backend.
+        """
+
+        bot_message, bot_storage_response = store_message(
+            chat_id=user_chat_id, content=bot_response, role="assistant"
+        )
+        print(f"bot storage response {bot_storage_response}")
 
         # We will continue adding keys here later, for now it will simply be the bot_response
-        response_object = {
-            "message": bot_response,
-            "timestamp": current_epoch_time(),
-            "chatId": app.current_request.json_body["chat_id"],
-        }
 
-        print(f"Returning object: {response_object}")
+        print(f"Returning object: {bot_message}")
         return Response(
-            body=response_object,
+            body=bot_message,
             status_code=200,
         )
 

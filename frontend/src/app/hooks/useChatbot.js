@@ -93,11 +93,11 @@ const useChatbot = (baseUrl = "http://127.0.0.1:8000", debug = false) => {
       setMessages((prevMessages) => [
         ...prevMessages,
         {
-          message: userMessage,
-          type: "user",
+          content: userMessage,
+          role: "user",
           sourceDocuments: null,
           timestamp: timestamp,
-          ChatId: chatId,
+          chat_id: chatId,
         },
       ]);
 
@@ -139,8 +139,8 @@ const useChatbot = (baseUrl = "http://127.0.0.1:8000", debug = false) => {
       setMessages((prevMessages) => [
         ...prevMessages,
         {
-          message: resJson?.message,
-          type: "bot",
+          content: resJson?.content,
+          role: "assistant",
           audio_file_url: resJson?.audio_file_url,
         },
       ]);
