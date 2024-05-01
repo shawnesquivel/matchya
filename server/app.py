@@ -2,6 +2,8 @@ from chalice import Chalice, CORSConfig, Response
 from chalice import BadRequestError
 import logging
 from chalicelib.chatbot import text_generation_with_function_call
+from chalicelib.kitsune_1_chatbot import send_message_to_openai
+from chalicelib.utils import current_epoch_time
 
 app = Chalice(app_name="mimir-backend")
 
@@ -52,83 +54,99 @@ def hello_name(name):
 #
 
 
-@app.route("/kitsune", methods=["POST"], cors=cors_config)
-def kitsune_chatbot():
+@app.route("/chat", methods=["POST"], cors=cors_config)
+def kitsune_chatbot_1():
+    """Kitsune 1: Chatbot"""
     try:
         user_message = app.current_request.json_body["message"]
-        user_api_key = app.current_request.json_body["apiKey"]
+        # Add more settings from the frontend
+        user_temperature = app.current_request.json_body["temperature"]
+        user_model = app.current_request.json_body["model"]
+        user_prompt_template = app.current_request.json_body["prompt_template"]
+
+        bot_response = send_message_to_openai(
+            user_message, user_prompt_template, user_model, user_temperature
+        )
+
+        # We will continue adding keys here later, for now it will simply be the bot_response
+        response_object = {
+            "message": bot_response,
+            "timestamp": current_epoch_time(),
+            "chatId": app.current_request.json_body["chat_id"],
+        }
+
+        print(f"Returning object: {response_object}")
         return Response(
-            body={
-                "data": {"response": f"Success: {user_message} api key {user_api_key}"}
-            },
+            body=response_object,
             status_code=200,
         )
+
     except Exception as e:
         logging.error(f"An error occurred: {str(e)}")
         return Response(body={"error": str(e)}, status_code=500)
 
 
-@app.route("/chat", methods=["POST", "GET"], cors=cors_config)
-def tutorial_chat_endpoint():
-    """
-    Test endpoint for NextJS tutorial.
+# @app.route("/chat", methods=["POST", "GET"], cors=cors_config)
+# def tutorial_chat_endpoint():
+#     """
+#     Test endpoint for NextJS tutorial.
 
-    To Test:
-    curl -X POST http://127.0.0.1:8000/chat \
-        -H "Content-Type: application/json" \
-        -d '{
-                "message": "What is a Large Language Model?"
-    }'
-    """
-    try:
-        user_message = app.current_request.json_body["message"]
-        user_api_key = app.current_request.json_body["apiKey"]
+#     To Test:
+#     curl -X POST http://127.0.0.1:8000/chat \
+#         -H "Content-Type: application/json" \
+#         -d '{
+#                 "message": "What is a Large Language Model?"
+#     }'
+#     """
+#     try:
+#         user_message = app.current_request.json_body["message"]
+#         user_api_key = app.current_request.json_body["apiKey"]
 
-        if not user_api_key:
-            user_api_key = "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"
-        print(f"received user message: {user_message}")
-        messages = text_generation_with_function_call(
-            user_message, api_key=user_api_key
-        )
-        # Assume messages is a list and we need the last message which is a dictionary containing 'choices'
-        last_message = messages[-1]
-        print(f"LAST MESSAGE: {last_message}")
-        if hasattr(last_message, "choices") and last_message.choices:
-            print("choices Present")
-            result_content = last_message.choices[-1].message.content
-        else:
-            print("choices not present")
-            result_content = last_message.content
-            print(result_content)
-        return Response(body={"data": {"response": result_content}}, status_code=200)
-    except Exception as e:
-        logging.error(f"An error occurred: {str(e)}")
-        return Response(body={"error": str(e)}, status_code=500)
+#         if not user_api_key:
+#             user_api_key = "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"
+#         print(f"received user message: {user_message}")
+#         messages = text_generation_with_function_call(
+#             user_message, api_key=user_api_key
+#         )
+#         # Assume messages is a list and we need the last message which is a dictionary containing 'choices'
+#         last_message = messages[-1]
+#         print(f"LAST MESSAGE: {last_message}")
+#         if hasattr(last_message, "choices") and last_message.choices:
+#             print("choices Present")
+#             result_content = last_message.choices[-1].message.content
+#         else:
+#             print("choices not present")
+#             result_content = last_message.content
+#             print(result_content)
+#         return Response(body={"data": {"response": result_content}}, status_code=200)
+#     except Exception as e:
+#         logging.error(f"An error occurred: {str(e)}")
+#         return Response(body={"error": str(e)}, status_code=500)
 
 
-@app.route("/agents", methods=["POST", "GET"], cors=cors_config)
-def agents_endpoint():
-    """
-    Test endpoint for NextJS tutorial.
+# @app.route("/agents", methods=["POST", "GET"], cors=cors_config)
+# def agents_endpoint():
+#     """
+#     Test endpoint for NextJS tutorial.
 
-    To Test:
-    curl -X POST http://127.0.0.1:8000/chat \
-        -H "Content-Type: application/json" \
-        -d '{
-                "message": "What is a Large Language Model?"
-    }'
-    """
-    try:
-        # TODO Use the request body from user
-        # user_message = app.current_request.json_body["message"]
-        user_message = "Make a tweet about AI agents"
+#     To Test:
+#     curl -X POST http://127.0.0.1:8000/chat \
+#         -H "Content-Type: application/json" \
+#         -d '{
+#                 "message": "What is a Large Language Model?"
+#     }'
+#     """
+#     try:
+#         # TODO Use the request body from user
+#         # user_message = app.current_request.json_body["message"]
+#         user_message = "Make a tweet about AI agents"
 
-        user_api_key = app.current_request.json_body["apiKey"]
+#         user_api_key = app.current_request.json_body["apiKey"]
 
-        if not user_api_key:
-            user_api_key = "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"
-        result_content = {" "}
-        return Response(body={"data": {"response": result_content}}, status_code=200)
-    except Exception as e:
-        logging.error(f"An error occurred: {str(e)}")
-        return Response(body={"error": str(e)}, status_code=500)
+#         if not user_api_key:
+#             user_api_key = "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"
+#         result_content = {" "}
+#         return Response(body={"data": {"response": result_content}}, status_code=200)
+#     except Exception as e:
+#         logging.error(f"An error occurred: {str(e)}")
+#         return Response(body={"error": str(e)}, status_code=500)
