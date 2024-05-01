@@ -11,23 +11,6 @@ const Navbar = () => {
       </a>
       <HamburgerMenu />
       <p className={`text-center`}>WEEKNIGHTS + WEEKENDS</p>
-      <div className="hidden">
-        <Link href="/">Home 🏡 </Link>
-
-        <Link href="/pdf">PDF-GPT 👨🏻‍🏫</Link>
-        <Link href="/memory">Memory 🧠</Link>
-        <Link href="/streaming">Streaming 🌊</Link>
-
-        {/* Documents / QA */}
-        <Link href="/transcript-qa">YouTube Video Chat 💬</Link>
-
-        {/* APIs, Templates, Agents */}
-        <Link href="/content-generator">AI Content Wizard 🧙🏼</Link>
-
-        {/* Documents / Database */}
-        <Link href="/resume-reader">RoboHR 🤖</Link>
-        <Link href="/api-tester">Testing ⚠️</Link>
-      </div>
     </nav>
   );
 };
