@@ -33,7 +33,7 @@ def store_message(
     # The item is defined as an object with all the keys. Only the chat_id and timestamp are required.
     message = {
         "chat_id": str(chat_id),  # unique id
-        "timestamp": str(timestamp),  # current time stamp
+        "timestamp": timestamp,  # current time stamp
         "content": content,  # message from openai
         "role": role,  # 'user' or 'assistant'
         "audio_file_url": audio_file_url,  # used in the next phase
