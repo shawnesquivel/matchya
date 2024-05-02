@@ -7,7 +7,7 @@ from chalicelib.kitsune_1_chatbot import (
     send_message_to_openai_with_history,
 )
 from chalicelib.utils import current_epoch_time
-from chalicelib.update_table import store_message
+from chalicelib.update_table import store_message, get_all_messages_for_chat
 from chalicelib.audio import (
     text_to_audio,
     generate_mp3_file_name,
@@ -172,7 +172,11 @@ def kitsune_chatbot_3():
         user_prompt_template = app.current_request.json_body["prompt_template"]
 
         bot_response = send_message_to_openai_with_history(
-            user_message, user_prompt_template, user_model, user_temperature
+            user_message,
+            user_prompt_template,
+            user_model,
+            user_temperature,
+            user_chat_id,
         )
 
         """
@@ -220,6 +224,15 @@ def kitsune_chatbot_3():
     except Exception as e:
         logging.error(f"An error occurred: {str(e)}")
         return Response(body={"error": str(e)}, status_code=500)
+
+
+@app.route("/chat/messages/{chat_id}", methods=["GET"], cors=cors_config)
+def get_chat_messages(chat_id):
+    """Phase 3: Fetch old messages"""
+    print(f" received messages request: {chat_id}")
+    messages = get_all_messages_for_chat(chat_id)
+    print(f"retrieved chat messages: {messages}")
+    return {"data": messages}
 
 
 # @app.route("/chat", methods=["POST", "GET"], cors=cors_config)

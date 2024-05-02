@@ -43,7 +43,7 @@ def send_message_to_openai(user_message, prompt_template, model, temperature):
 
 
 def send_message_to_openai_with_history(
-    user_message, prompt_template, model, temperature
+    user_message, prompt_template, model, temperature, chat_id
 ):
     """PHASE 2: Duplicate the last send_message_to_openai and fetch old messages instead"""
 
@@ -52,7 +52,7 @@ def send_message_to_openai_with_history(
         """
         We replace the message history with this.
         """
-        messages = create_messages_openai(prompt_template, user_message)
+        messages = create_messages_openai(prompt_template, user_message, chat_id)
 
         response = client.chat.completions.create(
             # We pass the model here, the list of models can be found here:
@@ -144,7 +144,7 @@ def fetch_system_prompt(prompt_template: str) -> str:
         )
 
 
-def create_messages_openai(prompt_template, user_message):
+def create_messages_openai(prompt_template, user_message, chat_id):
     """PHASE 2: Fetches the old messages and adds the conversation history"""
 
     system_prompt = fetch_system_prompt(prompt_template)
@@ -159,7 +159,7 @@ def create_messages_openai(prompt_template, user_message):
     ]
 
     # mock conversaiton history from dynamdodb
-    old_messages = get_all_messages_for_chat("o8045x2mfcapik2b6ebzu")
+    old_messages = get_all_messages_for_chat(chat_id)
 
     for old_message in old_messages:
         # print(old_message)
