@@ -2,9 +2,18 @@ from chalice import Chalice, CORSConfig, Response
 from chalice import BadRequestError
 import logging
 from chalicelib.chatbot import text_generation_with_function_call
-from chalicelib.kitsune_1_chatbot import send_message_to_openai
+from chalicelib.kitsune_1_chatbot import (
+    send_message_to_openai,
+    send_message_to_openai_with_history,
+)
 from chalicelib.utils import current_epoch_time
 from chalicelib.update_table import store_message
+from chalicelib.audio import (
+    text_to_audio,
+    generate_mp3_file_name,
+    upload_audio_bytes_to_s3,
+    get_playable_audio_link,
+)
 
 app = Chalice(app_name="mimir-backend")
 
@@ -71,9 +80,9 @@ def hello_name(name):
 
 #         # We will continue adding keys here later, for now it will simply be the bot_response
 #         response_object = {
-#             "message": bot_response,
+#             "content": bot_response,
 #             "timestamp": current_epoch_time(),
-#             "chatId": app.current_request.json_body["chat_id"],
+#             "chat_id": app.current_request.json_body["chat_id"],
 #         }
 
 #         print(f"Returning object: {response_object}")
@@ -87,45 +96,124 @@ def hello_name(name):
 #         return Response(body={"error": str(e)}, status_code=500)
 
 
+# @app.route("/chat", methods=["POST"], cors=cors_config)
+# def kitsune_chatbot_2():
+#     """Kitsune 2: Messages"""
+#     try:
+#         user_message = app.current_request.json_body["message"]
+#         """
+#         TUTORIAL: Store the user message in the backend.
+#         1. Get chat ID
+#         2. Store message as user
+#         """
+#         user_chat_id = app.current_request.json_body["chat_id"]
+#         user_timestamp = current_epoch_time()
+#         store_message(
+#             chat_id=user_chat_id,
+#             timestamp=user_timestamp,
+#             content=user_message,
+#             role="user",
+#         )
+#         """
+#         TUTORIAL: Fetch old messages
+#         """
+
+#         # Add more settings from the frontend
+#         user_temperature = app.current_request.json_body["temperature"]
+#         user_model = app.current_request.json_body["model"]
+#         user_prompt_template = app.current_request.json_body["prompt_template"]
+
+#         bot_response = send_message_to_openai_with_history(
+#             user_message, user_prompt_template, user_model, user_temperature
+#         )
+#         """
+#         TUTORIAL: Store the bot resposne in the backend.
+#         """
+#         bot_timestamp = current_epoch_time()
+
+#         bot_response_obj, bot_storage_response = store_message(
+#             chat_id=user_chat_id,
+#             timestamp=bot_timestamp,
+#             content=bot_response,
+#             role="assistant",
+#         )
+#         print(f"bot storage response {bot_storage_response}")
+
+#         # We will continue adding keys here later, for now it will simply be the bot_response
+
+#         print(f"Returning object: {bot_response_obj}")
+#         return Response(
+#             body=bot_response_obj,
+#             status_code=200,
+#         )
+
+#     except Exception as e:
+#         logging.error(f"An error occurred: {str(e)}")
+#         return Response(body={"error": str(e)}, status_code=500)
+
+
 @app.route("/chat", methods=["POST"], cors=cors_config)
-def kitsune_chatbot_2():
-    """Kitsune 2: Messages"""
+def kitsune_chatbot_3():
+    """Kitsune 3: Add Audio Files"""
     try:
         user_message = app.current_request.json_body["message"]
-        """
-        TUTORIAL: Store the user message in the backend.
-        1. Get chat ID
-        2. Store message as user
-        """
         user_chat_id = app.current_request.json_body["chat_id"]
-        store_message(chat_id=user_chat_id, content=user_message, role="user")
-
-        """
-        TUTORIAL: Fetch old messages
-        """
+        user_timestamp = current_epoch_time()
+        store_message(
+            chat_id=user_chat_id,
+            timestamp=user_timestamp,
+            content=user_message,
+            role="user",
+        )
 
         # Add more settings from the frontend
         user_temperature = app.current_request.json_body["temperature"]
         user_model = app.current_request.json_body["model"]
         user_prompt_template = app.current_request.json_body["prompt_template"]
 
-        bot_response = send_message_to_openai(
+        bot_response = send_message_to_openai_with_history(
             user_message, user_prompt_template, user_model, user_temperature
         )
+
         """
-        TUTORIAL: Store the bot resposne in the backend.
+        TUTORIAL: Get audio from ElevenLabs
+        """
+        audio = text_to_audio(bot_response)
+
+        """
+        TUTORIAL: Upload audio to S3 bucket
         """
 
-        bot_message, bot_storage_response = store_message(
-            chat_id=user_chat_id, content=bot_response, role="assistant"
+        s3_file_name = generate_mp3_file_name()
+        bot_timestamp = current_epoch_time()
+
+        upload_audio_bytes_to_s3(
+            audio, "hippo-ai-audio", user_chat_id, bot_timestamp, s3_file_name
         )
-        print(f"bot storage response {bot_storage_response}")
+
+        """
+        TUTORIAL: Get playable link from S3.
+        """
+
+        bot_audio_url = get_playable_audio_link(s3_file_name, "hippo-ai-audio")
+
+        """
+        
+        TUTORIAL: Store the message with the audio link.
+        """
+
+        bot_response_obj, bot_storage_response = store_message(
+            chat_id=user_chat_id,
+            timestamp=bot_timestamp,
+            content=bot_response,
+            role="assistant",
+            audio_file_url=bot_audio_url,
+        )
 
         # We will continue adding keys here later, for now it will simply be the bot_response
 
-        print(f"Returning object: {bot_message}")
         return Response(
-            body=bot_message,
+            body=bot_response_obj,
             status_code=200,
         )
 

@@ -9,7 +9,13 @@ table = dynamodb.Table("Messages")
 
 
 # TODO - create store message
-def store_message(chat_id, content, role, audio_file_url=None):
+def store_message(
+    chat_id,
+    content,
+    role,
+    timestamp,
+    audio_file_url=None,
+):
     """
     Stores a message in a DynamoDB table.
 
@@ -27,7 +33,7 @@ def store_message(chat_id, content, role, audio_file_url=None):
     # The item is defined as an object with all the keys. Only the chat_id and timestamp are required.
     message = {
         "chat_id": str(chat_id),  # unique id
-        "timestamp": current_epoch_time(),  # current time stamp
+        "timestamp": str(timestamp),  # current time stamp
         "content": content,  # message from openai
         "role": role,  # 'user' or 'assistant'
         "audio_file_url": audio_file_url,  # used in the next phase

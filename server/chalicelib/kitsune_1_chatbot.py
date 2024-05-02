@@ -6,43 +6,45 @@ from chalicelib.update_table import get_all_messages_for_chat
 client = OpenAI(api_key="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")
 
 
-# def send_message_to_openai(user_message, prompt_template, model, temperature):
-#     """PHASE 1: Make a call to OpenAI and return the latest message."""
-
-#     print(f"Received request {user_message} {prompt_template} {model} {temperature}")
-
-#     try:
-
-#         system_prompt = fetch_system_prompt(prompt_template)
-
-#         response = client.chat.completions.create(
-#             # We pass the model here, the list of models can be found here:
-#             # https://platform.openai.com/docs/models/gpt-4-and-gpt-4-turbo
-#             model=model,
-#             temperature=temperature,
-#             # The messages must have this format: https://platform.openai.com/docs/api-reference/chat/create
-#             messages=[
-#                 {
-#                     "role": "system",
-#                     "content": system_prompt,
-#                 },
-#                 # Put the latest message here.
-#                 # new messages will be added to the end
-#                 {"role": "user", "content": user_message},
-#             ],
-#         )
-#         print(f"Full Response: {response}")
-#         # This will always pass back an 'assistant' message
-#         last_message = response.choices[0].message.content
-#         print("last message", last_message)
-
-#     except Exception as e:
-#         print(f"An error occurred: {e}")
-#         last_message = f"An error occurred: {str(e)}"
-#     return last_message
-
-
 def send_message_to_openai(user_message, prompt_template, model, temperature):
+    """PHASE 1: Make a call to OpenAI and return the latest message."""
+
+    print(f"Received request {user_message} {prompt_template} {model} {temperature}")
+
+    try:
+
+        system_prompt = fetch_system_prompt(prompt_template)
+
+        response = client.chat.completions.create(
+            # We pass the model here, the list of models can be found here:
+            # https://platform.openai.com/docs/models/gpt-4-and-gpt-4-turbo
+            model=model,
+            temperature=temperature,
+            # The messages must have this format: https://platform.openai.com/docs/api-reference/chat/create
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_prompt,
+                },
+                # Put the latest message here.
+                # new messages will be added to the end
+                {"role": "user", "content": user_message},
+            ],
+        )
+        print(f"Full Response: {response}")
+        # This will always pass back an 'assistant' message
+        last_message = response.choices[0].message.content
+        print("last message", last_message)
+
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        last_message = f"An error occurred: {str(e)}"
+    return last_message
+
+
+def send_message_to_openai_with_history(
+    user_message, prompt_template, model, temperature
+):
     """PHASE 2: Duplicate the last send_message_to_openai and fetch old messages instead"""
 
     try:
