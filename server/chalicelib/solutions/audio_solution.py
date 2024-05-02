@@ -28,6 +28,7 @@ def generate_mp3_file_name():
     return str(uuid.uuid4()) + ".mp3"
 
 
+# TODO - Write this
 def text_to_audio(message: str) -> bytes:
     """
     Convert a message into an audio file using the Labs API.
@@ -47,9 +48,65 @@ def text_to_audio(message: str) -> bytes:
     Tutorial Reference:
     https://elevenlabs.io/docs/api-reference/text-to-speech
     """
-    return
+    # Limit usage for testing
+    CHARACTER_LIMIT = 5000
+
+    if len(message) > CHARACTER_LIMIT:
+        print(
+            f"🎤 Text received surpasses free limit, shortening to {CHARACTER_LIMIT} char."
+        )
+
+    print("🎤 Generating audio! Waiting for Eleven Labs...")
+    # Headers to send with the request
+    # Includes the expected response type (audio/mpeg for MP3) and the content type of the request
+    # Your API key is also included here for authentication
+    payload = {
+        "text": message,
+        "model_id": "eleven_monolingual_v1",
+        "voice_settings": {
+            # Stability: This slider controls the consistency and randomness between each voice generation. Lowering the stability introduces a broader emotional range, potentially making the voice sound more emotive. However, setting it too low can lead to unpredictable performances or overly rapid speech, whereas setting it too high can result in a monotonous and emotionless output.
+            "stability": 0,
+            # Similarity Boost: This setting dictates how closely the AI attempts to replicate the original voice. A higher similarity boost means the AI will try harder to mimic the original voice's nuances, including its tone and characteristics. However, setting the similarity slider too high might result in replication of artifacts or undesired elements from the original recording if it's of poor quality.
+            "similarity_boost": 0,
+        },
+    }
+
+    headers = {
+        "accept": "audio/mpeg",
+        "xi-api-key": os.getenv("ELEVEN_LABS_API_KEY"),
+        "Content-Type": "application/json",
+    }
+    # You might get a 401 error if you run out of characters (10,000 for free)
+
+    # The URL endpoint for the Text-to-Speech request
+    # Change the voice ID here: https://api.elevenlabs.io/v1/voices
+    voice_id = "21m00Tcm4TlvDq8ikWAM"
+    try:
+        response = requests.post(
+            # Change the voice ID here: https://api.elevenlabs.io/v1/voices
+            f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}?optimize_streaming_latency=0",
+            json=payload,
+            headers=headers,
+        )
+        print(f"ElevenLabs Response: {response}")
+
+        if response.status_code == 200 and response.content:
+            return response.content
+        else:
+            print(f"Error? {response.status_code}: {response.content}")
+            return None
+    except requests.RequestException as e:
+        print(f"Error Block 1: {e}")
+        print(f"Error during request: {e}")
+        return None
+
+    except Exception as e:
+        print(f"Error: {e}")
+        print(f"Unexpected error: {e}")
+        return None
 
 
+# TODO - Write this
 def upload_audio_bytes_to_s3(audio_content, bucket, chat_id, timestamp, s3_obj_name):
     """
     Uploads audio to S3.
@@ -84,6 +141,7 @@ def upload_audio_bytes_to_s3(audio_content, bucket, chat_id, timestamp, s3_obj_n
         return False
 
 
+# TODO - Write this
 def get_playable_audio_link(file_name, bucket_name, expiration=604800):
     """
     Generate a pre-signed URL to access a private S3 object.

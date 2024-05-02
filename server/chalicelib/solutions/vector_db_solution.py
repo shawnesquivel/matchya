@@ -1,6 +1,6 @@
 import json
 from langchain_openai import OpenAIEmbeddings
-from chalicelib.loaders import youtube_to_docs, website_to_docs
+from chalicelib.loaders_solution import youtube_to_docs, website_to_docs
 
 """
 https://python.langchain.com/docs/integrations/vectorstores/chroma/
