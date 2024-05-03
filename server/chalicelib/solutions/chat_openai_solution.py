@@ -19,7 +19,7 @@ def send_message_to_openai(user_message, prompt_template, model, temperature):
             # We pass the model here, the list of models can be found here:
             # https://platform.openai.com/docs/models/gpt-4-and-gpt-4-turbo
             model=model,
-            temperature=temperature,
+            temperature=float(temperature),
             # The messages must have this format: https://platform.openai.com/docs/api-reference/chat/create
             messages=[
                 {
@@ -58,7 +58,7 @@ def send_message_to_openai_with_history(
             # We pass the model here, the list of models can be found here:
             # https://platform.openai.com/docs/models/gpt-4-and-gpt-4-turbo
             model=model,
-            temperature=temperature,
+            temperature=float(temperature),
             # The messages must have this format: https://platform.openai.com/docs/api-reference/chat/create
             messages=messages,
         )
