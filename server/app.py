@@ -14,7 +14,7 @@ cors_config = CORSConfig(
 )
 
 
-@app.route("/")
+@app.route("/", cors=cors_config)
 def index():
     """
     Verify the server status by going to http://127.0.0.1:8000/
