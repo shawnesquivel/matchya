@@ -16,7 +16,7 @@ const Chatbot = ({
   boldText = "Powered by OpenAI",
   description = "Fully customizable",
   baseUrl = "http://127.0.0.1:8000",
-  botPngFile = "kitsune-girlfriend",
+  botPngFile = "girlfriend",
   debug = false,
 }) => {
   /**
