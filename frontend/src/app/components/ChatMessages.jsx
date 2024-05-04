@@ -2,7 +2,6 @@
 import React, { useState, useEffect, useRef, useCallback, memo } from "react";
 import Image from "next/image";
 import styles from "../styles/spinner.module.css";
-import { generateTimeStamp } from "../utils/chatHelpers";
 
 // Memo: Do not re-render the component if props havent changed between re-renders
 const MessageItem = memo(({ message, botPngFile, isLast }) => {
