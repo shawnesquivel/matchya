@@ -1,6 +1,5 @@
 import boto3
 import logging
-from chalicelib.utils import current_epoch_time
 
 # Initialize a DynamoDB client. Ensure the region matches.
 dynamodb = boto3.resource("dynamodb", region_name="us-west-2")
