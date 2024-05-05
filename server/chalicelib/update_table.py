@@ -57,3 +57,8 @@ def get_all_messages_for_chat(chat_id):
         KeyConditionExpression=boto3.dynamodb.conditions.Key("chat_id").eq(chat_id)
     )
     return response["Items"]
+
+
+# Example
+# store_message(123, "hello world", 'user', 123, None)
+# get_all_messages_for_chat(123)
