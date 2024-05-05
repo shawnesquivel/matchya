@@ -60,5 +60,5 @@ def get_all_messages_for_chat(chat_id):
 
 
 # Example
-store_message("abc123", "hello world", 'user', 1234, None)
-print(get_all_messages_for_chat("abc123"))
+# store_message("abc123", "hello world", 'user', 1234, None)
+# print(get_all_messages_for_chat("abc123"))
