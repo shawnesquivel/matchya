@@ -1,7 +1,9 @@
-import os
 import requests
 from pathlib import Path
 
+
+# Create your account and get your API key here: https://elevenlabs.io/
+ELEVENLABS_API_KEY = ""
 
 def get_elevenlabs_audio(message: str) -> bytes:
     """
@@ -47,7 +49,7 @@ def get_elevenlabs_audio(message: str) -> bytes:
 
     headers = {
         "accept": "audio/mpeg",
-        "xi-api-key": os.getenv("ELEVEN_LABS_API_KEY"),
+        "xi-api-key": ELEVENLABS_API_KEY,
         "Content-Type": "application/json",
     }
     # You might get a 401 error if you run out of characters (10,000 for free)
