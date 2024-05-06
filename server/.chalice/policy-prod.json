@@ -1,0 +1,27 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      "Resource": "arn:aws:logs:*:*:*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["dynamodb:Query", "dynamodb:PutItem"],
+      // Change REGION_NAME to your region
+      // Change table name to your table
+      "Resource": "arn:aws:dynamodb:REGION_NAME:094478197777:table/TABLE_NAME"
+    },
+    {
+      "Effect": "Allow",
+      "Action": ["s3:PutObject", "s3:GetObject"],
+      // Change BUCKET_NAME to your bucket
+      "Resource": "arn:aws:s3:::BUCKET_NAME/*"
+    }
+  ]
+}
