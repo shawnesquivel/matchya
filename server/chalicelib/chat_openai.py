@@ -1,5 +1,10 @@
 from openai import OpenAI
+import os
+from chalicelib.update_table import get_all_messages_for_chat
+from dotenv import load_dotenv
+load_dotenv()
 
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 def fetch_system_prompt(prompt_template: str) -> str:
     """
@@ -52,10 +57,11 @@ def fetch_system_prompt(prompt_template: str) -> str:
         The AI is talkative and provides lots of specific details from its context. 
         If the AI does not know the answer to a question, it truthfully says it does not know.
         """
+    
 def send_message_to_openai(user_message, prompt_template, model, temperature):
     return
 
 def send_message_to_openai_with_history(
     user_message, prompt_template, model, temperature, chat_id
 ):
-    return
+    return 

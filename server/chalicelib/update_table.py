@@ -28,7 +28,7 @@ def store_message(
     audio_file_url - optional, link to audio
 
     """
-    # The item is defined as an object with all the keys. Only the chat_id and timestamp are required.
+    # We upload objects to DynamoDB. Required: chat_id/timestamp.
     message = {
         "chat_id": str(chat_id),  # unique id
         "timestamp": timestamp,  # current time stamp
@@ -36,13 +36,9 @@ def store_message(
         "role": role,  # 'user' or 'assistant'
         "audio_file_url": audio_file_url,  # used in the next phase
     }
-
-    logging.info("========================")
-    logging.info(f"Creating item: {message}")
-    print(f"Creating message: {message}")
-
     response = table.put_item(Item=message)  # AWS method to add the item
 
+    logging.info(f"Creating item: {message}")
     logging.info("========================")
     print(f"message stored: {response}")
 

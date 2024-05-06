@@ -8,7 +8,7 @@ cors_config = CORSConfig(
     # allow_origin="http://localhost:3000",
     # wildcard: testing only
     allow_origin="*",
-    allow_headers=["X-Special-Header"],
+    allow_headers=['Content-Type', 'X-Special-Header', 'Authorization'], 
     max_age=600,
     allow_credentials=True,
 )

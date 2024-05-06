@@ -1,1 +1,5 @@
-# requirements for lambda project
+# Add all requirements for your app.py file
+boto3==1.34.72
+openai==1.14.2
+python-dotenv==1.0.0
+requests
