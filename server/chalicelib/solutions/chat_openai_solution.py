@@ -1,10 +1,10 @@
 from openai import OpenAI
+import os
 from chalicelib.update_table import get_all_messages_for_chat
+from dotenv import load_dotenv
+load_dotenv()
 
-# hardcode this for now
-# client = OpenAI(api_key="")
-client = OpenAI(api_key="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")
-
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 def send_message_to_openai(user_message, prompt_template, model, temperature):
     """PHASE 1: Make a call to OpenAI and return the latest message."""
