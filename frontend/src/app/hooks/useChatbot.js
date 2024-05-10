@@ -142,6 +142,7 @@ const useChatbot = (baseUrl = "http://127.0.0.1:8000", debug = false) => {
           content: resJson?.content,
           role: "assistant",
           audio_file_url: resJson?.audio_file_url,
+          sourceDocuments: resJson?.source_documents,
         },
       ]);
 
