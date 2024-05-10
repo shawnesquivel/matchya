@@ -160,12 +160,12 @@ const Navbar = () => {
             </li>
 
             <li className="flex flex-col gap-4">
-              <a href="resume-reader">
+              <a href="mimir">
                 <span>
                   <div className=" rounded-xl overflow-hidden h-40 w-32 drop-shadow">
                     <div className="absolute inset-0">
                       <Image
-                        src="/assets/images/robohr.png"
+                        src="/assets/images/wizard.png"
                         alt="robot reading newspaper"
                         fill
                         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
@@ -187,7 +187,7 @@ const Navbar = () => {
                   <div className=" rounded-xl overflow-hidden h-40 w-32 drop-shadow">
                     <div className="absolute inset-0">
                       <Image
-                        src="/assets/images/wizard.png"
+                        src="/assets/images/robohr.png"
                         alt="robot reading newspaper"
                         fill
                         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
@@ -198,7 +198,7 @@ const Navbar = () => {
                   <p
                     className={`text-m font-bold text-gray-200 ${sourceCodePro.className}`}
                   >
-                    Content Wiz
+                    Agent
                   </p>
                 </span>
               </a>
