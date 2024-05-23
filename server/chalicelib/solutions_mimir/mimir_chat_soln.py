@@ -16,7 +16,32 @@ from dotenv import load_dotenv
 load_dotenv()
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+"""
+Helper Functions
+"""
 
+
+def determine_assistant_tool_messages(messages: str):
+    """Helper Function: For function calling, determines the correct message to return."""
+    last_message = messages[-1]
+
+    # there was a function call    
+    if hasattr(last_message, "choices"):
+        tool_message = messages[-2]["content"]
+        message_content = str(last_message.choices[0].message.content)
+    # there was no function call
+    elif hasattr(last_message, "content"):
+        message_content = str(last_message.content)
+        tool_message = None
+    else: 
+        message_content = "Error finding message"
+        tool_message = None
+
+    return (message_content, tool_message)
+
+"""
+Write these functions
+"""
 
 def chat_function_call(
     user_msg,
@@ -50,7 +75,6 @@ def chat_function_call(
         },
         {"role": "user", "content": format_user_msg},
     ]
-
     tools = [
         {
             "type": "function",
@@ -164,21 +188,3 @@ def chat_function_call(
 
     return messages
 
-
-def determine_assistant_tool_messages(messages: str):
-    """For function calling, determines the assistant message and tool results"""
-    last_message = messages[-1]
-
-    # there was a function call    
-    if hasattr(last_message, "choices"):
-        tool_message = messages[-2]["content"]
-        message_content = str(last_message.choices[0].message.content)
-    # there was no functio ncall
-    elif hasattr(last_message, "content"):
-        message_content = str(last_message.content)
-        tool_message = None
-    else: 
-        message_content = "Error finding message"
-        tool_message = None
-
-    return (message_content, tool_message)

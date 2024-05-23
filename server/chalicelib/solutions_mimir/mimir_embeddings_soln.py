@@ -1,13 +1,5 @@
 from langchain_openai import OpenAIEmbeddings
 from chalicelib.mimir_loaders import youtube_to_docs, website_to_docs
-
-"""
-https://python.langchain.com/docs/integrations/vectorstores/chroma/
-pip install chromadb
-
-
-Persistent Directory Example: https://github.com/hwchase17/chroma-langchain/blob/master/persistent-qa.ipynb
-"""
 import os
 from pinecone import Pinecone, ServerlessSpec
 from dotenv import load_dotenv
@@ -15,36 +7,9 @@ from langchain_pinecone import PineconeVectorStore
 
 load_dotenv()
 
-
-def init_pinecone():
-    pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
-    pc.create_index(
-        name="langchain",
-        dimension=1536,  # Replace with your model dimensions
-        metric="euclidean",  # Replace with your model metric
-        spec=ServerlessSpec(cloud="aws", region="us-west-2"),
-    )
-
-
-def upload_documents_to_pinecone(documents, index_name="langchain-ai41"):
-    if not documents:
-        print(f"ERROR: Incomplete documents: {documents}")
-        return False
-
-    embeddings_model = OpenAIEmbeddings(
-        model="text-embedding-ada-002", openai_api_key=os.getenv("OPENAI_API_KEY")
-    )
-
-    db = PineconeVectorStore.from_existing_index(
-        embedding=embeddings_model, index_name=index_name
-    )
-
-    upload_status = db.add_documents(documents=documents)
-    print(f"uploaded!")
-
-    check_pinecone_index()
-    return upload_status
-
+"""
+Helper Functions
+"""
 
 def initialize_pinecone_index(index_name: str = "langchain-ai41") -> bool:
     """
@@ -83,9 +48,8 @@ def initialize_pinecone_index(index_name: str = "langchain-ai41") -> bool:
         print(f"Error initializing Pinecone index: {e}")
         return False
 
-
 def check_pinecone_index(index_name="langchain-ai41"):
-    """Check the current index stats"""
+    """Check a Pinecone Index stats."""
     pc = Pinecone(
         api_key=os.environ.get("PINECONE_API_KEY"),
     )
@@ -95,12 +59,57 @@ def check_pinecone_index(index_name="langchain-ai41"):
         return True
     else:
         return False
+    
+"""
+Function Calling Functions
+"""
+def pinecone_youtube_upload(youtube_url):
+    """Function Calling: Add YouTube video to vector database"""
+    print("CALLING YOUTUBE UPLOADER!")
+    docs = youtube_to_docs(youtube_url)
+    upload_status = upload_documents_to_pinecone(docs)
+    print(f"uploaed to youtube: {docs}")
+    print(f"upload status: {upload_status}")
+    return f"Successfully uploaded {len(docs)} to Pinecone vector database."
 
+def pinecone_website_upload(website_url):
+    """Function Calling: Add website contents to vector database"""
+    print("CALLING WEBSITE UPLOADER!")
+    docs = website_to_docs(website_url)
+    upload_status = upload_documents_to_pinecone(docs)
+    print(f"uploaed to youtube: {docs}")
+    print(f"upload status: {upload_status}")
+    return f"Successfully uploaded {len(docs)} to Pinecone vector database."
+
+"""
+Write these functions
+"""
+def upload_documents_to_pinecone(documents, index_name="langchain-ai41"):
+    """Uses the OpenAI Embeddings model to upload a list of documents to a Pinecone index."""
+    if not documents:
+        print(f"ERROR: Incomplete documents: {documents}")
+        return False
+
+    embeddings_model = OpenAIEmbeddings(
+        model="text-embedding-ada-002", openai_api_key=os.getenv("OPENAI_API_KEY")
+    )
+
+    db = PineconeVectorStore.from_existing_index(
+        embedding=embeddings_model, index_name=index_name
+    )
+
+    upload_status = db.add_documents(documents=documents)
+    print(f"uploaded!")
+
+    check_pinecone_index()
+    return upload_status
 
 def pinecone_similarity_search(user_msg, index_name="langchain-ai41") -> str:
     """
-    Returns a string search so that OpenAI can understand.
+    Do a similarity search on the Pinecone vector store.
 
+    Documentation
+    ----
     https://api.python.langchain.com/en/latest/vectorstores/langchain_pinecone.vectorstores.PineconeVectorStore.html#langchain_pinecone.vectorstores.PineconeVectorStore.similarity_search
     """
     try:
@@ -115,25 +124,8 @@ def pinecone_similarity_search(user_msg, index_name="langchain-ai41") -> str:
 
         return str(result)
     except Exception as e:
-        print(f"Error in similarity search: {e}")
-
-
-def pinecone_youtube_upload(youtube_url):
-    print("CALLING YOUTUBE UPLOADER!")
-    docs = youtube_to_docs(youtube_url)
-    upload_status = upload_documents_to_pinecone(docs)
-    print(f"uploaed to youtube: {docs}")
-    print(f"upload status: {upload_status}")
-    return f"Successfully uploaded {len(docs)} to Pinecone vector database."
-
-
-def pinecone_website_upload(website_url):
-    print("CALLING WEBSITE UPLOADER!")
-    docs = website_to_docs(website_url)
-    upload_status = upload_documents_to_pinecone(docs)
-    print(f"uploaed to youtube: {docs}")
-    print(f"upload status: {upload_status}")
-    return f"Successfully uploaded {len(docs)} to Pinecone vector database."
+        error = f"Error in similarity search: {e}"
+        return error
 
 if __name__ == "__main__":
     result = pinecone_similarity_search("how to start a nextjs project")
