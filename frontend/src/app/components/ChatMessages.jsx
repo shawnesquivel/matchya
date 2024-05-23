@@ -68,8 +68,8 @@ const MessageItem = memo(({ message, botPngFile, isLast }) => {
           />
         </div>
         {/* PHASE 1: How we get the messages parameter. */}
-        <div className="flex justify-center align-middle gap-4">
-          <p className={`max-w-96 ${message.role === "user" ? "user" : "bot"}`}>
+        <div className="flex justify-start align-middle gap-4 w-full">
+          <p className={` max-w-full ${message.role === "user" ? "user" : "bot"}`}>
             {message.content ? message.content : "No message found."}
           </p>
           {/* PHASE 2: Show the audio if it's present */}
@@ -95,22 +95,13 @@ const MessageItem = memo(({ message, botPngFile, isLast }) => {
             className="text-gray-600 text-sm font-bold"
             onClick={() => setShowSources(!showSources)}
           >
-            Source Documents {showSources ? "(Hide)" : "(Show)"}
+            Function Call Results {showSources ? "(Hide)" : "(Show)"}
           </button>
-          {showSources &&
-            message.sourceDocuments.map((document, docIndex) => (
-              <div key={docIndex}>
-                <h3 className="text-gray-600 text-sm font-bold">
-                  Source {docIndex + 1}:
-                </h3>
-                <p className="text-gray-800 text-sm mt-2">
-                  {document.pageContent}
-                </p>
-                <pre className="text-xs text-gray-500 mt-2">
-                  {JSON.stringify(document.metadata, null, 2)}
-                </pre>
-              </div>
-            ))}
+          {showSources && (
+            <p className="text-gray-800 text-sm mt-2">
+              {message.sourceDocuments.slice(0,300)}
+            </p>
+          )}
         </div>
       )}
     </div>
