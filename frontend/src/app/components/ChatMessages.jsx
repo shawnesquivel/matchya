@@ -99,7 +99,7 @@ const MessageItem = memo(({ message, botPngFile, isLast }) => {
           </button>
           {showSources && (
             <p className="text-gray-800 text-sm mt-2">
-              {message.sourceDocuments.slice(0,300)}
+              {message.sourceDocuments}
             </p>
           )}
         </div>
