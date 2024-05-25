@@ -8,7 +8,7 @@ orjson==3.9.15 # needed for langchain > 0.1.7 https://github.com/langchain-ai/la
 openai==1.14.2
 python-dotenv==1.0.0
 langchain-community==0.0.30
-langchain-openai==0.0.4
+langchain-openai==0.0.6
 langchain-text-splitters
 # langchain==0.1.10 #https://github.com/langchain-ai/langchain/issues/18409
 # specific to loaders

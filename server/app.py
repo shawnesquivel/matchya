@@ -51,3 +51,16 @@ Test with `chalice local`
 Deploy with `chalice deploy`
 
 """
+@app.route("/chat", methods=["POST"], cors=cors_config)
+def mimir_1():
+    """Mimir Starter Route"""
+    try:
+        user_message = app.current_request.json_body["message"]
+        user_chat_id = app.current_request.json_body["chat_id"]
+
+        
+        response_object = {}
+        return Response(body=response_object, status_code=200)
+    except Exception as e:
+        print(f'there was an error {e}')
+        return Response(body={"error": str(e)}, status_code=500)
