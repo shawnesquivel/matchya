@@ -1,55 +1,23 @@
-import os
-
+"""
+pip install --upgrade --quiet  youtube-transcript-api pypdf langchain-openai langchain pinecone
+"""
 from langchain_pinecone import PineconeVectorStore
-
-"""
-pip install --upgrade --quiet  youtube-transcript-api
-"""
-
-from langchain_community.document_loaders import YoutubeLoader, PyPDFLoader
+from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-"""
-https://python.langchain.com/docs/use_cases/web_scraping
-pip install langchain-openai langchain playwright beautifulsoup4
-playwright install
-playwright install-deps
-"""
-from langchain_community.document_loaders import AsyncChromiumLoader
-from langchain_community.document_transformers import BeautifulSoupTransformer
-
-"""
-pip install pypdf
-"""
-
-# Open Source Embeddings
-from langchain_community.embeddings.sentence_transformer import (
-    SentenceTransformerEmbeddings,
-)
 from langchain_openai import OpenAIEmbeddings
-
-"""
-https://python.langchain.com/docs/integrations/vectorstores/chroma/
-pip install chromadb
-"""
 from langchain_community.document_loaders import (
     PyPDFLoader,
     GithubFileLoader,
-    GitLoader,
-    NotionDirectoryLoader,
 )
-
-
 from dotenv import load_dotenv
-
+import os
 load_dotenv()
-
 
 def github_files_to_docs(username, repository):
     """
-
     Load all the JSX and JSON files from a repo.
 
-    TODO: not working atm. See Langchain issue: https://github.com/langchain-ai/langchain/issues/17453
+    If you have issues: https://github.com/langchain-ai/langchain/issues/17453
     """
     loader = GithubFileLoader(
         repo=f"{username}/{repository}",  # username/repo
@@ -112,15 +80,41 @@ def upload_documents_to_pinecone(documents, index_name="ai41"):
     return upload_status
 
 
+def pinecone_similarity_search(user_msg, index_name="ai41") -> str:
+    """
+    Do a similarity search on the Pinecone vector store.
+
+    Documentation
+    ----
+    https://api.python.langchain.com/en/latest/vectorstores/langchain_pinecone.vectorstores.PineconeVectorStore.html#langchain_pinecone.vectorstores.PineconeVectorStore.similarity_search
+    """
+    try:
+        embeddings_model = OpenAIEmbeddings(
+            model="text-embedding-ada-002", openai_api_key=os.getenv("OPENAI_API_KEY")
+        )
+        vectorstore = PineconeVectorStore.from_existing_index(
+            embedding=embeddings_model, index_name=index_name
+        )
+
+        result = vectorstore.similarity_search(query=user_msg, k=6)
+
+        return str(result)
+    except Exception as e:
+        error = f"Error in similarity search: {e}"
+        return error
+
 if __name__ == "__main__":
-    """Upload PDFs"""
+    """Upload PDFs (do this once)"""
     docs = pdf_folder_to_docs("pdfs")
     print(docs)
     print(len(docs))
     status = upload_documents_to_pinecone(docs)
     print(status)
-    """Upload GitHub Directory"""
-    docs = github_files_to_docs("shawnesquivel", "openai-javascript-course")
+    """Upload GitHub Directory (do this once)"""
+    docs = github_files_to_docs("shawnesquivel", "ai-41-start")
     print(docs)
     status = upload_documents_to_pinecone(docs)
     print(status)
+    """Test it out"""
+    # result = pinecone_similarity_search("what is chain of thought?")
+    # print(result)
