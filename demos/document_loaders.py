@@ -68,7 +68,7 @@ def upload_documents_to_pinecone(documents, index_name="ai41"):
         return False
 
     embeddings_model = OpenAIEmbeddings(
-        model="text-embedding-ada-002", openai_api_key=os.getenv("OPENAI_API_KEY"), disallowed_special=()
+        model="text-embedding-3-small", openai_api_key=os.getenv("OPENAI_API_KEY"), disallowed_special=()
     )
 
     db = PineconeVectorStore.from_existing_index(
@@ -78,7 +78,6 @@ def upload_documents_to_pinecone(documents, index_name="ai41"):
     upload_status = db.add_documents(documents=documents)
 
     return upload_status
-
 
 def pinecone_similarity_search(user_msg, index_name="ai41") -> str:
     """
@@ -90,7 +89,7 @@ def pinecone_similarity_search(user_msg, index_name="ai41") -> str:
     """
     try:
         embeddings_model = OpenAIEmbeddings(
-            model="text-embedding-ada-002", openai_api_key=os.getenv("OPENAI_API_KEY")
+            model="text-embedding-3-small", openai_api_key=os.getenv("OPENAI_API_KEY")
         )
         vectorstore = PineconeVectorStore.from_existing_index(
             embedding=embeddings_model, index_name=index_name
