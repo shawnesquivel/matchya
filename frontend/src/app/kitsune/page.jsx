@@ -15,7 +15,8 @@ const Kitsune = () => {
         description="Generative Text. Prompt Engineering. Few Shot Learning."
         debug={true}
         /** Base URL when using `chalice local` */
-        baseUrl="https://lg9eg36d44.execute-api.us-west-2.amazonaws.com/api"
+        basUrl="http://localhost:3000"
+        // baseUrl="https://lg9eg36d44.execute-api.us-west-2.amazonaws.com/api"
         botPngFile="girlfriend"
       />
     </>
