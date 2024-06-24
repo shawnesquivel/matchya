@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 # Create your account and get your API key here: https://elevenlabs.io/
-ELEVENLABS_API_KEY = ""
+ELEVENLABS_API_KEY = "sk_67912c5a66266e213e9624f75343de92d7f8ccc9a119d0eb"
 
 def get_elevenlabs_audio(message: str) -> bytes:
     """
@@ -98,10 +98,10 @@ def get_elevenlabs_audio(message: str) -> bytes:
         return None
 
 
-# response = get_elevenlabs_audio(
-#     "Your time is limited, so don’t waste it living someone else’s life."
-# )
-
 response = get_elevenlabs_audio(
-    "No, I don't ever give up. I'd have to be dead or completely incapacitated"
+    "Your time is limited, so don’t waste it living someone else’s life."
 )
+
+# response = get_elevenlabs_audio(
+#     "No, I don't ever give up. I'd have to be dead or completely incapacitated"
+# )

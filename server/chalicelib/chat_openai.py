@@ -1,11 +1,12 @@
 from openai import OpenAI
 import os
+import sys
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from chalicelib.update_table import get_all_messages_for_chat
 from dotenv import load_dotenv
 load_dotenv()
-
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
+# Debug api problems print(f"API Key: {os.getenv("OPENAI_API_KEY")}")
 def fetch_system_prompt(prompt_template: str) -> str:
     """
     Set the system prompt for the prompt template.
@@ -58,10 +59,59 @@ def fetch_system_prompt(prompt_template: str) -> str:
         If the AI does not know the answer to a question, it truthfully says it does not know.
         """
     
+
 def send_message_to_openai(user_message, prompt_template, model, temperature):
-    return
+    response = client.chat.completions.create(
+        model=model,
+        temperature=float(temperature),
+        messages=[
+            {
+                "role": "system",
+                "content": fetch_system_prompt(prompt_template)
+            },
+            {
+                "role": "user",
+                "content": user_message
+            }
+        ]
+    )
+    last_message = response.choices[0].message.content
+
+    return last_message
 
 def send_message_to_openai_with_history(
     user_message, prompt_template, model, temperature, chat_id
 ):
-    return 
+    messages = [
+        {
+            "role": "system",
+            "content": fetch_system_prompt(prompt_template)
+        }
+    ]
+
+    old_messages = get_all_messages_for_chat(chat_id)
+
+    for message in old_messages:
+        messages.append(
+            {
+                "role": message["role"],
+                "content": message["content"]
+            }
+        )
+
+    messages.append(
+        {
+            "role": "user",
+            "content": user_message
+        }
+    )
+
+    response = client.chat.completions.create(
+        model=model,
+        temperature=float(temperature),
+        messages=messages
+    )
+    
+    last_message = response.choices[0].message.content
+
+    return last_message

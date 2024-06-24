@@ -1,3 +1,5 @@
 env/
 .DS_Store
 mimir-env
+.env
+server/.chalice/config.json

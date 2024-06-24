@@ -1,5 +1,7 @@
 from openai import OpenAI
+import sys
 import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from chalicelib.update_table import get_all_messages_for_chat
 from dotenv import load_dotenv
 load_dotenv()
@@ -34,6 +36,22 @@ def send_message_to_openai(user_message, prompt_template, model, temperature):
         last_message = f"An error occurred: {str(e)}"
     return last_message
 
+def send_message_to_openai(user_message, prompt_template, model, temperature):
+    response = client.chat.completions.create(
+        model=model,
+        temperature=float(temperature),
+        messages=[
+            {
+                "role": "system",
+                "content": fetch_system_prompt(prompt_template)
+            },
+            {
+                "role": "user",
+                "content": user_message
+            }
+        ]
+    )
+    print(response.choices[0].message.content)
 
 def send_message_to_openai_with_history(
     user_message, prompt_template, model, temperature, chat_id
