@@ -35,7 +35,7 @@ Our backend is a Chalice project, which is a framework for writing serverless ap
    - If you see an error or if your credentials are not displayed correctly, refer to the [Setup AWS Credentials](#setup-aws-credentials) section below.
 2. Navigate to the backend directory:
    ```
-   cd backend
+   cd server
    ```
 3. Create a new virtual environment named `env`:
    ```
