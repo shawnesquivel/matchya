@@ -41,6 +41,10 @@ Our backend is a Chalice project, which is a framework for writing serverless ap
    ```
    python -m venv env
    ```
+   Alternatively
+   ```
+   python3 -m venv env
+   ```
 4. Activate the virtual environment:
    ```
    source env/bin/activate  # On Unix/macOS
