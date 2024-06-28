@@ -39,26 +39,25 @@ def hello_name(name):
     return {"message": f"Welcome to the course, {name.upper()}!"}
 
 
-"""
-Write more endpoints here...
-
-- add functions in chalicelib file 
-- grab the user's request from app.current_request.json_body
-- return Response(body={},status_code=200)
-
-Test with `chalice local`
-Deploy with `chalice deploy`
-
-"""
 @app.route("/chat", methods=["POST"], cors=cors_config)
 def mimir_1():
-    """Mimir Starter Route"""
     try:
         user_message = app.current_request.json_body["message"]
         user_chat_id = app.current_request.json_body["chat_id"]
 
-        
-        response_object = {}
+        messages = chat_function_call(user_msg=user_message)
+        print(f"messages: {messages}")
+        bot_message, tool_message = determine_assistant_tool_messages(messages)
+        print(f"bot message: {bot_message}")
+        print(f"bot message: {tool_message}")
+        response_object = {
+            "chat_id": str(user_chat_id),  
+            "timestamp": current_epoch_time(),  
+            "content": bot_message,  # message from openai
+            "role": "assistant",  # differentiate messages
+            "source_documents": tool_message, # function call results
+            "audio_file_url": None,   
+        }
         return Response(body=response_object, status_code=200)
     except Exception as e:
         print(f'there was an error {e}')

@@ -13,15 +13,22 @@
     {
       "Effect": "Allow",
       "Action": ["dynamodb:Query", "dynamodb:PutItem"],
-      // Change REGION_NAME to your region
-      // Change table name to your table
-      "Resource": "arn:aws:dynamodb:REGION_NAME:094478197777:table/TABLE_NAME"
+      "Resource": "arn:aws:dynamodb:us-west-2:094478197777:table/Messages"
     },
     {
       "Effect": "Allow",
       "Action": ["s3:PutObject", "s3:GetObject"],
-      // Change BUCKET_NAME to your bucket
-      "Resource": "arn:aws:s3:::BUCKET_NAME/*"
+      "Resource": "arn:aws:s3:::ai41-audio-files/*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "ssm:GetParameter"
+      ],
+      "Resource": [
+        "arn:aws:ssm:us-west-2:094478197777:parameter/OPENAI_API_KEY",
+        "arn:aws:ssm:us-west-2:094478197777:parameter/PINECONE_API_KEY"
+      ]
     }
   ]
 }
