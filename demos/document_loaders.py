@@ -104,16 +104,16 @@ def pinecone_similarity_search(user_msg, index_name="ai41") -> str:
 
 if __name__ == "__main__":
     """Upload PDFs (do this once)"""
-    docs = pdf_folder_to_docs("pdfs")
-    print(docs)
-    print(len(docs))
-    status = upload_documents_to_pinecone(docs)
-    print(status)
+    # docs = pdf_folder_to_docs("pdfs")
+    # print(docs)
+    # print(len(docs))
+    # status = upload_documents_to_pinecone(docs)
+    # print(status)
     """Upload GitHub Directory (do this once)"""
-    docs = github_files_to_docs("shawnesquivel", "ai-41-start")
-    print(docs)
-    status = upload_documents_to_pinecone(docs)
-    print(status)
+    # docs = github_files_to_docs("shawnesquivel", "ai-41-start")
+    # print(docs)
+    # status = upload_documents_to_pinecone(docs)
+    # print(status)
     """Test it out"""
-    # result = pinecone_similarity_search("what is chain of thought?")
-    # print(result)
+    result = pinecone_similarity_search("tell me about my packages in the json file")
+    print(result)
