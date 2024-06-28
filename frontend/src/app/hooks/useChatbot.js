@@ -149,7 +149,7 @@ const useChatbot = (baseUrl = "http://127.0.0.1:8000", debug = false) => {
       setError("");
     } catch (err) {
       console.error(err);
-      setError("Error fetching transcript. Please try again.");
+      setError("Error fetching messages. Please try again.");
     }
   };
 
