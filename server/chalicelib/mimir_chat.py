@@ -7,6 +7,7 @@ from openai import OpenAI
 import json
 import os
 import logging
+from chalicelib.utils_s3 import get_ssm_parameter
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
@@ -15,28 +16,44 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = OpenAI(api_key=get_ssm_parameter("OPENAI_API_KEY"))
 """
 Helper Functions
 """
 
+
+class MessageError(Exception):
+    """Custom exception for message errors."""
+    def __init__(self, message, original_exception=None):
+        super().__init__(message)
+        self.original_exception = original_exception
+
 def determine_assistant_tool_messages(messages: str):
     """Helper Function: For function calling, determines the correct message to return."""
-    last_message = messages[-1]
+    try:
+        last_message = messages[-1]
+        print(f"last message: {last_message}")
 
-    # there was a function call    
-    if hasattr(last_message, "choices"):
-        tool_message = messages[-2]["content"]
-        message_content = str(last_message.choices[0].message.content)
-    # there was no function call
-    elif hasattr(last_message, "content"):
-        message_content = str(last_message.content)
-        tool_message = None
-    else: 
-        message_content = "Error finding message"
-        tool_message = None
+        # Check if last_message has 'choices'
+        if hasattr(last_message, "choices"):
+            print(f"choices")
+            tool_message = messages[-2]["content"]
+            message_content = str(last_message.choices[0].message.content)
+        # Check if last_message has 'content'
+        elif hasattr(last_message, "content"):
+            print(f"content")
+            message_content = str(last_message.content)
+            tool_message = None
+        else:
+            print(f"error finding message: {last_message}")
+            raise MessageError("Error finding message format", last_message)
 
-    return (message_content, tool_message)
+        return (message_content, tool_message)
+    except Exception as e:
+        # Log the error message and return a tuple indicating the error
+        error_message = f"An error occurred: {str(e)}"
+        print(error_message)
+        raise MessageError(error_message, e) from e
 
 """
 Write these functions
@@ -74,11 +91,109 @@ def chat_function_call(
         },
         {"role": "user", "content": format_user_msg},
     ]
-    # Write this
-    tools = []
+    tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": "pinecone_similarity_search",
+                "description": "Add additional context to the user query",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "user_msg": {
+                            "type": "string",
+                            "description": "The user's message to query to the database",
+                        },
+                        "index_name": {
+                            "type": "string",
+                            "description": "Hardcoded to 'ai41'",
+                        },
+                    },
+                    "required": ["user_msg"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "pinecone_youtube_upload",
+                "description": "Given a youtube URL, it will add its transcript to the Pinecone vector store.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "youtube_url": {
+                            "type": "string",
+                            "description": "A youtube url, should start with:  https://www.youtube.com/watch?v=",
+                        },
+                    },
+                    "required": ["youtube_url"],
+                },
+            },
+        },
+        {
+            "type": "function",
+            "function": {
+                "name": "pinecone_website_upload",
+                "description": "Given a website URL that is NOT youtube, it will load its HTML into the Pinecone vector store.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "website_url": {
+                            "type": "string",
+                            "description": "A website url.",
+                        },
+                    },
+                    "required": ["website_url"],
+                },
+            },
+        },
+    ]
 
     try:
-      print("Attempting function call")
+        response = client.chat.completions.create(
+            model=model, messages=messages, tools=tools, tool_choice="auto"
+        )
+        # print(format_system_msg)
+        print(f"OpenAI: {response}")
+        response_message = response.choices[0].message
+        print(response_message)
+        tool_calls = response_message.tool_calls
+        print("tools", tool_calls)
+
+        if tool_calls:
+            print(f"tool requested")
+            available_functions = {
+                "pinecone_similarity_search": pinecone_similarity_search,
+                "pinecone_youtube_upload": pinecone_youtube_upload,
+                "pinecone_website_upload": pinecone_website_upload,
+            }  # only one function in this example, but you can have multiple
+            messages.append(
+                response_message
+            )  # extend conversation with assistant's reply
+
+            for tool_call in tool_calls:
+                function_name = tool_call.function.name
+                function_to_call = available_functions[function_name]
+                function_args = json.loads(tool_call.function.arguments)
+                function_response = function_to_call(**function_args)
+                messages.append(
+                    {
+                        "tool_call_id": tool_call.id,
+                        "role": "tool",
+                        "name": function_name,
+                        "content": function_response,
+                    }
+                )  # extend conversation with function response
+            second_response = client.chat.completions.create(
+                model="gpt-3.5-turbo-0125",
+                messages=messages,
+            )  # get a new response from the model where it can see the function response
+            print(f"second response: {second_response}")
+            messages.append(second_response)
+        else:
+            print("no tool requested")
+            messages.append(response_message)
+
     except Exception as e:
         error_message=f"Function Call: There was an error {e}"
         messages.append({
@@ -86,6 +201,7 @@ def chat_function_call(
             "content": error_message
         })
         logging.info(error_message)
+        raise ValueError
 
     return messages
 

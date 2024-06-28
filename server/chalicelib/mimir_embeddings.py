@@ -1,9 +1,11 @@
 from langchain_openai import OpenAIEmbeddings
 from chalicelib.mimir_loaders import youtube_to_docs, website_to_docs
-from pinecone import Pinecone, ServerlessSpec
-from langchain_pinecone import PineconeVectorStore
 import os
+from pinecone import Pinecone, ServerlessSpec
 from dotenv import load_dotenv
+from langchain_pinecone import PineconeVectorStore
+from chalicelib.utils_s3 import get_ssm_parameter
+
 
 load_dotenv()
 
@@ -11,7 +13,7 @@ load_dotenv()
 Helper Functions
 """
 
-def initialize_pinecone_index(index_name: str = "langchain-ai41") -> bool:
+def initialize_pinecone_index(index_name: str = "ai41") -> bool:
     """
     Return the requested Pinecone index. If not found, create the index.
     """
@@ -48,7 +50,7 @@ def initialize_pinecone_index(index_name: str = "langchain-ai41") -> bool:
         print(f"Error initializing Pinecone index: {e}")
         return False
 
-def check_pinecone_index(index_name="langchain-ai41"):
+def check_pinecone_index(index_name="ai41"):
     """Check a Pinecone Index stats."""
     pc = Pinecone(
         api_key=os.environ.get("PINECONE_API_KEY"),
@@ -84,11 +86,27 @@ def pinecone_website_upload(website_url):
 """
 Write these functions
 """
-def upload_documents_to_pinecone(documents, index_name="langchain-ai41"):
+def upload_documents_to_pinecone(documents, index_name="ai41"):
     """Uses the OpenAI Embeddings model to upload a list of documents to a Pinecone index."""
-    return
+    if not documents:
+        print(f"ERROR: Incomplete documents: {documents}")
+        return False
 
-def pinecone_similarity_search(user_msg, index_name="langchain-ai41") -> str:
+    embeddings_model = OpenAIEmbeddings(
+        model="text-embedding-ada-002", openai_api_key=os.getenv("OPENAI_API_KEY")
+    )
+
+    db = PineconeVectorStore.from_existing_index(
+        embedding=embeddings_model, index_name=index_name
+    )
+
+    upload_status = db.add_documents(documents=documents)
+    print(f"uploaded!")
+
+    check_pinecone_index()
+    return upload_status
+
+def pinecone_similarity_search(user_msg, index_name="ai41") -> str:
     """
     Do a similarity search on the Pinecone vector store.
 
@@ -96,7 +114,25 @@ def pinecone_similarity_search(user_msg, index_name="langchain-ai41") -> str:
     ----
     https://api.python.langchain.com/en/latest/vectorstores/langchain_pinecone.vectorstores.PineconeVectorStore.html#langchain_pinecone.vectorstores.PineconeVectorStore.similarity_search
     """
-    return
+    try:
+
+        pinecone_api_key = get_ssm_parameter("PINECONE_API_KEY")
+        # Set Pinecone API key as an environment variable
+        os.environ["PINECONE_API_KEY"] = pinecone_api_key
+        embeddings_model = OpenAIEmbeddings(
+            model="text-embedding-ada-002", openai_api_key=get_ssm_parameter("OPENAI_API_KEY")
+        )
+        vectorstore = PineconeVectorStore.from_existing_index(
+            embedding=embeddings_model, index_name=index_name, 
+        )
+
+        result = vectorstore.similarity_search(query=user_msg, k=6)
+
+        return str(result)
+    except Exception as e:
+        error = f"Error in similarity search: {e}"
+        print(error)
+        raise Exception(error)
 
 if __name__ == "__main__":
     result = pinecone_similarity_search("how to start a nextjs project")
