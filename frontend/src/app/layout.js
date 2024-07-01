@@ -7,7 +7,7 @@ export const metadata = {
   title: "matchya",
   description: "find your ideal therapist, without the hassle.",
   icons: {
-    icon: "/matchya.png", // /public path
+    icon: "/assets/images/favicon.png", // /public path
   },
 };
 

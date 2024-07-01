@@ -27,7 +27,7 @@ let initialChatMessages = [
   {
     role: "bot",
     content:
-      "first off, our therapists are located worlwide. where are you located?",
+      "first off, physical therapists are located in vancouver, NYC, LA, and Toronto. we have global recommendations though. where are you located?",
   },
 ];
 
