@@ -8,6 +8,29 @@ import {
   setCookiesChatId,
 } from "../utils/chatHelpers";
 
+let initialChatMessages = [
+  {
+    role: "bot",
+    content:
+      "hihi. i'm matchya, and i'm here to match you with your ideal therapist.",
+  },
+  {
+    role: "bot",
+    content:
+      "just like brewing the perfect 🍵 matcha, every detail will improve the final result! the more info you're comfortable sharing, the better match i can find you.",
+  },
+  {
+    role: "bot",
+    content:
+      "oh and dw, everything is 100% confidential! chats are deleted after 24h.",
+  },
+  {
+    role: "bot",
+    content:
+      "first off, our therapists are located worlwide. where are you located?",
+  },
+];
+
 const useChatbot = (baseUrl = "http://127.0.0.1:8000", debug = false) => {
   const [chatId, setChatId] = useState(getChatID());
   // ChatMessages
@@ -78,6 +101,32 @@ const useChatbot = (baseUrl = "http://127.0.0.1:8000", debug = false) => {
     setUserMessage(e.target.value);
   };
 
+  const fetchInitialChatMessages = async () => {
+    try {
+      setLoadingNewMsg(true);
+
+      const addMessageWithDelay = (message, delay) => {
+        return new Promise((resolve) => {
+          setTimeout(() => {
+            setMessages((prevMessages) => [...prevMessages, message]);
+            resolve();
+          }, delay);
+        });
+      };
+
+      // Load the messages one by one into the chat box with delay
+      for (const message of initialChatMessages) {
+        await addMessageWithDelay(message, 250); // milliseconds
+      }
+
+      setLoadingNewMsg(false);
+      setError("");
+    } catch (err) {
+      setLoadingNewMsg(false);
+      console.error(err);
+      setError("Error fetching messages. Please try again.");
+    }
+  };
   const handleSubmit = async () => {
     /**
      * Run the chat function
@@ -249,6 +298,7 @@ const useChatbot = (baseUrl = "http://127.0.0.1:8000", debug = false) => {
     fetchPreviousMessages,
     chatId,
     newChat,
+    fetchInitialChatMessages,
   };
 };
 

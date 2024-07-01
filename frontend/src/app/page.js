@@ -18,7 +18,7 @@ const Kitsune = () => {
         /** Base URL when using `chalice local` */
         baseUrl="https://smvfn4yz5a.execute-api.us-west-2.amazonaws.com/api"
         // baseUrl="http://127.0.0.1:8000"
-        botPngFile="wizard"
+        botPngFile="matchya"
       />
     </>
   );

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import useChatbot from "../hooks/useChatbot";
 import useChatSession from "../hooks/useChatSession";
 import Title from "../components/Title";
@@ -31,6 +31,7 @@ const Chatbot = ({
     isLoadingMessages,
     loadingNewMsg,
     handlePromptChange,
+    fetchInitialChatMessages,
     handleSubmit,
     promptTemplate,
     setPromptTemplate,
@@ -41,6 +42,10 @@ const Chatbot = ({
     newChat,
     chatId,
   } = useChatbot(baseUrl, debug);
+
+  useEffect(() => {
+    fetchInitialChatMessages();
+  }, []);
 
   return (
     <>
