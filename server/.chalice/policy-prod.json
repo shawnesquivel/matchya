@@ -22,12 +22,11 @@
     },
     {
       "Effect": "Allow",
-      "Action": [
-        "ssm:GetParameter"
-      ],
+      "Action": ["ssm:GetParameter"],
       "Resource": [
         "arn:aws:ssm:us-west-2:094478197777:parameter/OPENAI_API_KEY",
-        "arn:aws:ssm:us-west-2:094478197777:parameter/PINECONE_API_KEY"
+        "arn:aws:ssm:us-west-2:094478197777:parameter/PINECONE_API_KEY",
+        "arn:aws:ssm:us-west-2:094478197777:parameter/PINECONE_INDEX"
       ]
     }
   ]
