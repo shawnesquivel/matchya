@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef, useCallback, memo } from "react";
 import Image from "next/image";
 import styles from "../styles/spinner.module.css";
-
+import Loader from "./Loader";
 // Memo: Do not re-render the component if props havent changed between re-renders
 const MessageItem = memo(({ message, botPngFile, isLast }) => {
   /**
@@ -69,7 +69,11 @@ const MessageItem = memo(({ message, botPngFile, isLast }) => {
         </div>
         {/* PHASE 1: How we get the messages parameter. */}
         <div className="flex justify-start align-middle gap-4 w-full">
-          <p className={` max-w-full ${message.role === "user" ? "user" : "bot"}`}>
+          <p
+            className={` max-w-full ${
+              message.role === "user" ? "user" : "bot"
+            }`}
+          >
             {message.content ? message.content : "No message found."}
           </p>
           {/* PHASE 2: Show the audio if it's present */}
@@ -108,7 +112,13 @@ const MessageItem = memo(({ message, botPngFile, isLast }) => {
   );
 });
 
-const ChatMessages = ({ messages, botPngFile, maxMsgs, isLoadingMessages }) => {
+const ChatMessages = ({
+  messages,
+  botPngFile,
+  maxMsgs,
+  isLoadingMessages,
+  loadingNewMsg,
+}) => {
   /**
    * 
    * The useRef hook in React is used to access a DOM element directly and persist values across renders without triggering a re-render of the component.
@@ -151,7 +161,7 @@ const ChatMessages = ({ messages, botPngFile, maxMsgs, isLoadingMessages }) => {
           <div className={styles.spinner}></div> {/* Use the spinner here */}
         </div>
       )}
-
+      {loadingNewMsg && <Loader />}
       {/* Display messages if isLoadingMessages is false, regardless of messages count */}
       {!isLoadingMessages &&
         messages.map((message, index) => {

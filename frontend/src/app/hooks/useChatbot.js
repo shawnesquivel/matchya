@@ -19,7 +19,7 @@ const useChatbot = (baseUrl = "http://127.0.0.1:8000", debug = false) => {
   const [model, setModel] = useState("gpt-3.5-turbo");
   const [promptTemplate, setPromptTemplate] = useState("girlfriend");
   const [temperature, setTemperature] = useState(0.5);
-
+  const [loadingNewMsg, setLoadingNewMsg] = useState(false);
   useEffect(() => {
     /**
      *  Fetch old messages on page load.
@@ -89,7 +89,7 @@ const useChatbot = (baseUrl = "http://127.0.0.1:8000", debug = false) => {
     try {
       const chatId = getChatID();
       const timestamp = generateTimeStamp();
-
+      setLoadingNewMsg(true);
       setMessages((prevMessages) => [
         ...prevMessages,
         {
@@ -147,7 +147,9 @@ const useChatbot = (baseUrl = "http://127.0.0.1:8000", debug = false) => {
       ]);
 
       setError("");
+      setLoadingNewMsg(false);
     } catch (err) {
+      setLoadingNewMsg(false);
       console.error(err);
       setError("Error fetching messages. Please try again.");
     }
@@ -234,6 +236,7 @@ const useChatbot = (baseUrl = "http://127.0.0.1:8000", debug = false) => {
     messages,
     error,
     isLoadingMessages,
+    loadingNewMsg,
     handlePromptChange,
     handleSubmit,
     handleClearChat,

@@ -8,6 +8,7 @@ import ChatMessages from "../components/ChatMessages";
 import TwoColumnLayout from "../components/TwoColumnLayout";
 import NewChatButton from "./NewChatButton";
 import ChatbotSettings from "./ChatbotSettings";
+import Loader from "../components/Loader";
 
 const Chatbot = ({
   emoji = "🤖",
@@ -28,6 +29,7 @@ const Chatbot = ({
     messages,
     error,
     isLoadingMessages,
+    loadingNewMsg,
     handlePromptChange,
     handleSubmit,
     promptTemplate,
@@ -62,6 +64,7 @@ const Chatbot = ({
             <ChatMessages
               messages={messages}
               isLoadingMessages={isLoadingMessages}
+              loadingNewMsg={loadingNewMsg}
               botPngFile={botPngFile}
             />
             {/* Explain how the user's message gets changed inside this component with useState */}
