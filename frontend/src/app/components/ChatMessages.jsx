@@ -161,7 +161,6 @@ const ChatMessages = ({
           <div className={styles.spinner}></div> {/* Use the spinner here */}
         </div>
       )}
-      {loadingNewMsg && <Loader />}
       {/* Display messages if isLoadingMessages is false, regardless of messages count */}
       {!isLoadingMessages &&
         messages.map((message, index) => {
@@ -176,6 +175,7 @@ const ChatMessages = ({
             />
           );
         })}
+      {loadingNewMsg && <Loader />}
     </div>
   );
 };
