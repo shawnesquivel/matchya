@@ -5,7 +5,10 @@ import { instrumentSans } from "./styles/fonts";
 
 export const metadata = {
   title: "matchya",
-  description: "Learn  the latest AI technologies from Shawn Esquivel.",
+  description: "find your ideal therapist, without the hassle.",
+  icons: {
+    icon: "/matchya.png", // /public path
+  },
 };
 
 export default function RootLayout({ children }) {
