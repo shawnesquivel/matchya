@@ -4,7 +4,7 @@ import Navbar from "./components/Navbar";
 import { instrumentSans } from "./styles/fonts";
 
 export const metadata = {
-  title: "🦊 Kitsune AI",
+  title: "matchya",
   description: "Learn  the latest AI technologies from Shawn Esquivel.",
 };
 
