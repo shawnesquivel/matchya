@@ -1,7 +1,5 @@
 from chalicelib.mimir_embeddings import (
-    pinecone_similarity_search,
-    pinecone_youtube_upload,
-    pinecone_website_upload,
+    therapist_similarity_search,
 )
 from openai import OpenAI
 import json
@@ -24,9 +22,11 @@ Helper Functions
 
 class MessageError(Exception):
     """Custom exception for message errors."""
+
     def __init__(self, message, original_exception=None):
         super().__init__(message)
         self.original_exception = original_exception
+
 
 def determine_assistant_tool_messages(messages: str):
     """Helper Function: For function calling, determines the correct message to return."""
@@ -55,9 +55,6 @@ def determine_assistant_tool_messages(messages: str):
         print(error_message)
         raise MessageError(error_message, e) from e
 
-"""
-Write these functions
-"""
 
 def chat_function_call(
     user_msg,
@@ -68,17 +65,17 @@ def chat_function_call(
 
     Support models: https://platform.openai.com/docs/guides/function-calling/supported-models
     """
-    format_system_msg = f"""You are a helpful assistant. Mention the user's query, then answer the question solely in the context. Reference the source of your answer.
+    format_system_msg = f"""You are a helpful receptionist at a Therapy and Counselling Clinic. Mention the user's query, then answer the question solely in the context. Reference the source of your answer.
 
-        If there is no context provided, you can search it up using piencone_similarity_search.
-        
-        If it you still can't answer, say why you don't know.
+        If there is no context provided.
 
-        Example: 
-        User: How do I create a NextJS Project?
-        Context: Step 1, Step 2, Step 3. Metadata = "pdf/NextJS Instructions"
-        Answer: To connect to Next JS, follow step 1, then step 2, then step 3.
-        This is outlined in Page 35 of the document 'Next JS Instructions.' This is also referenced in Page 2 of 'Next JS Basics'
+        Good Match Example: 
+        User: Help me find a therapist who specializes in holistic approaches"
+        Response: Here's 3 therapists who specialize in holistic approaches. [SUMMARY OF RESULTS]
+
+        No Match Example: 
+        User: Help me find a therapist who specializes in needling"
+        Response: Sorry, I couldn't find any therapists who specialize in needling. Please try expanding your search.
         """
 
     format_user_msg = f"""
@@ -95,55 +92,17 @@ def chat_function_call(
         {
             "type": "function",
             "function": {
-                "name": "pinecone_similarity_search",
-                "description": "Add additional context to the user query",
+                "name": "therapist_similarity_search",
+                "description": "",
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "user_msg": {
                             "type": "string",
-                            "description": "The user's message to query to the database",
-                        },
-                        "index_name": {
-                            "type": "string",
-                            "description": "Hardcoded to 'ai41'",
+                            "description": "A search to the therapist database with the user's request, cleaned for grammatical errors.",
                         },
                     },
                     "required": ["user_msg"],
-                },
-            },
-        },
-        {
-            "type": "function",
-            "function": {
-                "name": "pinecone_youtube_upload",
-                "description": "Given a youtube URL, it will add its transcript to the Pinecone vector store.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "youtube_url": {
-                            "type": "string",
-                            "description": "A youtube url, should start with:  https://www.youtube.com/watch?v=",
-                        },
-                    },
-                    "required": ["youtube_url"],
-                },
-            },
-        },
-        {
-            "type": "function",
-            "function": {
-                "name": "pinecone_website_upload",
-                "description": "Given a website URL that is NOT youtube, it will load its HTML into the Pinecone vector store.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "website_url": {
-                            "type": "string",
-                            "description": "A website url.",
-                        },
-                    },
-                    "required": ["website_url"],
                 },
             },
         },
@@ -163,10 +122,8 @@ def chat_function_call(
         if tool_calls:
             print(f"tool requested")
             available_functions = {
-                "pinecone_similarity_search": pinecone_similarity_search,
-                "pinecone_youtube_upload": pinecone_youtube_upload,
-                "pinecone_website_upload": pinecone_website_upload,
-            }  # only one function in this example, but you can have multiple
+                "therapist_similarity_search": therapist_similarity_search,
+            }
             messages.append(
                 response_message
             )  # extend conversation with assistant's reply
@@ -195,13 +152,9 @@ def chat_function_call(
             messages.append(response_message)
 
     except Exception as e:
-        error_message=f"Function Call: There was an error {e}"
-        messages.append({
-            "role": "assistant",
-            "content": error_message
-        })
+        error_message = f"Function Call: There was an error {e}"
+        messages.append({"role": "assistant", "content": error_message})
         logging.info(error_message)
         raise ValueError
 
     return messages
-
