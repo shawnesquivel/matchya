@@ -15,7 +15,8 @@ const Kitsune = () => {
         description="simply let matchya know what kind of therapist you're looking for."
         debug={false}
         /** Base URL when using `chalice local` */
-        // baseUrl="https://smvfn4yz5a.execute-api.us-west-2.amazonaws.com/api"
+        baseUrl="https://smvfn4yz5a.execute-api.us-west-2.amazonaws.com/api"
+        // baseUrl="http://127.0.0.1:8000"
         botPngFile="wizard"
       />
     </>
