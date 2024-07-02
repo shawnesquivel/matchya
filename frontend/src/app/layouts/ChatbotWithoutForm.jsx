@@ -51,39 +51,26 @@ const Chatbot = ({
     <>
       {/* Simple JSX - Can just show, no need to write from scratch. */}
       <Title emoji={emoji} headingText={headingText} />
-      <TwoColumnLayout
-        leftColumn={
-          <>
-            <PageHeader
-              heading={heading}
-              boldText={boldText}
-              description={description}
-            />
-          </>
-        }
-        rightColumn={
-          <>
-            {/* This should be explained */}
-            <NewChatButton handleClearChat={newChat} />
-            {/* Explain how messages get put into this container. */}
-            <ChatMessages
-              messages={messages}
-              isLoadingMessages={isLoadingMessages}
-              loadingNewMsg={loadingNewMsg}
-              botPngFile={botPngFile}
-            />
-            {/* Explain how the user's message gets changed inside this component with useState */}
-            {/* Write the handleSubmit function. */}
-            <ChatInput
-              prompt={userMessage}
-              handlePromptChange={handlePromptChange}
-              handleSubmit={handleSubmit}
-              placeHolderText={`Type your message...`}
-              error={error}
-            />
-          </>
-        }
-      />
+      <>
+        {/* This should be explained */}
+        <NewChatButton handleClearChat={newChat} />
+        {/* Explain how messages get put into this container. */}
+        <ChatMessages
+          messages={messages}
+          isLoadingMessages={isLoadingMessages}
+          loadingNewMsg={loadingNewMsg}
+          botPngFile={botPngFile}
+        />
+        {/* Explain how the user's message gets changed inside this component with useState */}
+        {/* Write the handleSubmit function. */}
+        <ChatInput
+          prompt={userMessage}
+          handlePromptChange={handlePromptChange}
+          handleSubmit={handleSubmit}
+          placeHolderText={`Type your message...`}
+          error={error}
+        />
+      </>
     </>
   );
 };

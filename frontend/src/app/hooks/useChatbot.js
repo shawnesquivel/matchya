@@ -12,22 +12,22 @@ let initialChatMessages = [
   {
     role: "bot",
     content:
-      "hihi. i'm matchya, and i'm here to match you with your ideal therapist.",
+      "hihi. i'm matchya, and i'm here to match ya with your perfect therapist!",
   },
   {
     role: "bot",
     content:
-      "just like brewing the perfect 🍵 matcha, every detail will improve the final result! the more info you're comfortable sharing, the better match i can find you.",
+      "just like brewing the perfect matcha 🍵, every detail you provide will improve your match.",
   },
   {
     role: "bot",
     content:
-      "oh and dw, everything is 100% confidential! chats are deleted after 24h.",
+      "oh ya and dw, everything is 100% confidential - chats are deleted after 24h.",
   },
   {
     role: "bot",
     content:
-      "first off, physical therapists are located in vancouver, NYC, LA, and Toronto. we have global recommendations though. where are you located?",
+      "most of our therapists located in USA/Canada, but we have online therapists too. where are you located?",
   },
 ];
 
@@ -115,8 +115,10 @@ const useChatbot = (baseUrl = "http://127.0.0.1:8000", debug = false) => {
       };
 
       // Load the messages one by one into the chat box with delay
-      for (const message of initialChatMessages) {
-        await addMessageWithDelay(message, 250); // milliseconds
+      for (let i = 0; i < initialChatMessages.length; i++) {
+        const message = initialChatMessages[i];
+        const delay = i === 0 ? 500 : 3000; // 0.5 seconds for first message, 2 seconds for the rest
+        await addMessageWithDelay(message, delay);
       }
 
       setLoadingNewMsg(false);

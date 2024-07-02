@@ -1,43 +1,43 @@
 .wrapper {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: white;
-    padding: 15px;
-    filter: contrast(130%);
-  }
-  
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: white;
+  padding: 10px;
+  filter: contrast(130%);
+}
+
+.c-item {
+  width: 12px;  /* Further reduced size */
+  height: 12px; /* Further reduced size */
+  margin: 0 4px; /* Reduced margin */
+  background: #C9D356;
+  border-radius: 50%;
+  box-shadow: 0 0 6px 2px rgba(201, 211, 86, 0.7); /* Adjusted glow */
+  transform: scale(1) translateX(0);
+  animation: load 1.1s ease-in-out infinite both;
+}
+
+.c1 { animation-delay: 0.1s; }
+.c2 { animation-delay: 0.3s; }
+.c3 { animation-delay: 0.5s; }
+.c4 { animation-delay: 0.7s; }
+
+@keyframes load {
+  0%, 100% { transform: scale(1) translateX(8px); } /* Reduced movement */
+  50% { transform: scale(1.2) translateX(-8px); }   /* Reduced movement */
+}
+
+@media screen and (max-width: 992px) {
   .c-item {
-    width: 20px;  /* Reduced size */
-    height: 20px; /* Reduced size */
-    margin: 0 6px;
-    background: #C9D356;
-    border-radius: 50%;
-    box-shadow: 0 0 10px 3px rgba(201, 211, 86, 0.7); /* Adjusted glow */
-    transform: scale(1) translateX(0);
-    animation: load 1.1s ease-in-out infinite both;
+    width: 10px;
+    height: 10px;
+    margin: 0 2px;
+    box-shadow: 0 0 5px 1px rgba(201, 211, 86, 0.7);
   }
-  
-  .c1 { animation-delay: 0.1s; }
-  .c2 { animation-delay: 0.3s; }
-  .c3 { animation-delay: 0.5s; }
-  .c4 { animation-delay: 0.7s; }
-  
+
   @keyframes load {
-    0%, 100% { transform: scale(1) translateX(15px); } /* Reduced movement */
-    50% { transform: scale(1.2) translateX(-15px); }   /* Reduced movement */
+    0%, 100% { transform: scale(1) translateX(6px); }
+    50% { transform: scale(1.2) translateX(-6px); }
   }
-  
-  @media screen and (max-width: 992px) {
-    .c-item {
-      width: 15px;
-      height: 15px;
-      margin: 0 3px;
-      box-shadow: 0 0 8px 2px rgba(201, 211, 86, 0.7);
-    }
-  
-    @keyframes load {
-      0%, 100% { transform: scale(1) translateX(10px); }
-      50% { transform: scale(1.2) translateX(-10px); }
-    }
-  }
+}
