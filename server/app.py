@@ -55,7 +55,8 @@ def matchya():
             user_msg=user_message, model="gpt-4o", old_messages=previous_messages
         )
 
-        print(f"messages: {messages}")
+        print(f"second last message: {messages[-2]}")
+        print(f"last message: {messages[-1]}")
 
         bot_message, tool_message = determine_assistant_tool_messages(messages)
         bot_timestamp = current_epoch_time()
@@ -69,12 +70,26 @@ def matchya():
             role="assistant",
             timestamp=bot_timestamp,
         )
+
+        try:
+            if tool_message:
+                tool_json = ast.literal_eval(tool_message)
+            else:
+                tool_json = None
+        except (ValueError, SyntaxError) as e:
+            print(f"JSON  error: {tool_message}")
+            print(f"JSON  error: {e}!")
+            print(
+                f"Problematic string: {tool_message[:100]}..."
+            )  # Print first 100 chars
+            raise ValueError(str(e))
+        #
         response_object = {
             "chat_id": str(user_chat_id),
             "timestamp": current_epoch_time(),
             "content": bot_message,  # message from openai
             "role": "assistant",  # differentiate messages
-            "source_documents": tool_message,  # function call results
+            "source_documents": tool_json,  # function call results
             "audio_file_url": None,
         }
         return Response(

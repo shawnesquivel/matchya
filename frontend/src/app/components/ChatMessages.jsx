@@ -50,7 +50,10 @@ const MessageItem = memo(({ message, botPngFile, isLast }) => {
     audio.play().catch((e) => console.error("Playback failed:", e));
     // console.log({ audioUrl });
   }, []);
-  // console.log({ message });
+  console.log("source docs", message.sourceDocuments);
+  console.log("source docs", typeof message.sourceDocuments);
+
+  const matches = message?.sourceDocuments?.matches;
 
   return (
     <div className={`flex flex-col ${isLast ? "flex-grow" : ""}`}>
@@ -103,9 +106,38 @@ const MessageItem = memo(({ message, botPngFile, isLast }) => {
           </button>
           {showSources && (
             <p className="text-gray-800 text-sm mt-2">
-              {message.sourceDocuments}
+              {JSON.stringify(message.sourceDocuments)}
             </p>
           )}
+          <div className="flex flex-row justify-between">
+            {matches &&
+              matches.map((match) => {
+                const id = match.id;
+                const metadata = match.metadata;
+                return (
+                  <div id="card" className="bg-green-200 p-4 flex flex-col">
+                    <div id="top-left" className="flex flex-row gap-4">
+                      <img
+                        src="https://thrivedowntown.com/wp-content/uploads/2024/04/Andressa-Taverna-Counsellor.webp"
+                        alt={`profile pic ${metadata.name}`}
+                        className="w-16 h-16 rounded-md"
+                      />
+                      <div id="top-right">
+                        <p>{metadata?.location}</p>
+                        <p>{metadata?.name}</p>
+                      </div>
+                    </div>
+                    <p>{metadata?.summary.slice(0, 50)}</p>
+                    <p>{metadata?.bio.slice(0, 50)}</p>
+                    {metadata.specialties.map((el) => (
+                      <p>{el}</p>
+                    ))}
+                    <p>{metadata?.bio.slice(0, 50)}</p>
+                    <p>{metadata?.bio.slice(0, 50)}</p>
+                  </div>
+                );
+              })}
+          </div>
         </div>
       )}
     </div>

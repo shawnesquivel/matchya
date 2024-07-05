@@ -38,6 +38,7 @@ def determine_assistant_tool_messages(messages: str):
         if hasattr(last_message, "choices"):
             print(f"choices")
             tool_message = messages[-2]["content"]
+            print(type(tool_message))
             message_content = str(last_message.choices[0].message.content)
         # Check if last_message has 'content'
         elif hasattr(last_message, "content"):
@@ -58,7 +59,8 @@ def determine_assistant_tool_messages(messages: str):
 
 def chat_function_call(
     user_msg,
-    model="gpt-4",
+    model="gpt-4o",
+    old_messages=[],
 ):
     """
     Simple text generation with OpenAI
@@ -69,9 +71,10 @@ def chat_function_call(
         You are `matchya`, a helpful receptionist who helps users find their ideal therapist.
 
         Your first questions should inquire about the user's preferences. Use open ended questions. Don't be pushy. All lower case! 
-        (1) hihi. i'm matchya, and i'm here to match you with your ideal therapist. but first, i need your help. the more details you can provide, the better match i can find you. and don't worry - everything is 100% confidential, all chats are deleted after 24h. 
-        (2) do you have a preferred gender for your therapist?  
-        (3) can you tell me a little about why you're looking for a therapist? 
+        
+        sample questions:
+        (1) do you have a preferenecs for your therapist? e.g. gender, trauma, experience with lgbtq,   
+        (3) can you tell me a little yourself (no names pls)
 
         Good Match Example: 
         User: Help me find a therapist who specializes in holistic approaches"
@@ -84,16 +87,34 @@ def chat_function_call(
         Response: sorry, I the closest match I found is a therapist who has. is that alright? let me know if you have other preferences and i can try to match you better.
         """
 
-    format_user_msg = f"""
-            {user_msg}
-        """
     messages = [
         {
             "role": "system",
             "content": format_system_msg,
         },
-        {"role": "user", "content": format_user_msg},
+        {
+            "role": "assistant",
+            "content": "hihi. i'm matchya, and i'm here to match ya with your perfect therapist!",
+        },
+        {
+            "role": "assistant",
+            "content": "just like brewing the perfect matcha 🍵, every detail you provide will improve your match.",
+        },
+        {
+            "role": "assistant",
+            "content": "oh ya and dw, everything is 100% confidential - chats are deleted after 24h.",
+        },
+        {
+            "role": "assistant",
+            "content": "most of our therapists located in USA/Canada, but we have online therapists too. where are you located?",
+        },
     ]
+
+    for message in old_messages:
+        messages.append({"role": message["role"], "content": message["content"]})
+
+    messages.append({"role": "user", "content": str(user_msg)})
+
     tools = [
         {
             "type": "function",
