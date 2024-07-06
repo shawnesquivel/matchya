@@ -114,6 +114,44 @@ const MessageItem = memo(({ message, botPngFile, isLast }) => {
               matches.map((match) => {
                 const id = match.id;
                 const metadata = match.metadata;
+                let bookingLink; 
+
+                if (metadata?.booking_link.startsWith("http")){
+                  bookingLink = metadata.booking_link 
+                } else {
+                  bookingLink = null
+                }
+
+
+                // turn the above code into a function
+                // create two variables validatedBookingLink and validatedBioLink
+                // use them in the JSX
+
+                const validateLink = (link) => { 
+                  if (link.startsWith("http")){
+                    return link;
+                  } else {
+                    return null;
+                  }
+                }
+                const validatedBookingLink = validateLink(metadata?.booking_link);
+                const validatedBioLink = validateLink(metadata?.bio_link);
+
+
+                const joinWithPlus = (name) => {
+
+                  const splitName = name.split(" ") // [firstname, lastname ]
+                  if (splitName.length === 2) {
+                    return splitName.join("+")
+                   } else {
+                    return name
+                   }
+                }
+                
+                const queryFormattedName = joinWithPlus(metadata?.name)
+                const queryFormattedClinic = joinWithPlus(metadata?.clinic)
+                const queryFormattedLocation = joinWithPlus(metadata?.location)
+
                 return (
                   <div id="card" className="transition-all ease-in-out bg-beige-light lg:p-6 flex flex-col wfull rounded-2xl justify-between gap-6 border border-transparent hover:border-grey-dark p-4">
                     <div className="flex flex-col gap-4">
@@ -138,7 +176,11 @@ const MessageItem = memo(({ message, botPngFile, isLast }) => {
                     ))}
                     </ul>
                     </div>
-                    <a href="#" className="wfull bg-mblack text-white px-4 py-3 rounded-full flex align-middle justify-center">Full Bio Coming Soon</a>
+                    <div className="flex flex-col align-center">
+                      {validatedBookingLink ? <a href={validatedBookingLink} target="_blank" className="wfull bg-mblack text-white px-4 py-3 rounded-full flex align-middle justify-center">Book Now</a> : <a href={`https://www.google.com/search?q=${queryFormattedName}+${queryFormattedClinic}+${queryFormattedLocation}`}target="_blank" className="wfull bg-mblack text-white px-4 py-3 rounded-full flex align-middle justify-center">Find on Google</a>}
+                      {validatedBioLink ? <a href={validatedBioLink} target="_blank" className="wfull text-mblack px-4 pt-3 rounded-full flex align-middle justify-center">Read Full Bio</a> : <a href={validatedBioLink} target="_blank" className="wfull text-transparent px-4 pt-3 rounded-full flex align-middle justify-center pointer-events-none">"</a>}
+                    </div>
+
                   </div>
                 );
               })}

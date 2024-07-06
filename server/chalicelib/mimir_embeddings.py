@@ -42,7 +42,6 @@ def therapist_similarity_search(user_msg) -> str:
             include_values=False,
             include_metadata=True,
         )
-        print(f"therapist_similarity_search response: {response}")
         return str(response)
     except Exception as e:
         error = f"Error in similarity search: {e}"

@@ -72,19 +72,16 @@ def chat_function_call(
 
         Your first questions should inquire about the user's preferences. Use open ended questions. Don't be pushy. All lower case! 
         
-        sample questions:
-        (1) do you have a preferenecs for your therapist? e.g. gender, trauma, experience with lgbtq,   
-        (3) can you tell me a little yourself (no names pls)
+        good responses:
+        (1) do you have a preferences for your therapist? e.g. gender, trauma, experience with lgbtq,   
+        (2) can you tell me a little about yourself?
+        (3) i found X, Y, and Z who satisfy your REQUIREMENT. let me know if you need more info.
+        (4) sorry, the closest match I found is a therapist who has X experience. is that alright? let me know if you have other preferences and i can try to match you better.
 
-        Good Match Example: 
-        User: Help me find a therapist who specializes in holistic approaches"
-        Response: here are 2 therapists who specialize in holistic approaches. you also mentioned 
+        bad responses:
+        (1) do not summarize the results. 1. **name** location **... etc. 
 
-        [SUMMARY OF RESULTS]
-
-        No Match Example: 
-        User: help me find a therapist who specialize in sexual abuse.
-        Response: sorry, I the closest match I found is a therapist who has. is that alright? let me know if you have other preferences and i can try to match you better.
+        Remember, never summarize the results.
         """
 
     messages = [
@@ -94,19 +91,7 @@ def chat_function_call(
         },
         {
             "role": "assistant",
-            "content": "hihi. i'm matchya, and i'm here to match ya with your perfect therapist!",
-        },
-        {
-            "role": "assistant",
-            "content": "just like brewing the perfect matcha 🍵, every detail you provide will improve your match.",
-        },
-        {
-            "role": "assistant",
-            "content": "oh ya and dw, everything is 100% confidential - chats are deleted after 24h.",
-        },
-        {
-            "role": "assistant",
-            "content": "most of our therapists located in USA/Canada, but we have online therapists too. where are you located?",
+            "content": "hihi. i'm matchya, and i'm here to match ya with your perfect therapist! just like brewing the perfect matcha 🍵, every detail you provide will improve your match. oh ya and dw, everything is 100% confidential - chats are deleted after 24h. most of our therapists located in USA/Canada, but we have online therapists too. where are you located?",
         },
     ]
 
@@ -160,6 +145,7 @@ def chat_function_call(
                 function_to_call = available_functions[function_name]
                 function_args = json.loads(tool_call.function.arguments)
                 function_response = function_to_call(**function_args)
+
                 messages.append(
                     {
                         "tool_call_id": tool_call.id,
@@ -168,10 +154,12 @@ def chat_function_call(
                         "content": function_response,
                     }
                 )  # extend conversation with function response
-            second_response = client.chat.completions.create(
-                model="gpt-3.5-turbo-0125",
-                messages=messages,
-            )  # get a new response from the model where it can see the function response
+
+                second_response = client.chat.completions.create(
+                    model="gpt-4o",
+                    messages=messages,
+                )  # get a new response from the model where it can see the function response
+                print(f"GET THE FORMAT: {second_response}")
             print(f"second response: {second_response}")
             messages.append(second_response)
         else:
