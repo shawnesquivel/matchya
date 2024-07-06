@@ -1,5 +1,5 @@
 import React from "react";
-import { pressStart2P, instrumentSans } from "../styles/fonts";
+import { pressStart2P, instrumentSans,aspekta } from "../styles/fonts";
 
 const PageHeader = ({ heading, boldText, description }) => {
   /**
@@ -14,6 +14,7 @@ const PageHeader = ({ heading, boldText, description }) => {
         <strong>{boldText}</strong>
       </p>{" "}
       <p className={`${instrumentSans.className} mb-10`}>{description}</p>
+  
     </>
   );
 };

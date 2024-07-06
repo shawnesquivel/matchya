@@ -3,6 +3,7 @@ from chalicelib.utils import current_epoch_time
 from chalicelib.mimir_chat import chat_function_call, determine_assistant_tool_messages
 from chalicelib.update_table import get_all_messages_for_chat
 from chalicelib.update_table import store_message, get_all_messages_for_chat
+import ast 
 
 app = Chalice(app_name="kitsune-backend")
 

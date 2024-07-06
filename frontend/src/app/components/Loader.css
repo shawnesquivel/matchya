@@ -2,7 +2,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: white;
   padding: 8px;
   filter: contrast(130%);
 }
@@ -11,9 +10,8 @@
   width: 8px;  /* Further reduced size */
   height: 8px; /* Further reduced size */
   margin: 0 3px; /* Reduced margin */
-  background: #C9D356;
+  background: #B2B2B2;
   border-radius: 50%;
-  box-shadow: 0 0 4px 1px rgba(201, 211, 86, 0.7); /* Adjusted glow */
   transform: scale(1) translateX(0);
   animation: load 1.1s ease-in-out infinite both;
 }
@@ -33,7 +31,6 @@
     width: 6px;
     height: 6px;
     margin: 0 2px;
-    box-shadow: 0 0 3px 1px rgba(201, 211, 86, 0.7);
   }
 
   @keyframes load {

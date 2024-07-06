@@ -49,27 +49,25 @@ const Chatbot = ({
 
   return (
     <>
-      {/* Simple JSX - Can just show, no need to write from scratch. */}
-      <Title emoji={emoji} headingText={headingText} />
+
+
+      <TwoColumnLayout leftColumn={<>      <Title emoji={emoji} headingText={headingText} /></>} rightColumn={<><NewChatButton handleClearChat={newChat} /></>}/>
       <>
-        {/* This should be explained */}
-        <NewChatButton handleClearChat={newChat} />
-        {/* Explain how messages get put into this container. */}
-        <ChatMessages
-          messages={messages}
-          isLoadingMessages={isLoadingMessages}
-          loadingNewMsg={loadingNewMsg}
-          botPngFile={botPngFile}
-        />
-        {/* Explain how the user's message gets changed inside this component with useState */}
-        {/* Write the handleSubmit function. */}
-        <ChatInput
-          prompt={userMessage}
-          handlePromptChange={handlePromptChange}
-          handleSubmit={handleSubmit}
-          placeHolderText={`Type your message...`}
-          error={error}
-        />
+        <div className="min-w-full bg-white pt-0 pb-6 px-6 rounded-3xl overflow-hidden border-grey-dark border h-full justify-end flex flex-col max-w-[1440px] mx-auto lg:h-[85vh] md:h-[84vh] sm:h-[85vh] h-[70vh]">
+          <ChatMessages
+            messages={messages}
+            isLoadingMessages={isLoadingMessages}
+            loadingNewMsg={loadingNewMsg}
+            botPngFile={botPngFile}
+          />
+          <ChatInput
+            prompt={userMessage}
+            handlePromptChange={handlePromptChange}
+            handleSubmit={handleSubmit}
+            placeHolderText={`Type your message...`}
+            error={error}
+          />
+        </div>
       </>
     </>
   );

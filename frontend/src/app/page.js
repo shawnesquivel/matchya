@@ -9,10 +9,6 @@ const Kitsune = () => {
   return (
     <>
       <ChatbotWithoutForm
-        emoji="🍵"
-        headingText="matchya"
-        heading="matchya"
-        boldText="find your perfect therapist."
         description="simply let matchya know what kind of therapist you're looking for."
         debug={false}
         /** Base URL when using `chalice local` */

@@ -8,28 +8,7 @@ import {
   setCookiesChatId,
 } from "../utils/chatHelpers";
 
-let initialChatMessages = [
-  {
-    role: "bot",
-    content:
-      "hihi. i'm matchya, and i'm here to match ya with your perfect therapist!",
-  },
-  {
-    role: "bot",
-    content:
-      "just like brewing the perfect matcha 🍵, every detail you provide will improve your match.",
-  },
-  {
-    role: "bot",
-    content:
-      "oh ya and dw, everything is 100% confidential - chats are deleted after 24h.",
-  },
-  {
-    role: "bot",
-    content:
-      "most of our therapists located in USA/Canada, but we have online therapists too. where are you located?",
-  },
-];
+
 
 const useChatbot = (baseUrl = "http://127.0.0.1:8000", debug = false) => {
   const [chatId, setChatId] = useState(getChatID());
@@ -101,26 +80,21 @@ const useChatbot = (baseUrl = "http://127.0.0.1:8000", debug = false) => {
     setUserMessage(e.target.value);
   };
 
+  let initialChatMessages = [
+    {
+      role: "bot",
+      content:
+        "hihi. i'm matchya, and i'm here to match ya with your perfect therapist! just like brewing the perfect matcha 🍵, every detail you provide will improve your match. oh ya and dw, everything is 100% confidential - chats are deleted after 24h. most of our therapists located in USA/Canada, but we have online therapists too. where are you located?",
+    },
+  ];
+
   const fetchInitialChatMessages = async () => {
     try {
       setLoadingNewMsg(true);
 
-      const addMessageWithDelay = (message, delay) => {
-        return new Promise((resolve) => {
-          setTimeout(() => {
-            setMessages((prevMessages) => [...prevMessages, message]);
-            resolve();
-          }, delay);
-        });
-      };
 
-      // Load the messages one by one into the chat box with delay
-      for (let i = 0; i < initialChatMessages.length; i++) {
-        const message = initialChatMessages[i];
-        const delay = i === 0 ? 500 : 3000; // 0.5 seconds for first message, 2 seconds for the rest
-        await addMessageWithDelay(message, delay);
-      }
 
+      setMessages(initialChatMessages)
       setLoadingNewMsg(false);
       setError("");
     } catch (err) {
