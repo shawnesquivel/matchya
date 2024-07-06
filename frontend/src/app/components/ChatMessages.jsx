@@ -51,9 +51,12 @@ const MessageItem = memo(({ message, botPngFile, isLast }) => {
     audio.play().catch((e) => console.error("Playback failed:", e));
     // console.log({ audioUrl });
   }, []);
-
-
   const matches = message?.sourceDocuments?.matches;
+  
+    useEffect(()=>{
+      console.log("matches", matches)
+      console.log("source docs", message?.sourceDocuments)
+    },[])
   
   const typedText = useTypingEffect(message.content || "No message found."); // Use the custom hook
 
