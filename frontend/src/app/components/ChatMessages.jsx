@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef, useCallback, memo } from "react";
 import Image from "next/image";
 import styles from "../styles/spinner.module.css";
 import Loader from "./Loader";
+import useTypingEffect from "./useTypingEffect"; 
 // Memo: Do not re-render the component if props havent changed between re-renders
 const MessageItem = memo(({ message, botPngFile, isLast }) => {
   /**
@@ -54,30 +55,38 @@ const MessageItem = memo(({ message, botPngFile, isLast }) => {
   console.log("source docs", typeof message.sourceDocuments);
 
   const matches = message?.sourceDocuments?.matches;
+  
+  const typedText = useTypingEffect(message.content || "No message found."); // Use the custom hook
+
 
   return (
-    <div className={`flex flex-col ${isLast ? "flex-grow" : ""}`}>
-      <div className="flex mb-4 w-full">
-        <div className="rounded mr-4 h-10 w-10 relative overflow-hidden">
+    <div className={`flex flex-col mb-2 ${isLast ? "flex-grow" : ""}`}>
+      <div className={`flex lg:max-w-[80%]  message p-4 h-fit rounded-2xl w-fit ${
+              message.role === "user" ? "user" : "bot"
+            }`}>
+        <div className="rounded mr-4 h-10 w-10 relative overflow-hidden h-fit">
           {/* PHASE 1: How we choose between the user and bot image. */}
           <Image
             src={message.role === "user" ? userImage : botImage}
             alt={`${message.role}'s profile`}
             width={32}
             height={32}
-            className="rounded"
+            className={`w-8 h-8 rounded ${
+              message.role === "user" ? "user" : "bot"
+            }`}
             priority
             unoptimized
           />
         </div>
         {/* PHASE 1: How we get the messages parameter. */}
-        <div className="flex justify-start align-middle gap-4 w-full">
+        <div className="flex justify-start align-middle gap-4 w-full h-fit">
           <p
-            className={` max-w-full ${
+            className={`sm:mt-[2px] mt-[unset] max-w-full h-fit ${
               message.role === "user" ? "user" : "bot"
             }`}
           >
-            {message.content ? message.content : "No message found."}
+            {/* {message.content ? message.content : "No message found."} */}
+            {typedText}
           </p>
           {/* PHASE 2: Show the audio if it's present */}
           {message.audio_file_url && (
@@ -97,7 +106,7 @@ const MessageItem = memo(({ message, botPngFile, isLast }) => {
       </div>
       {/* MIMIR: Show source documents */}
       {message.sourceDocuments && (
-        <div className="mb-6">
+        <div className="">
           <button
             className="text-gray-600 text-sm font-bold"
             onClick={() => setShowSources(!showSources)}
@@ -109,31 +118,37 @@ const MessageItem = memo(({ message, botPngFile, isLast }) => {
               {JSON.stringify(message.sourceDocuments)}
             </p>
           )}
-          <div className="flex flex-row justify-between">
+          <div className="grid lg:grid-cols-3 gap-4 md:grid-cols-1">
+
             {matches &&
               matches.map((match) => {
                 const id = match.id;
                 const metadata = match.metadata;
                 return (
-                  <div id="card" className="bg-green-200 p-4 flex flex-col">
-                    <div id="top-left" className="flex flex-row gap-4">
-                      <img
-                        src="https://thrivedowntown.com/wp-content/uploads/2024/04/Andressa-Taverna-Counsellor.webp"
-                        alt={`profile pic ${metadata.name}`}
-                        className="w-16 h-16 rounded-md"
-                      />
-                      <div id="top-right">
-                        <p>{metadata?.location}</p>
-                        <p>{metadata?.name}</p>
+                  <div id="card" className="transition-all ease-in-out bg-beige-light lg:p-6 md:p-4 flex flex-col wfull rounded-2xl justify-between gap-6 border border-transparent hover:border-grey-dark">
+                    <div className="flex flex-col gap-4">
+                    <div id="top-left" className="flex flex-row gap-4 align-center">
+                      <div className="relative w-20 h-20">
+                        <img
+                          src="https://thrivedowntown.com/wp-content/uploads/2024/04/Andressa-Taverna-Counsellor.webp"
+                          alt={`profile pic ${metadata.name}`}
+                          className="absolute inset-0 w-full h-full object-cover rounded-full"
+                        />
+                      </div>
+                      <div id="top-right" className="flex flex-col gap-1 my-auto">
+                        <p className="text-m">{metadata?.location}</p>
+                        <p className="text-3xl">{metadata?.name}</p>
                       </div>
                     </div>
-                    <p>{metadata?.summary.slice(0, 50)}</p>
-                    <p>{metadata?.bio.slice(0, 50)}</p>
-                    {metadata.specialties.map((el) => (
-                      <p>{el}</p>
+                    <p className="text-lg leading-tight">{metadata?.summary.slice(0, 150)}.</p>
+                    {/* <p>{metadata?.bio.slice(0, 50)}</p> */}
+                    <ul className="flex gap-y-1 gap-x-2 wfull flex-wrap">
+                    {metadata.specialties.slice(0, 4).map((el, index) => (
+                        <li className="whitespace-nowrap flex px-1 py-1 border border-orange rounded-full text-orange text-sm">{el}</li>
                     ))}
-                    <p>{metadata?.bio.slice(0, 50)}</p>
-                    <p>{metadata?.bio.slice(0, 50)}</p>
+                    </ul>
+                    </div>
+                    <a href="#" className="wfull bg-mblack text-white px-4 py-3 rounded-full flex align-middle justify-center">Full Bio Coming Soon</a>
                   </div>
                 );
               })}
@@ -183,7 +198,7 @@ const ChatMessages = ({
   return (
     <div
       ref={messagesContainerRef}
-      className={`bg-white p-10 rounded-3xl shadow-lg mb-8 overflow-y-auto h-[500px] max-h-[500px] flex flex-col space-y-4 ${
+      className={`bg-white overflow-y-auto h-100 flex flex-col space-y-4 ${
         messages.length < maxMsgToScroll && "justify-end"
       }`}
     >
@@ -198,6 +213,7 @@ const ChatMessages = ({
         messages.map((message, index) => {
           // DEBUG: See every individual message
           // console.log({ message });
+          
           return (
             <MessageItem
               // Ensuring unique key
@@ -205,6 +221,8 @@ const ChatMessages = ({
               message={message}
               botPngFile={botPngFile}
             />
+
+            
           );
         })}
       {loadingNewMsg && <Loader />}

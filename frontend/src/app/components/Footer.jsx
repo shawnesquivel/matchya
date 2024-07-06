@@ -1,31 +1,22 @@
-import { sourceCodePro } from "../styles/fonts";
+import { aspekta } from "../styles/fonts";
 
 const Footer = () => {
   return (
     <footer
-      className={`p-4 bg-gray-800 text-white w-full grid grid-cols-3 fixed bottom-0 ${sourceCodePro.className}`}
+      className={`sm:p-4 px-1 py-2 gap-1 bg-white-dark text-mblack w-full flex flex-col-reverse sm:flex-row justify-between align-center text-xs ${aspekta.className}`}
     >
-      <p className={`text-center ${sourceCodePro.className}`}>
-        <a
-          href="https://x.com/shawn_builds/"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hover:text-gray-400 transition-colors duration-300 hover:underline hover:underline-offset-2"
-        >
-          X/Twitter
-        </a>
-      </p>
-      <p className={`text-center ${sourceCodePro.className}`}>
+      <p className={`sm:text-left text-center ${aspekta.className}`}>
         &copy; matchya.
       </p>
-      <p className={`text-center ${sourceCodePro.className}`}>
+      <p className={`sm:text-right text-center ${aspekta.className}`}>
+      This is a beta version and prototype. Your data is stored for less than 24 hours. Experiencing a software issue? &nbsp;
         <a
-          href="https://www.figma.com/proto/zYc44w56sYTodeSDL3bn3F/matchya?page-id=31%3A81&node-id=43-1840&viewport=1248%2C228%2C0.12&t=vMD8voci0L7PRtCE-1&scaling=scale-down&content-scaling=fixed"
+          href="#tally-open=nG0l1Z&tally-hide-title=1&tally-emoji-text=🍵&tally-emoji-animation=heart-beat"
           target="_blank"
           rel="noopener noreferrer"
-          className="hover:text-gray-400 transition-colors duration-300 hover:underline hover:underline-offset-2"
+          className="hover:text-orange transition-colors duration-300 hover:underline hover:underline-offset-2"
         >
-          Landing Page
+          Report a Bug
         </a>
       </p>
     </footer>

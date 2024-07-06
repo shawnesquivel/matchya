@@ -20,5 +20,8 @@ const sourceCodePro = Source_Code_Pro({ subsets: ["latin"], weight: "400" });
 const instrumentSans = localFont({
   src: "./InstrumentSans-VariableFont_wdth,wght.ttf",
 });
+const aspekta = localFont({
+  src: "./Aspekta-400.otf",
+});
 
-export { pressStart2P, sourceCodePro, instrumentSans };
+export { pressStart2P, sourceCodePro, instrumentSans, aspekta };

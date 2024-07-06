@@ -6,6 +6,40 @@ module.exports = {
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/**/*.{js,ts,jsx,tsx,mdx}",
   ],
-  theme: {},
+  theme: {
+    extend: {
+      colors: {
+        green: {
+          light: '#C9D356',
+          DEFAULT: '#466421',
+        },
+        mblack: {
+          DEFAULT: '#2A1410',
+        },
+        white: {
+          DEFAULT: '#FDFDFD',
+          dark: '#F6F5F1',
+        },
+        grey: {
+          DEFAULT: '#F7F7F7',
+          dark: '#E3E3E3',
+        },
+        beige: {
+          light: '#F8F8F2',
+          DEFAULT: '#F6F5F1',
+        },       
+        orange: {
+          DEFAULT: '#F3843C',
+        },       
+      },
+    },
+    screens: {
+      sm: '640px',
+      md: '768px',
+      lg: '1024px',
+      xl: '1280px',
+      '2xl': '1536px',
+    },
+  },
   plugins: [],
 };
