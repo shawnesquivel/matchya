@@ -53,7 +53,7 @@ const Chatbot = ({
 
       <TwoColumnLayout leftColumn={<>      <Title emoji={emoji} headingText={headingText} /></>} rightColumn={<><NewChatButton handleClearChat={newChat} /></>}/>
       <>
-        <div className="min-w-full bg-white pt-0 pb-6 px-6 rounded-3xl overflow-hidden border-grey-dark border h-full justify-end flex flex-col max-w-[1440px] mx-auto lg:h-[85vh] md:h-[84vh] sm:h-[85vh] h-[70vh]">
+        <div className="min-w-full bg-white pt-0 pb-6 md:px-6 px-2 rounded-3xl overflow-hidden border-grey-dark border h-full justify-end flex flex-col max-w-[1440px] mx-auto lg:h-[85vh] md:h-[84vh] sm:h-[85vh] h-[70vh] w-full">
           <ChatMessages
             messages={messages}
             isLoadingMessages={isLoadingMessages}

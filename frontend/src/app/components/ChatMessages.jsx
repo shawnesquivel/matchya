@@ -51,8 +51,7 @@ const MessageItem = memo(({ message, botPngFile, isLast }) => {
     audio.play().catch((e) => console.error("Playback failed:", e));
     // console.log({ audioUrl });
   }, []);
-  console.log("source docs", message.sourceDocuments);
-  console.log("source docs", typeof message.sourceDocuments);
+
 
   const matches = message?.sourceDocuments?.matches;
   
@@ -61,7 +60,7 @@ const MessageItem = memo(({ message, botPngFile, isLast }) => {
 
   return (
     <div className={`flex flex-col mb-2 ${isLast ? "flex-grow" : ""}`}>
-      <div className={`flex lg:max-w-[80%]  message p-4 h-fit rounded-2xl w-fit ${
+      <div className={`flex lg:max-w-[80%]  message p-4 h-fit max-w-full rounded-2xl w-fit ${
               message.role === "user" ? "user" : "bot"
             }`}>
         <div className="rounded mr-4 h-10 w-10 relative overflow-hidden h-fit">
@@ -107,44 +106,32 @@ const MessageItem = memo(({ message, botPngFile, isLast }) => {
       {/* MIMIR: Show source documents */}
       {message.sourceDocuments && (
         <div className="">
-          <button
-            className="text-gray-600 text-sm font-bold"
-            onClick={() => setShowSources(!showSources)}
-          >
-            Function Call Results {showSources ? "(Hide)" : "(Show)"}
-          </button>
-          {showSources && (
-            <p className="text-gray-800 text-sm mt-2">
-              {JSON.stringify(message.sourceDocuments)}
-            </p>
-          )}
-          <div className="grid lg:grid-cols-3 gap-4 md:grid-cols-1">
-
+          <div className="mt-3 grid lg:grid-cols-3 gap-4 grid-cols-1">
             {matches &&
               matches.map((match) => {
                 const id = match.id;
                 const metadata = match.metadata;
                 return (
-                  <div id="card" className="transition-all ease-in-out bg-beige-light lg:p-6 md:p-4 flex flex-col wfull rounded-2xl justify-between gap-6 border border-transparent hover:border-grey-dark">
+                  <div id="card" className="transition-all ease-in-out bg-beige-light lg:p-6 flex flex-col wfull rounded-2xl justify-between gap-6 border border-transparent hover:border-grey-dark p-4">
                     <div className="flex flex-col gap-4">
-                    <div id="top-left" className="flex flex-row gap-4 align-center">
-                      <div className="relative w-20 h-20">
+                    <div id="top-left" className="flex flex-row gap-4 align-center break-words">
+                      <div className="relative h-20 aspect-square">
                         <img
-                          src="https://thrivedowntown.com/wp-content/uploads/2024/04/Andressa-Taverna-Counsellor.webp"
+                          src={metadata?.image || "/assets/images/default-pp.png"}
                           alt={`profile pic ${metadata.name}`}
-                          className="absolute inset-0 w-full h-full object-cover rounded-full"
+                          className="aspect-square absolute inset-0 w-full h-full object-cover rounded-full"
                         />
                       </div>
                       <div id="top-right" className="flex flex-col gap-1 my-auto">
-                        <p className="text-m">{metadata?.location}</p>
-                        <p className="text-3xl">{metadata?.name}</p>
+                        <p className="md:text-m text-sm">{metadata?.location}</p>
+                        <p className="md:text-3xl text-xl">{metadata?.name}</p>
                       </div>
                     </div>
-                    <p className="text-lg leading-tight">{metadata?.summary.slice(0, 150)}.</p>
+                    <p className="lg:text-lg text-md leading-tight">{metadata?.summary.slice(0, 150)}.</p>
                     {/* <p>{metadata?.bio.slice(0, 50)}</p> */}
                     <ul className="flex gap-y-1 gap-x-2 wfull flex-wrap">
                     {metadata.specialties.slice(0, 4).map((el, index) => (
-                        <li className="whitespace-nowrap flex px-1 py-1 border border-orange rounded-full text-orange text-sm">{el}</li>
+                        <li className="whitespace-nowrap flex px-1 py-1 border border-orange rounded-full text-orange text-xs">{el}</li>
                     ))}
                     </ul>
                     </div>
@@ -182,25 +169,10 @@ const ChatMessages = ({
       There is no other way to directly manipulate the DOM for scrolling purposes in React's declarative paradigm. 
       The ref persists throughout the life of the component, allowing direct access to the DOM node without causing additional renders, which would happen if you were to use state for this purpose.
     */
-  const messagesContainerRef = useRef();
 
-  useEffect(() => {
-    // On new message, scroll to the bottom.
-    if (messagesContainerRef.current) {
-      const element = messagesContainerRef.current;
-      element.scrollTop = element.scrollHeight;
-    }
-  }, [messages]);
-
-  // E.g. If we have less than {5} messages, the messages won'ts take up the full container.
-  //      We add the justify-end property to pushes messages to the bottom
-  const maxMsgToScroll = maxMsgs || 5;
   return (
     <div
-      ref={messagesContainerRef}
-      className={`bg-white overflow-y-auto h-100 flex flex-col space-y-4 ${
-        messages.length < maxMsgToScroll && "justify-end"
-      }`}
+      className="overflow-y-scroll"
     >
       {/* Show loading spinner only when isLoadingMessages is true */}
       {isLoadingMessages && (
@@ -211,8 +183,6 @@ const ChatMessages = ({
       {/* Display messages if isLoadingMessages is false, regardless of messages count */}
       {!isLoadingMessages &&
         messages.map((message, index) => {
-          // DEBUG: See every individual message
-          // console.log({ message });
           
           return (
             <MessageItem

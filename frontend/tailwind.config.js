@@ -16,6 +16,9 @@ module.exports = {
         mblack: {
           DEFAULT: '#2A1410',
         },
+        purple: {
+          DEFAULT: '#E8D7EA',
+        },
         white: {
           DEFAULT: '#FDFDFD',
           dark: '#F6F5F1',
