@@ -20,7 +20,7 @@ export default function RootLayout({ children }) {
           <script async src="https://tally.so/widgets/embed.js"></script>
         </head>
         <body className={`flex flex-col h-screen ${aspekta.className}`}>
-          <main className="bg-grey gap-2 flex flex-col px-2 pt-0 lg:gap-6 lg:px-20 md:px-10 h-full ">
+          <main className="min-h-screen">
             {children}
           </main>
           <Analytics />
