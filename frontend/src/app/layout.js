@@ -1,6 +1,6 @@
 import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
-import Footer from "./components/Footer";
+
 import { aspekta } from "./styles/fonts";
 import { ClerkProvider } from "@clerk/nextjs";
 
@@ -24,7 +24,6 @@ export default function RootLayout({ children }) {
             {children}
           </main>
           <Analytics />
-          <Footer />
         </body>
       </html>
     </ClerkProvider>

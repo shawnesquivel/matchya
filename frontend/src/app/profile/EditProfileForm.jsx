@@ -1,5 +1,7 @@
 "use client";
 import React, { useState } from "react";
+import PrimaryBtn from "../components/PrimaryBtn";
+import { aspekta } from "../styles/fonts";
 
 const EditProfileForm = () => {
   console.log("To Do: Fetch profile data from web scrape component");
@@ -63,6 +65,15 @@ const EditProfileForm = () => {
     });
   };
 
+  // const handleArrayChange = (e, field, index) => {
+  //   const newArray = [...profileData[field]];
+  //   newArray[index] = e.target.value;
+  //   setProfileData({
+  //     ...profileData,
+  //     [field]: newArray,
+  //   });
+  // };
+
   const handleArrayChange = (e, field, index) => {
     const newArray = [...profileData[field]];
     newArray[index] = e.target.value;
@@ -71,17 +82,44 @@ const EditProfileForm = () => {
       [field]: newArray,
     });
   };
-
+  // const renderArrayInputs = (array, fieldName) => {
+  //   return array.map((item, index) => (
+  //     <div key={index}>
+  //       <input
+  //         type="text"
+  //         value={item}
+  //         onChange={(e) => handleArrayChange(e, fieldName, index)}
+  //       />
+  //     </div>
+  //   ));
+  // };
   const renderArrayInputs = (array, fieldName) => {
     return array.map((item, index) => (
-      <div key={index}>
+      <div key={index} className="flex items-center w-fit">
         <input
           type="text"
           value={item}
           onChange={(e) => handleArrayChange(e, fieldName, index)}
+          className="px-3 py-1 bg-gray-200 rounded-full mr-2"
         />
+        <button
+          onClick={() => handleDeleteItem(fieldName, index)}
+          className="text-red-500"
+        >
+          Delete
+        </button>
       </div>
     ));
+  };
+
+  // Handle deletion of an item in array fields
+  const handleDeleteItem = (field, index) => {
+    const newArray = [...profileData[field]];
+    newArray.splice(index, 1);
+    setProfileData({
+      ...profileData,
+      [field]: newArray,
+    });
   };
 
   const saveProfile = () => {
@@ -92,172 +130,197 @@ const EditProfileForm = () => {
 
   return (
     <>
-      <div>
-        <h1 className="text-3xl font-bold">Edit Profile Page</h1>
-        <div className="flex flex-row">
-          <div className="flex flex-col">
-            <div>
-              <label>Name:</label>
-              <input
-                type="text"
-                name="name"
-                value={profileData.name}
-                onChange={handleChange}
-              />
+      <div
+        className={`bg-white gap-2 flex flex-col p-4 h-full ${aspekta.className} transition ease-in-out`}
+      >
+        <div className="bg-grey px-2 pt-0 flex flex-col lg:gap-6 lg:px-20 md:px-10 rounded-2xl h-full z-10 overflow-hidden relative">
+          <h1 className="text-2xl font-bold mt-16">
+            Awesome! Here’s what we’ve found about you:
+          </h1>
+          <div className="grid grid-cols-[2fr_1fr] gap-6">
+            <div className="flex flex-col">
+              <div className="profile-field">
+                <label>Name:</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={profileData.name}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="profile-field">
+                <label>Gender:</label>
+                <input
+                  // this should be select
+                  type="text"
+                  name="gender"
+                  value={profileData.gender}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="profile-field">
+                <label>Location:</label>
+                <input
+                  type="text"
+                  name="location"
+                  value={profileData.location}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="profile-field">
+                <label>Country:</label>
+                <input
+                  type="text"
+                  name="country"
+                  value={profileData.country}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="profile-field">
+                <label>Languages:</label>
+                <div className="chips">
+                  {renderArrayInputs(profileData.languages, "languages")}
+                </div>
+              </div>
+              <div className="profile-field">
+                <label>Qualifications:</label>
+                <div className="chips">
+                  {renderArrayInputs(
+                    profileData.qualifications,
+                    "qualifications"
+                  )}
+                </div>
+              </div>
+              <div className="profile-field">
+                <label>Specialties:</label>
+                <div className="chips">
+                  {renderArrayInputs(profileData.specialties, "specialties")}
+                </div>
+              </div>
+              <div className="profile-field">
+                <label>Approaches:</label>
+                <div className="chips">
+                  {renderArrayInputs(profileData.approaches, "approaches")}
+                </div>
+              </div>
+              <div className="profile-field">
+                <label>Available Online:</label>
+                <input
+                  type="checkbox"
+                  name="available_online"
+                  checked={profileData.available_online}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="profile-field">
+                <label>Bio:</label>
+                <textarea
+                  name="bio"
+                  value={profileData.bio}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="profile-field">
+                <label>Bio Link:</label>
+                <input
+                  type="text"
+                  name="bio_link"
+                  value={profileData.bio_link}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="profile-field">
+                <label>Booking Link:</label>
+                <input
+                  type="text"
+                  name="booking_link"
+                  value={profileData.booking_link}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="profile-field">
+                <label>Clinic:</label>
+                <input
+                  type="text"
+                  name="clinic"
+                  value={profileData.clinic}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="profile-field">
+                <label>Fees:</label>
+                <input
+                  type="text"
+                  name="fees"
+                  value={profileData.fees.join(", ")}
+                  onChange={(e) =>
+                    setProfileData({
+                      ...profileData,
+                      fees: e.target.value.split(", "),
+                    })
+                  }
+                />
+              </div>
+              <div className="profile-field">
+                <label>Profile Link:</label>
+                <input
+                  type="text"
+                  name="profile_link"
+                  value={profileData.profile_link}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="profile-field">
+                <label>Email:</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={profileData.email}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="profile-field">
+                <label>Verified:</label>
+                <input
+                  type="checkbox"
+                  name="verified"
+                  checked={profileData.verified}
+                  onChange={handleChange}
+                />
+              </div>
             </div>
-            <div>
-              <label>Gender:</label>
-              <input
-                type="text"
-                name="gender"
-                value={profileData.gender}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label>Location:</label>
-              <input
-                type="text"
-                name="location"
-                value={profileData.location}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label>Country:</label>
-              <input
-                type="text"
-                name="country"
-                value={profileData.country}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label>Languages:</label>
-              {renderArrayInputs(profileData.languages, "languages")}
-            </div>
-            <div>
-              <label>Qualifications:</label>
-              {renderArrayInputs(profileData.qualifications, "qualifications")}
-            </div>
-            <div>
-              <label>Specialties:</label>
-              {renderArrayInputs(profileData.specialties, "specialties")}
+            <div className="flex flex-col ">
+              <div className="profile-field">
+                <label>Short Summary:</label>
+                <textarea
+                  name="short_summary"
+                  value={profileData.short_summary}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="profile-field">
+                <label>Summary:</label>
+                <textarea
+                  name="summary"
+                  value={profileData.summary}
+                  onChange={handleChange}
+                />
+              </div>
             </div>
           </div>
-          <div className="flex flex-col">
-            <div>
-              <label>Approaches:</label>
-              {renderArrayInputs(profileData.approaches, "approaches")}
-            </div>
-            <div>
-              <label>Available Online:</label>
-              <input
-                type="checkbox"
-                name="available_online"
-                checked={profileData.available_online}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label>Bio:</label>
-              <textarea
-                name="bio"
-                value={profileData.bio}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label>Bio Link:</label>
-              <input
-                type="text"
-                name="bio_link"
-                value={profileData.bio_link}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label>Booking Link:</label>
-              <input
-                type="text"
-                name="booking_link"
-                value={profileData.booking_link}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label>Clinic:</label>
-              <input
-                type="text"
-                name="clinic"
-                value={profileData.clinic}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label>Fees:</label>
-              <input
-                type="text"
-                name="fees"
-                value={profileData.fees.join(", ")}
-                onChange={(e) =>
-                  setProfileData({
-                    ...profileData,
-                    fees: e.target.value.split(", "),
-                  })
-                }
-              />
-            </div>
-            <div>
-              <label>Profile Link:</label>
-              <input
-                type="text"
-                name="profile_link"
-                value={profileData.profile_link}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label>Short Summary:</label>
-              <textarea
-                name="short_summary"
-                value={profileData.short_summary}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label>Summary:</label>
-              <textarea
-                name="summary"
-                value={profileData.summary}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label>Email:</label>
-              <input
-                type="email"
-                name="email"
-                value={profileData.email}
-                onChange={handleChange}
-              />
-            </div>
-            <div>
-              <label>Verified:</label>
-              <input
-                type="checkbox"
-                name="verified"
-                checked={profileData.verified}
-                onChange={handleChange}
-              />
-            </div>
+
+          {/* <button className="bg-green-500 text-white" onClick={saveProfile}>
+            Save Profile (console.log(profileData))
+          </button> */}
+          <div className="flex w-full justify-center">
+            <PrimaryBtn
+              text="Save Profile"
+              onClick={saveProfile}
+              className="border-green-light"
+            />
           </div>
         </div>
       </div>
-
-      <button className="bg-green-500 text-white" onClick={saveProfile}>
-        Save Profile (console.log(profileData))
-      </button>
     </>
   );
 };
