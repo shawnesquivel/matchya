@@ -80,25 +80,32 @@ html {
 .profile-field {
   display: flex;
   flex-direction: column;
-  gap:.5rem;
+  gap:.25rem;
 }
 .profile-field label{
-  font-size: 1rem;
+  font-size: .70rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 .profile-field textarea{
   border-radius: 1rem;
   padding: 1rem;
   border: 1px solid #E9E9E9;
   color: #454140;
+  background-color: #FCFCFC;
+  height: 100%;
 }
 .profile-field textarea::placeholder{
   color: #E9E9E9;
 }
-.profile-field input[type='text']{
+.profile-field input[type='text'],
+.profile-field input[type='email']{
   border-radius: 1rem;
   padding: .5rem 1rem;
   border: 1px solid #E9E9E9;
   color: #454140;
+  background-color: #FCFCFC;
+  border-radius: 9999px;
 }
 .profile-field input[type='text']::placeholder{
   color: #E9E9E9;
@@ -106,15 +113,17 @@ html {
 
 .profile-field .chips {
   display: flex;
-  gap: 1rem;
+  gap: .25rem;
   width: 100%;
   flex-wrap: wrap;
 }
 .profile-field .chips-container {
   border-radius: 1rem;
-  padding: 1rem;
+  padding: .25rem;
   border: 1px solid #E9E9E9;
   color: #454140;
+  background-color: #FCFCFC;
+  border-radius: 1rem;
 }
 
 .profile-field > div input[type='text'] {

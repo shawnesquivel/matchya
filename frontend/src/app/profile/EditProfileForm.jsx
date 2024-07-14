@@ -2,8 +2,10 @@
 import React, { useState } from "react";
 import PrimaryBtn from "../components/PrimaryBtn";
 import { aspekta } from "../styles/fonts";
+import DeleteIcon from "../components/DeleteIcon";
 
 const EditProfileForm = () => {
+  const [activeTab, setActiveTab] = useState("info");
   console.log("To Do: Fetch profile data from web scrape component");
   const [profileData, setProfileData] = useState({
     name: "Isabelle St-Jean",
@@ -57,6 +59,14 @@ const EditProfileForm = () => {
     verified: true,
   });
 
+  const [editingIndex, setEditingIndex] = useState(null);
+  const [newChips, setNewChips] = useState({
+    languages: "",
+    qualifications: "",
+    specialties: "",
+    approaches: "",
+  });
+
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setProfileData({
@@ -82,6 +92,16 @@ const EditProfileForm = () => {
       [field]: newArray,
     });
   };
+
+  const handleDeleteItem = (field, index) => {
+    const newArray = [...profileData[field]];
+    newArray.splice(index, 1);
+    setProfileData({
+      ...profileData,
+      [field]: newArray,
+    });
+  };
+
   // const renderArrayInputs = (array, fieldName) => {
   //   return array.map((item, index) => (
   //     <div key={index}>
@@ -93,35 +113,132 @@ const EditProfileForm = () => {
   //     </div>
   //   ));
   // };
+  // const renderArrayInputs = (array, fieldName) => {
+  //   return array.map((item, index) => (
+  //     <div key={index} className="flex items-center rounded-full">
+  //       <input
+  //         type="text"
+  //         value={item}
+  //         onChange={(e) => handleArrayChange(e, fieldName, index)}
+  //         className="px-3 py-1 flex w-fit"
+  //       />
+  //       <button onClick={() => handleDeleteItem(fieldName, index)}>
+  //         <DeleteIcon />
+  //       </button>
+  //     </div>
+  //   ));
+  // };
+  // const renderArrayInputs = (array, fieldName) => {
+  //   return array.map((item, index) => (
+  //     <div
+  //       key={index}
+  //       className="text-sm flex items-center bg-gray-50 rounded-full rounded-full py-1 px-3 border relative hover:bg-white transition-colors"
+  //     >
+  //       {editingIndex === index ? (
+  //         <input
+  //           type="text"
+  //           value={item}
+  //           onChange={(e) => handleArrayChange(e, fieldName, index)}
+  //           onBlur={() => setEditingIndex(null)}
+  //           className="flex w-fit"
+  //           autoFocus
+  //         />
+  //       ) : (
+  //         <div
+  //           className=" w-fit  border-gray-300  cursor-pointer"
+  //           onClick={() => setEditingIndex(index)}
+  //         >
+  //           {item}
+  //         </div>
+  //       )}
+  //       <button
+  //         onClick={() => handleDeleteItem(fieldName, index)}
+  //         className="ml-2"
+  //       >
+  //         <DeleteIcon />
+  //       </button>
+  //     </div>
+  //   ));
+  // };
+  const handleAddChip = (field, value) => {
+    if (value.trim() !== "") {
+      const newArray = [...profileData[field], value.trim()];
+      setProfileData({
+        ...profileData,
+        [field]: newArray,
+      });
+      setNewChips({ ...newChips, [field]: "" });
+    }
+  };
+
   const renderArrayInputs = (array, fieldName) => {
-    return array.map((item, index) => (
-      <div key={index} className="flex items-center w-fit">
+    return (
+      <>
+        {array.map((item, index) => (
+          <div
+            key={index}
+            className="text-xs flex items-center bg-gray-50 rounded-full py-1 px-3 border relative hover:bg-white transition-colors"
+          >
+            {editingIndex === index ? (
+              <input
+                type="text"
+                value={item}
+                onChange={(e) => handleArrayChange(e, fieldName, index)}
+                onBlur={() => setEditingIndex(null)}
+                className="flex w-fit"
+                autoFocus
+              />
+            ) : (
+              <div
+                className="w-fit border-gray-300 cursor-pointer"
+                onClick={() => setEditingIndex(index)}
+              >
+                {item}
+              </div>
+            )}
+            <button
+              onClick={() => handleDeleteItem(fieldName, index)}
+              className="ml-2"
+            >
+              <DeleteIcon />
+            </button>
+          </div>
+        ))}
         <input
           type="text"
-          value={item}
-          onChange={(e) => handleArrayChange(e, fieldName, index)}
-          className="px-3 py-1 bg-gray-200 rounded-full mr-2"
+          value={newChips[fieldName]}
+          onChange={(e) =>
+            setNewChips({ ...newChips, [fieldName]: e.target.value })
+          }
+          onKeyPress={(e) => {
+            if (e.key === "Enter") {
+              handleAddChip(fieldName, newChips[fieldName]);
+            }
+          }}
+          className="text-sm flex items-center bg-gray-50 rounded-full py-1 px-3 border relative hover:bg-white transition-colors"
+          placeholder="Add new"
         />
-        <button
-          onClick={() => handleDeleteItem(fieldName, index)}
-          className="text-red-500"
-        >
-          Delete
-        </button>
-      </div>
-    ));
+      </>
+    );
   };
+  // // Handle deletion of an item in array fields
+  // const handleDeleteItem = (field, index) => {
+  //   const newArray = [...profileData[field]];
+  //   newArray.splice(index, 1);
+  //   setProfileData({
+  //     ...profileData,
+  //     [field]: newArray,
+  //   });
+  // };
 
-  // Handle deletion of an item in array fields
-  const handleDeleteItem = (field, index) => {
-    const newArray = [...profileData[field]];
-    newArray.splice(index, 1);
-    setProfileData({
-      ...profileData,
-      [field]: newArray,
-    });
-  };
-
+  // const handleDeleteItem = (field, index) => {
+  //   const newArray = [...profileData[field]];
+  //   newArray.splice(index, 1);
+  //   setProfileData({
+  //     ...profileData,
+  //     [field]: newArray,
+  //   });
+  // };
   const saveProfile = () => {
     console.log("To Do: Send this profile data to Clerk to update metadata");
     console.log("To Do: Send this profile data to Pinecone to update metadata");
@@ -133,95 +250,361 @@ const EditProfileForm = () => {
       <div
         className={`bg-white gap-2 flex flex-col p-4 h-full ${aspekta.className} transition ease-in-out`}
       >
-        <div className="bg-grey px-2 pt-0 flex flex-col lg:gap-6 lg:px-20 md:px-10 rounded-2xl h-full z-10 overflow-hidden relative">
-          <h1 className="text-2xl font-bold mt-16">
-            Awesome! Here’s what we’ve found about you:
-          </h1>
+        <div className="bg-grey px-2 pt-0 flex flex-col lg:gap-6 lg:px-20 lg:py-16 md:px-10 rounded-2xl h-full z-10 overflow-hidden relative">
+          {" "}
+          <div className="flex w-full justify-between items-center">
+            <h1 className="text-2xl font-bold">
+              Awesome! Here’s what we’ve found about you:
+            </h1>
+            <PrimaryBtn
+              text="Save Profile"
+              onClick={saveProfile}
+              className="border-green-light"
+            />
+          </div>
+          <div className="flex gap-6 h-full">
+            <div className="flex flex-col gap-1">
+              <button
+                onClick={() => setActiveTab("info")}
+                className={`relative py-1 px-2 text-left w-fit ${
+                  activeTab === "info" ? "text-gray-800" : "text-gray-600"
+                } transition-all duration-300 group`}
+              >
+                Info
+                <span
+                  className={`absolute bottom-0 left-0 h-0.5 bg-gray-600 transition-width duration-300 group-hover:w-full ${
+                    activeTab === "info" ? "w-full" : "w-0"
+                  }`}
+                ></span>
+              </button>
+              <button
+                onClick={() => setActiveTab("bio")}
+                className={`relative py-1 px-2 text-left w-fit ${
+                  activeTab === "bio" ? "text-gray-800" : "text-gray-600"
+                } transition-all duration-300 group`}
+              >
+                Bio
+                <span
+                  className={`absolute bottom-0 left-0 h-0.5 bg-gray-600 transition-width duration-300 group-hover:w-full ${
+                    activeTab === "bio" ? "w-full" : "w-0"
+                  }`}
+                ></span>
+              </button>
+              <button
+                onClick={() => setActiveTab("qualifications")}
+                className={`relative py-1 px-2 text-left w-fit ${
+                  activeTab === "qualifications"
+                    ? "text-gray-800"
+                    : "text-gray-600"
+                } transition-all duration-300 group`}
+              >
+                Expertise
+                <span
+                  className={`absolute bottom-0 left-0 h-0.5 bg-gray-600 transition-width duration-300 group-hover:w-full ${
+                    activeTab === "qualifications" ? "w-full" : "w-0"
+                  }`}
+                ></span>
+              </button>
+            </div>
+            <div className="h-full w-full">
+              {activeTab === "info" && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="profile-field">
+                    <label>Name</label>
+                    <input
+                      type="text"
+                      name="name"
+                      value={profileData.name}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div className="profile-field">
+                    <label>Gender</label>
+                    <input
+                      type="text"
+                      name="gender"
+                      value={profileData.gender}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div className="profile-field">
+                    <label>Location</label>
+                    <input
+                      type="text"
+                      name="location"
+                      value={profileData.location}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div className="profile-field">
+                    <label>Country</label>
+                    <input
+                      type="text"
+                      name="country"
+                      value={profileData.country}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div className="profile-field">
+                    <label>Clinic</label>
+                    <input
+                      type="text"
+                      name="clinic"
+                      value={profileData.clinic}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div className="profile-field">
+                    <label>Available Online</label>
+                    <input
+                      type="checkbox"
+                      name="available_online"
+                      checked={profileData.available_online}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div className="profile-field">
+                    <label>Fees</label>
+                    <input
+                      type="text"
+                      name="fees"
+                      value={profileData.fees.join(", ")}
+                      onChange={(e) =>
+                        setProfileData({
+                          ...profileData,
+                          fees: e.target.value.split(", "),
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="profile-field">
+                    <label>Email</label>
+                    <input
+                      type="email"
+                      name="email"
+                      value={profileData.email}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div className="profile-field col-span-2">
+                    <label>Bio Link</label>
+                    <input
+                      type="text"
+                      name="bio_link"
+                      value={profileData.bio_link}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div className="profile-field col-span-2">
+                    <label>Booking Link</label>
+                    <input
+                      type="text"
+                      name="booking_link"
+                      value={profileData.booking_link}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div className="profile-field col-span-2">
+                    <label>Profile Link</label>
+                    <input
+                      type="text"
+                      name="profile_link"
+                      value={profileData.profile_link}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+              )}
+              {activeTab === "bio" && (
+                <div className="grid grid-cols-2 gap-4 h-full">
+                  <div className="profile-field col-span-2">
+                    <label>Bio</label>
+                    <textarea
+                      name="bio"
+                      value={profileData.bio}
+                      onChange={handleChange}
+                    />
+                  </div>
+
+                  <div className="profile-field col-span-2">
+                    <label>Short Summary</label>
+                    <textarea
+                      name="short_summary"
+                      value={profileData.short_summary}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div className="profile-field col-span-2">
+                    <label>Summary</label>
+                    <textarea
+                      name="summary"
+                      value={profileData.summary}
+                      onChange={handleChange}
+                    />
+                  </div>
+                </div>
+              )}
+              {activeTab === "qualifications" && (
+                <div className="flex flex-col gap-4 h-full">
+                  <div className="profile-field">
+                    <label>Qualifications</label>
+                    <div className="chips-container">
+                      <div className="chips">
+                        {renderArrayInputs(
+                          profileData.qualifications,
+                          "qualifications"
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="profile-field">
+                    <label>Specialties</label>
+                    <div className="chips-container">
+                      <div className="chips">
+                        {renderArrayInputs(
+                          profileData.specialties,
+                          "specialties"
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="profile-field">
+                    <label>Approaches</label>
+                    <div className="chips-container">
+                      <div className="chips">
+                        {renderArrayInputs(
+                          profileData.approaches,
+                          "approaches"
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+          {/* 
           <div className="grid grid-cols-[2fr_1fr] gap-6">
-            <div className="flex flex-col">
-              <div className="profile-field">
-                <label>Name:</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={profileData.name}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="profile-field">
-                <label>Gender:</label>
-                <input
-                  // this should be select
-                  type="text"
-                  name="gender"
-                  value={profileData.gender}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="profile-field">
-                <label>Location:</label>
-                <input
-                  type="text"
-                  name="location"
-                  value={profileData.location}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="profile-field">
-                <label>Country:</label>
-                <input
-                  type="text"
-                  name="country"
-                  value={profileData.country}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="profile-field">
-                <label>Languages:</label>
-                <div className="chips">
-                  {renderArrayInputs(profileData.languages, "languages")}
+            <div className="flex flex-col gap-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="profile-field">
+                  <label>Name</label>
+                  <input
+                    type="text"
+                    name="name"
+                    value={profileData.name}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="profile-field">
+                  <label>Gender</label>
+                  <input
+                    // this should be select
+                    type="text"
+                    name="gender"
+                    value={profileData.gender}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="profile-field">
+                  <label>Location</label>
+                  <input
+                    type="text"
+                    name="location"
+                    value={profileData.location}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="profile-field">
+                  <label>Country</label>
+                  <input
+                    type="text"
+                    name="country"
+                    value={profileData.country}
+                    onChange={handleChange}
+                  />
+                </div>
+
+                <div className="profile-field">
+                  <label>Clinic</label>
+                  <input
+                    type="text"
+                    name="clinic"
+                    value={profileData.clinic}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="profile-field">
+                  <label>Available Online</label>
+                  <input
+                    type="checkbox"
+                    name="available_online"
+                    checked={profileData.available_online}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="profile-field">
+                  <label>Fees</label>
+                  <input
+                    type="text"
+                    name="fees"
+                    value={profileData.fees.join(", ")}
+                    onChange={(e) =>
+                      setProfileData({
+                        ...profileData,
+                        fees: e.target.value.split(", "),
+                      })
+                    }
+                  />
+                </div>
+                <div className="profile-field">
+                  <label>Email</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={profileData.email}
+                    onChange={handleChange}
+                  />
                 </div>
               </div>
               <div className="profile-field">
-                <label>Qualifications:</label>
-                <div className="chips">
-                  {renderArrayInputs(
-                    profileData.qualifications,
-                    "qualifications"
-                  )}
+                <label>Languages</label>
+                <div className="chips-container">
+                  <div className="chips">
+                    {renderArrayInputs(profileData.languages, "languages")}
+                  </div>
                 </div>
               </div>
               <div className="profile-field">
-                <label>Specialties:</label>
-                <div className="chips">
-                  {renderArrayInputs(profileData.specialties, "specialties")}
+                <label>Qualifications</label>
+                <div className="chips-container">
+                  <div className="chips">
+                    {renderArrayInputs(
+                      profileData.qualifications,
+                      "qualifications"
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="profile-field">
-                <label>Approaches:</label>
-                <div className="chips">
-                  {renderArrayInputs(profileData.approaches, "approaches")}
+                <label>Specialties</label>
+                <div className="chips-container">
+                  <div className="chips">
+                    {renderArrayInputs(profileData.specialties, "specialties")}
+                  </div>
                 </div>
               </div>
               <div className="profile-field">
-                <label>Available Online:</label>
-                <input
-                  type="checkbox"
-                  name="available_online"
-                  checked={profileData.available_online}
-                  onChange={handleChange}
-                />
+                <label>Approaches</label>
+                <div className="chips-container">
+                  <div className="chips">
+                    {renderArrayInputs(profileData.approaches, "approaches")}
+                  </div>
+                </div>
               </div>
+
               <div className="profile-field">
-                <label>Bio:</label>
-                <textarea
-                  name="bio"
-                  value={profileData.bio}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="profile-field">
-                <label>Bio Link:</label>
+                <label>Bio Link</label>
                 <input
                   type="text"
                   name="bio_link"
@@ -230,7 +613,7 @@ const EditProfileForm = () => {
                 />
               </div>
               <div className="profile-field">
-                <label>Booking Link:</label>
+                <label>Booking Link</label>
                 <input
                   type="text"
                   name="booking_link"
@@ -238,31 +621,9 @@ const EditProfileForm = () => {
                   onChange={handleChange}
                 />
               </div>
+
               <div className="profile-field">
-                <label>Clinic:</label>
-                <input
-                  type="text"
-                  name="clinic"
-                  value={profileData.clinic}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="profile-field">
-                <label>Fees:</label>
-                <input
-                  type="text"
-                  name="fees"
-                  value={profileData.fees.join(", ")}
-                  onChange={(e) =>
-                    setProfileData({
-                      ...profileData,
-                      fees: e.target.value.split(", "),
-                    })
-                  }
-                />
-              </div>
-              <div className="profile-field">
-                <label>Profile Link:</label>
+                <label>Profile Link</label>
                 <input
                   type="text"
                   name="profile_link"
@@ -270,28 +631,18 @@ const EditProfileForm = () => {
                   onChange={handleChange}
                 />
               </div>
-              <div className="profile-field">
-                <label>Email:</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={profileData.email}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="profile-field">
-                <label>Verified:</label>
-                <input
-                  type="checkbox"
-                  name="verified"
-                  checked={profileData.verified}
-                  onChange={handleChange}
-                />
-              </div>
             </div>
-            <div className="flex flex-col ">
+            <div className="grid grid-rows-3">
               <div className="profile-field">
-                <label>Short Summary:</label>
+                <label>Bio</label>
+                <textarea
+                  name="bio"
+                  value={profileData.bio}
+                  onChange={handleChange}
+                />
+              </div>
+              <div className="profile-field">
+                <label>Short Summary</label>
                 <textarea
                   name="short_summary"
                   value={profileData.short_summary}
@@ -299,7 +650,7 @@ const EditProfileForm = () => {
                 />
               </div>
               <div className="profile-field">
-                <label>Summary:</label>
+                <label>Summary</label>
                 <textarea
                   name="summary"
                   value={profileData.summary}
@@ -307,18 +658,10 @@ const EditProfileForm = () => {
                 />
               </div>
             </div>
-          </div>
-
+          </div> */}
           {/* <button className="bg-green-500 text-white" onClick={saveProfile}>
             Save Profile (console.log(profileData))
           </button> */}
-          <div className="flex w-full justify-center">
-            <PrimaryBtn
-              text="Save Profile"
-              onClick={saveProfile}
-              className="border-green-light"
-            />
-          </div>
         </div>
       </div>
     </>

@@ -20,12 +20,12 @@ const ProfilePage = () => {
     <>
       <SignedOut>
         <div
-          className={`bg-white gap-2 flex flex-col p-4 h-full ${aspekta.className} transition ease-in-out`}
+          className={`md:h-screen bg-white gap-2 flex flex-col p-4 h-full ${aspekta.className} transition ease-in-out`}
           id="page-layout"
         >
-          <div className="bg-grey px-2 pt-0 lg:gap-6 lg:px-20 md:px-10 rounded-2xl h-full z-10 overflow-hidden relative">
+          <div className="md:bg-grey px-2 pt-0 lg:gap-6 lg:px-20 md:px-10 md:rounded-2xl h-full z-10 md:overflow-hidden relative">
             <div
-              className="absolute w-6/12 h-full right-0 top-0 z-0"
+              className="absolute lg:w-6/12 lg:h-full md:right-0 lg:top-0 z-0 w-full h-1/2 bottom-0 hidden md:block"
               style={{
                 backgroundImage: 'url("/assets/images/couch.jpeg")',
                 backgroundSize: "cover",
@@ -33,13 +33,13 @@ const ProfilePage = () => {
                 backgroundPosition: "center",
               }}
             ></div>
-            <div className="py-8 px-2 lg:px-20 md:px-10 flex flex-row justify-between absolute w-full top-0 left-0">
+            <div className="lg:py-8 px-2 py-4 lg:px-20 md:px-10 flex flex-row md:justify-between lg:absolute w-full top-0 left-0">
               <img
                 src="/assets/images/matchya-for-therapists.png"
-                className="w-auto h-11"
+                className="w-auto md:h-11 h-8"
                 alt="matchya for therapists"
               />
-              <div className="flex flex-row gap-2">
+              <div className="flex-row gap-2 md:flex hidden">
                 <PrimaryBtn
                   text="Log In"
                   onClick={undefined}
@@ -54,10 +54,10 @@ const ProfilePage = () => {
             </div>
 
             <div
-              className="grid grid-cols-2 justify-center h-full my-auto"
+              className="lg:grid lg:grid-cols-2 lg:justify-center lg:h-full lg:my-auto flex flex-col md:py-20 md:gap-16 gap-4"
               id="two-panels"
             >
-              <div className="flex flex-col gap-14 justify-center">
+              <div className="flex flex-col lg:gap-14 gap-4 justify-center">
                 <a
                   href="/"
                   className="flex items-center gap-2 text-grey-extraDark hover:-translate-x-1 transition-transform"
@@ -77,9 +77,9 @@ const ProfilePage = () => {
                   <span>Back to matchya directory</span>
                 </a>
 
-                <div className="flex flex-col gap-6">
-                  <h1 className="text-7xl">Go Live, Get Clients</h1>
-                  <h2 className="text-2xl">
+                <div className="flex flex-col md:gap-6 gap-2 lg:text-left text-center">
+                  <h1 className="lg:text-7xl text-3xl">Go Live, Get Clients</h1>
+                  <h2 className="lg:text-2xl text-md">
                     Get your profile live in ~3 minutes and let our system
                     handle client acquisition for you.
                   </h2>
