@@ -4,7 +4,10 @@ import PrimaryBtn from "../components/PrimaryBtn";
 import { aspekta } from "../styles/fonts";
 import DeleteIcon from "../components/DeleteIcon";
 
-const EditProfileForm = () => {
+const EditProfileForm = ({ userObj }) => {
+  console.log("Edit Profile Form");
+  console.log({ userObj });
+
   const [activeTab, setActiveTab] = useState("info");
   console.log("To Do: Fetch profile data from web scrape component");
   const [profileData, setProfileData] = useState({

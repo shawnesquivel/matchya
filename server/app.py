@@ -3,7 +3,7 @@ from chalicelib.utils import current_epoch_time
 from chalicelib.mimir_chat import chat_function_call, determine_assistant_tool_messages
 from chalicelib.update_table import get_all_messages_for_chat
 from chalicelib.update_table import store_message, get_all_messages_for_chat
-import ast 
+import ast
 
 app = Chalice(app_name="kitsune-backend")
 
@@ -33,6 +33,18 @@ def get_chat_messages(chat_id):
     messages = get_all_messages_for_chat(chat_id)
     print(f"here are the messages {messages}")
     return {"data": messages}
+
+
+@app.route("/profile/start/{bio_link}", methods=["GET"], cors=cors_config)
+def scrape_therapist_bio_route(bio_link):
+    print("called profile start")
+    try:
+        print(f"bio_link: {bio_link}")
+
+    except Exception as e:
+        return {"data": f"error: {e}", "status": 500}
+
+    return {"data": f"received bio {bio_link}", "status": 200}
 
 
 @app.route("/chat", methods=["POST"], cors=cors_config)
