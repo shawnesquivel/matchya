@@ -4,7 +4,6 @@ import { SignIn } from "@clerk/nextjs";
 import { aspekta } from "../styles/fonts";
 import PrimaryBtn from "../components/PrimaryBtn";
 import { UserButton } from "@clerk/clerk-react";
-import Link from "next/link";
 
 const SubmitBioForm = ({ user }) => {
   const [bioLink, setBioLink] = useState("");
@@ -51,10 +50,10 @@ const SubmitBioForm = ({ user }) => {
         </div>
 
         <div className="text-center flex flex-col gap-4 items-center justify-center max-w-[800px]">
-          <h1 className="lg:text-7xl text-3xl">Just 2 More Steps</h1>
+          <h1 className="lg:text-7xl text-3xl">Your profile is live, Jane.</h1>
           <h2 className="lg:text-2xl text-md">
-            Just paste your bio from your website to get a profile created
-            automatically.
+            We’ve added you to our directory. Enjoyed the process? Share matchya
+            with your colleagues!
           </h2>
           <div className="flex flex-row mt-4 gap-4 w-full">
             <div className="profile-field w-full">
@@ -74,13 +73,15 @@ const SubmitBioForm = ({ user }) => {
             />
           </div>
           <p className="mt-4">
-            Or
-            <Link
-              href={"/profile/edit"}
-              className="underline underline-offset-2 cursor-pointer"
+            Or{" "}
+            <a
+              href="#
+            "
             >
-              create a profile manually
-            </Link>
+              <span className="underline underline-offset-2 cursor-pointer">
+                create a profile manually
+              </span>
+            </a>
           </p>
         </div>
       </div>{" "}

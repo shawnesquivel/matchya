@@ -133,3 +133,8 @@ html {
   border: initial; /* Reset border */
   color: initial; /* Reset color */
 }
+
+.cl-userButtonAvatarBox {
+  width: 3rem;
+  height: 3rem;
+}

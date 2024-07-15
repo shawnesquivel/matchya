@@ -3,7 +3,6 @@ import React, { useState } from "react";
 import PrimaryBtn from "../components/PrimaryBtn";
 import { aspekta } from "../styles/fonts";
 import DeleteIcon from "../components/DeleteIcon";
-
 const EditProfileForm = ({ userObj }) => {
   console.log("Edit Profile Form");
   console.log({ userObj });
@@ -251,7 +250,7 @@ const EditProfileForm = ({ userObj }) => {
   return (
     <>
       <div
-        className={`bg-white gap-2 flex flex-col p-4 h-full ${aspekta.className} transition ease-in-out`}
+        className={`bg-white gap-2 flex flex-col p-4 h-full lg:h-screen ${aspekta.className} transition ease-in-out`}
       >
         <div className="bg-grey px-2 pt-0 flex flex-col lg:gap-6 lg:px-20 lg:py-16 md:px-10 rounded-2xl h-full z-10 overflow-hidden relative">
           {" "}
