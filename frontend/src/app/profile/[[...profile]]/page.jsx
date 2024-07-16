@@ -1,10 +1,11 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import EditProfileForm from "../EditProfileForm";
-import { SignedIn } from "@clerk/nextjs";
+import { SignedIn, SignedOut } from "@clerk/nextjs";
 import SubmitBioForm from "../SubmitBioForm";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
+import SignUpPage from "../SignUpPage";
 
 const ProfilePage = () => {
   // call web scraper
@@ -88,7 +89,11 @@ const ProfilePage = () => {
     }
   };
   if (!isLoaded || !isSignedIn) {
-    return null;
+    return (
+      <SignedOut>
+        <SignUpPage />
+      </SignedOut>
+    );
   }
   return (
     <>
