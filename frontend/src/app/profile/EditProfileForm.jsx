@@ -3,7 +3,20 @@ import React, { useState } from "react";
 import PrimaryBtn from "../components/PrimaryBtn";
 import { aspekta } from "../styles/fonts";
 import DeleteIcon from "../components/DeleteIcon";
-const EditProfileForm = ({ userObj }) => {
+import Link from "next/link";
+
+const EditProfileForm = ({ userObj, isScraping }) => {
+  if (userObj?.unsafeMetadata?.profileStarted === false) {
+    return (
+      <Link
+        href={"/profile"}
+        className="underline underline-offset-2 ml-16 mt-16"
+      >
+        Profile not started. Go to bio.
+      </Link>
+    );
+  }
+
   console.log("Edit Profile Form");
   console.log({ userObj });
 

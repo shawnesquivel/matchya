@@ -4,6 +4,7 @@ from chalicelib.mimir_chat import chat_function_call, determine_assistant_tool_m
 from chalicelib.update_table import get_all_messages_for_chat
 from chalicelib.update_table import store_message, get_all_messages_for_chat
 import ast
+from chalicelib.web_scraper import scrape_profile
 
 app = Chalice(app_name="kitsune-backend")
 
@@ -35,16 +36,29 @@ def get_chat_messages(chat_id):
     return {"data": messages}
 
 
-@app.route("/profile/start/{bio_link}", methods=["GET"], cors=cors_config)
-def scrape_therapist_bio_route(bio_link):
+@app.route("/profile/scrape", methods=["GET"], cors=cors_config)
+def scrape_therapist_bio_route():
     print("called profile start")
+    bio_link = app.current_request.query_params.get("bio_link", None)
+
     try:
-        print(f"bio_link: {bio_link}")
+        if not bio_link.startswith("https://"):
+            raise ValueError("Should be an https:// URL to web scrape")
 
+        result = scrape_profile(bio_link)
     except Exception as e:
-        return {"data": f"error: {e}", "status": 500}
+        print(f"error scraping {e}")
+        return {
+            "data": None,
+            "error": f"Error scraping the bio {e}",
+            "status_code": 500,
+        }
 
-    return {"data": f"received bio {bio_link}", "status": 200}
+    return {
+        "data": result.get("data"),
+        "error": result.get("errors"),
+        "status_code": 200,
+    }
 
 
 @app.route("/chat", methods=["POST"], cors=cors_config)

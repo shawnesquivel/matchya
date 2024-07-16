@@ -1,38 +1,11 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect } from "react";
 import { SignIn } from "@clerk/nextjs";
 import { aspekta } from "../styles/fonts";
 import PrimaryBtn from "../components/PrimaryBtn";
 import { UserButton } from "@clerk/clerk-react";
 import Link from "next/link";
-
-const SubmitBioForm = ({ user }) => {
-  const [bioLink, setBioLink] = useState("");
-
-  if (!user) return <SignIn />;
-
-  const handleCreateProfile = async () => {
-    if (!bioLink) {
-      alert("Please enter a bio link.");
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        `http://127.0.0.1:8000/profile/scrape?bio_link=${encodeURIComponent(
-          bioLink
-        )}`
-      );
-      if (!response.ok) {
-        throw new Error("Failed to fetch");
-      }
-      const data = await response.json();
-      console.log(data); // Handle the response data as needed
-    } catch (error) {
-      console.error("Error fetching profile:", error);
-    }
-  };
-
+const SubmitBioForm = ({ user, bioLink, setBioLink, handleSubmit }) => {
   return (
     <div
       className={`md:h-screen bg-white gap-2 flex flex-col p-4 h-full ${aspekta.className} transition ease-in-out`}
@@ -69,7 +42,7 @@ const SubmitBioForm = ({ user }) => {
             </div>
             <PrimaryBtn
               text="Create Profile"
-              onClick={handleCreateProfile}
+              onClick={handleSubmit}
               className="bg-green-light w-fit whitespace-nowrap"
             />
           </div>

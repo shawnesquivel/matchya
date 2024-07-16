@@ -26,8 +26,6 @@ const EditProfilePage = async () => {
   return (
     <>
       <SignedIn>
-        {/* TODO: The EditProfile Form should only appear if the therapist is signed in. */}
-        {/* <EditProfileForm /> */}
         <EditProfileForm user={userObj} />
       </SignedIn>
     </>
