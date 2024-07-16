@@ -4,7 +4,13 @@ from chalicelib.mimir_chat import chat_function_call, determine_assistant_tool_m
 from chalicelib.update_table import get_all_messages_for_chat
 from chalicelib.update_table import store_message, get_all_messages_for_chat
 import ast
-from chalicelib.web_scraper import scrape_profile
+from chalicelib.web_scraper import (
+    delete_records,
+    find_therapist,
+    get_embedding,
+    scrape_profile,
+    upload_therapist,
+)
 
 app = Chalice(app_name="kitsune-backend")
 
@@ -59,6 +65,35 @@ def scrape_therapist_bio_route():
         "error": result.get("errors"),
         "status_code": 200,
     }
+
+
+@app.route("/profile/update", methods=["POST"], cors=cors_config)
+def save_therapist_profile():
+    therapist_json = app.current_request.json_body
+    print(f"received json: {therapist_json.get('location')}")
+
+    try:
+        matches = find_therapist(bio_link=therapist_json.get("bio_link"))
+        duplicate_records = [match.get("id") for match in matches]
+        delete_records(ids=duplicate_records)
+        if not therapist_json.get("summary"):
+            print("error no summary found")
+            raise ValueError("No summary found")
+        embedding = get_embedding(therapist_json.get("summary"))
+        therapist_pinecone_id = upload_therapist(embedding, therapist_json)
+    except Exception as e:
+        error_message = {
+            "error": f"Error uploading therapist data for {str(therapist_json)} {str(e)}"
+        }
+        return Response(
+            body=error_message,
+            status_code=500,
+        )
+
+    return Response(
+        body={"deleted_records": duplicate_records, "id": therapist_pinecone_id},
+        status_code=200,
+    )
 
 
 @app.route("/chat", methods=["POST"], cors=cors_config)

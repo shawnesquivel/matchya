@@ -10,10 +10,29 @@ const ProfilePage = () => {
   // call web scraper
   const { isLoaded, isSignedIn, user } = useUser();
   const [isScraping, setIsScraping] = useState(false);
+  const [error, setError] = useState("");
   const [bioLink, setBioLink] = useState("");
   const router = useRouter();
 
   let userObj;
+
+  const handleManualProfile = (e, profileStarted) => {
+    e.preventDefault();
+    if (user) {
+      try {
+        console.log("setting profileStarted to ", profileStarted);
+        user.update({
+          unsafeMetadata: {
+            profileStarted: profileStarted,
+          },
+        });
+        // Redirect to profile/edit page
+        router.push(`/profile/edit`);
+      } catch (error) {
+        console.error("Error updating user metadata:", error);
+      }
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -32,12 +51,13 @@ const ProfilePage = () => {
   }, [user]);
 
   const handleCreateProfile = async () => {
-    setIsScraping(true);
-
     if (!bioLink) {
       alert("Please enter a bio link.");
       return;
     }
+
+    setError("");
+    setIsScraping(true);
 
     try {
       const response = await fetch(
@@ -64,6 +84,7 @@ const ProfilePage = () => {
     } catch (error) {
       console.error("Error fetching profile:", error);
       setIsScraping(false);
+      setError("There was an error fetching the profile.");
     }
   };
   if (!isLoaded || !isSignedIn) {
@@ -75,13 +96,18 @@ const ProfilePage = () => {
         {/* TODO: The EditProfile Form should only appear if the therapist is signed in. */}
         {/* <EditProfileForm /> */}
         {user?.unsafeMetadata?.profileStarted ? (
-          <EditProfileForm userObj={userObj} isScraping={isScraping} />
+          <EditProfileForm
+            userObj={userObj}
+            handleManualProfile={handleManualProfile}
+          />
         ) : (
           <SubmitBioForm
-            user={userObj}
             handleSubmit={handleCreateProfile}
             bioLink={bioLink}
             setBioLink={setBioLink}
+            errorMsg={error}
+            isLoading={isScraping}
+            handleManualProfile={handleManualProfile}
           />
         )}
       </SignedIn>

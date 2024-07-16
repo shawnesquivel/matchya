@@ -1,11 +1,18 @@
 "use client";
-import React, { useEffect } from "react";
-import { SignIn } from "@clerk/nextjs";
+import React from "react";
 import { aspekta } from "../styles/fonts";
 import PrimaryBtn from "../components/PrimaryBtn";
 import { UserButton } from "@clerk/clerk-react";
 import Link from "next/link";
-const SubmitBioForm = ({ user, bioLink, setBioLink, handleSubmit }) => {
+
+const SubmitBioForm = ({
+  bioLink,
+  setBioLink,
+  handleSubmit,
+  errorMsg,
+  isLoading,
+  handleManualProfile,
+}) => {
   return (
     <div
       className={`md:h-screen bg-white gap-2 flex flex-col p-4 h-full ${aspekta.className} transition ease-in-out`}
@@ -51,12 +58,19 @@ const SubmitBioForm = ({ user, bioLink, setBioLink, handleSubmit }) => {
             <Link
               href={"/profile/edit"}
               className="underline underline-offset-2 cursor-pointer"
+              onClick={(e) => handleManualProfile(e, true)}
             >
-              create a profile manually
+              create a profile manually!
             </Link>
           </p>
+          {isLoading && (
+            <p className="text-amber-600">
+              Loading your profile, please wait....
+            </p>
+          )}
+          {errorMsg && <p className="text-red-400 italic">{errorMsg}</p>}
         </div>
-      </div>{" "}
+      </div>
     </div>
   );
 };

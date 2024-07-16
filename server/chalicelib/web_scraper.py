@@ -29,7 +29,7 @@ def get_embedding(text, model="text-embedding-3-small"):
         embedding = (
             client.embeddings.create(input=[text], model=model).data[0].embedding
         )
-        print(f"Embedding success.")
+        print(f"Embedding success. {text[0:20]}")
         return embedding
     except Exception as e:
         raise Exception(f"Embedding Error: {e}")
@@ -59,9 +59,10 @@ def upload_therapist(embedding, metadata):
         return
 
     try:
+        id = generate_uuid()
         upsert_response = index.upsert(
             vectors=[
-                {"id": generate_uuid(), "values": embedding, "metadata": metadata},
+                {"id": id, "values": embedding, "metadata": metadata},
             ],
         )
         print(f"upsert response: {upsert_response}")
@@ -69,7 +70,7 @@ def upload_therapist(embedding, metadata):
         error = f"Upload Therapis Error: Embedding {len(embedding)} metadata: {metadata} -- ERROR {e}"
         raise Exception(error)
 
-    return upsert_response
+    return id
 
 
 def main():
@@ -434,6 +435,26 @@ def check_therapist_exists(bio_link):
         raise Exception(error)
 
 
+def find_therapist(bio_link):
+    try:
+        pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
+        index = pc.Index(os.getenv("PINECONE_INDEX"))
+        search_embedding = get_embedding("hello world")
+
+        response = index.query(
+            vector=search_embedding,
+            filter={"bio_link": {"$eq": bio_link}},
+            top_k=10,
+            include_values=False,
+            include_metadata=True,
+        )
+        return response.get("matches", [])
+    except Exception as e:
+        error = f"Error in similarity search: {e} {type(bio_link)} {bio_link} "
+        print(error)
+        raise Exception(error)
+
+
 def scrape_profile(link: str):
     """Gets JSON from an HTTPS link"""
     errors = []
@@ -498,19 +519,27 @@ def scrape_profile(link: str):
         therapist_json["short_summary"] = None
         errors.append({"error": error_message, "link": link})
 
-    try:
-        embedding = get_embedding(therapist_json.get("summary"))
-        response = upload_therapist(embedding, therapist_json)
-        print(f"Pinecone Success: {response}")
-    except Exception as e:
-        error_message = f"Error uploading therapist data for link {link}: {str(e)}"
-        errors.append({"error": error_message, "link": link})
-
     if errors:
-        print(f"{len(links)} links // {len(errors)} errors:")
+        print(f"{len(link)} links // {len(errors)} errors:")
         for error in errors:
             print(f"Link: {error['link']} - Error: {error['error']}")
     else:
         print("No errors.")
 
     return {"data": therapist_json, "errors": errors}
+
+
+def delete_records(ids):
+    """
+    records_ids: ["12345", "678910"]
+    """
+    if len(ids) == 0:
+        return
+    try:
+        pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
+        index = pc.Index(os.getenv("PINECONE_INDEX"))
+        index.delete(ids=ids)
+        return
+    except Exception as e:
+        error = f"error deleting: {e}"
+        raise Exception(error)
