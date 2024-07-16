@@ -1,6 +1,5 @@
 import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
-
 import { aspekta } from "./styles/fonts";
 import { ClerkProvider } from "@clerk/nextjs";
 
@@ -20,9 +19,7 @@ export default function RootLayout({ children }) {
           <script async src="https://tally.so/widgets/embed.js"></script>
         </head>
         <body className={`flex flex-col ${aspekta.className}`}>
-          <main className="min-h-screen">
-            {children}
-          </main>
+          <main className="min-h-screen">{children}</main>
           <Analytics />
         </body>
       </html>
