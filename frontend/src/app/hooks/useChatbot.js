@@ -8,9 +8,7 @@ import {
   setCookiesChatId,
 } from "../utils/chatHelpers";
 
-
-
-const useChatbot = (baseUrl = "http://127.0.0.1:8000", debug = false) => {
+const useChatbot = (debug = false) => {
   const [chatId, setChatId] = useState(getChatID());
   // ChatMessages
   const [userMessage, setUserMessage] = useState("");
@@ -58,8 +56,10 @@ const useChatbot = (baseUrl = "http://127.0.0.1:8000", debug = false) => {
     }
     const testEndpoint = async () => {
       try {
-        console.log(`Testing Chalice Deployed: ${baseUrl}`);
-        const response = await fetch(baseUrl);
+        console.log(
+          `Testing Chalice Deployed: ${process.env.NEXT_PUBLIC_API_URL}`
+        );
+        const response = await fetch(process.env.NEXT_PUBLIC_API_URL);
 
         console.log({ response });
 
@@ -92,9 +92,7 @@ const useChatbot = (baseUrl = "http://127.0.0.1:8000", debug = false) => {
     try {
       setLoadingNewMsg(true);
 
-
-
-      setMessages(initialChatMessages)
+      setMessages(initialChatMessages);
       setLoadingNewMsg(false);
       setError("");
     } catch (err) {
@@ -226,7 +224,7 @@ const useChatbot = (baseUrl = "http://127.0.0.1:8000", debug = false) => {
   //     // Get the messages using the ChatID
   //     setIsLoadingMessages(true);
   //     const chatId = getChatID();
-  //     const response = await fetch(`${baseUrl}/chat/messages/${chatId}`, {
+  //     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat/messages/${chatId}`, {
   //       method: "GET",
   //     });
   //     if (!response.ok) {

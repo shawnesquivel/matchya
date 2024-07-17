@@ -18,7 +18,6 @@ const Chatbot = ({
   heading = "Chat",
   boldText = "Powered by OpenAI",
   description = "Fully customizable",
-  baseUrl = "http://127.0.0.1:8000",
   botPngFile = "girlfriend",
   debug = false,
 }) => {
@@ -43,7 +42,7 @@ const Chatbot = ({
     setTemperature,
     newChat,
     chatId,
-  } = useChatbot(baseUrl, debug);
+  } = useChatbot(debug);
 
   useEffect(() => {
     fetchInitialChatMessages();
