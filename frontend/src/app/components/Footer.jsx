@@ -13,6 +13,9 @@ const Footer = () => {
         <Link href={`/privacy`} className="">
           Privacy Policy
         </Link>
+        <Link href={`/tos`} className="">
+          Terms of Service
+        </Link>
       </div>
       <p className={`sm:text-right text-center ${aspekta.className}`}>
         This is a beta version and prototype. Your data is stored for less than

@@ -1,9 +1,15 @@
 import React from "react";
-
+import Link from "next/link";
 const PrivacyPolicy = () => {
   return (
     <div className="max-w-4xl mx-auto p-6">
-      <h1 className="text-3xl font-bold text-center mb-8">Privacy Policy</h1>
+      <Link href={`/`} className="underline  underline-offset-2">
+        {" "}
+        Back to home
+      </Link>
+      <h1 className="text-3xl font-bold text-center mb-8">
+        Matchya's Privacy Policy
+      </h1>
       <p className="text-gray-600 mb-4">Last updated: July 16, 2024</p>
       <section className="mb-6">
         <h2 className="text-2xl font-semibold text-gray-800 mb-2">
