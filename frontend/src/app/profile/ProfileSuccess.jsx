@@ -18,7 +18,7 @@ const SubmitBioForm = ({ user }) => {
 
     try {
       const response = await fetch(
-        `http://127.0.0.1:8000/profile/scrape?bio_link=${encodeURIComponent(
+        `${process.env.API_URL}/profile/scrape?bio_link=${encodeURIComponent(
           bioLink
         )}`
       );

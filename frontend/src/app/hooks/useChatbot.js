@@ -143,7 +143,9 @@ const useChatbot = (baseUrl = "http://127.0.0.1:8000", debug = false) => {
 
       setUserMessage("");
 
-      const url = `${baseUrl}/chat`;
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/chat`;
+
+      console.log({ url });
 
       const response = await fetch(url, {
         method: "POST",
