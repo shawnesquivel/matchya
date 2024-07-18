@@ -7,7 +7,7 @@ const Kitsune = () => {
     <>
       <ChatbotWithoutForm
         description="simply let matchya know what kind of therapist you're looking for."
-        debug={false}
+        debug={true}
         botPngFile="matchya"
       />
     </>

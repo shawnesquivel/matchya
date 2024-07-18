@@ -57,7 +57,7 @@ const useChatbot = (debug = false) => {
     const testEndpoint = async () => {
       try {
         console.log(
-          `Testing Chalice Deployed: ${process.env.NEXT_PUBLIC_API_URL}`
+          `Testing Chalice Deployed Root Endpoint: ${process.env.NEXT_PUBLIC_API_URL}`
         );
         const response = await fetch(process.env.NEXT_PUBLIC_API_URL);
 
