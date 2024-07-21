@@ -6,7 +6,7 @@ import DeleteIcon from "../components/DeleteIcon";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 
-const EditProfileForm = ({ userObj, handleManualProfile }) => {
+const EditProfileForm = ({ handleManualProfile }) => {
   const { user } = useUser();
   const [editingIndex, setEditingIndex] = useState(null);
   const [profileData, setProfileData] = useState({
@@ -40,23 +40,39 @@ const EditProfileForm = ({ userObj, handleManualProfile }) => {
   const [success, setSuccess] = useState("");
 
   useEffect(() => {
-    if (
-      userObj?.profileSaved === false &&
-      Object.keys(userObj.webScrapeData).length !== 0
-    ) {
-      setProfileData((prevState) => ({
-        ...prevState,
-        ...userObj.webScrapeData?.data,
-        fees: userObj.webScrapeData?.data?.fees || [],
-        languages: userObj.webScrapeData?.data?.languages || [],
-        qualifications: userObj.webScrapeData?.data?.qualifications || [],
-        specialties: userObj.webScrapeData?.data?.specialties || [],
-        approaches: userObj.webScrapeData?.data?.approaches || [],
-      }));
+    if (user) {
+      console.log("User object:", user);
+      if (user.unsafeMetadata && user.unsafeMetadata.webScrapeData.data) {
+        const scrapeData = user.unsafeMetadata.webScrapeData.data;
+        const newState = {
+          name: scrapeData.name || "",
+          gender: scrapeData.gender || "male",
+          location: scrapeData.location || "",
+          country: scrapeData.country || "",
+          clinic: scrapeData.clinic || "",
+          available_online: scrapeData.available_online || false,
+          fees: scrapeData.fees || [],
+          email: scrapeData.emailAddress || "",
+          bio_link: scrapeData.bio_link || "",
+          booking_link: scrapeData.booking_link || "",
+          profile_link: scrapeData.profile_link || "",
+          bio: scrapeData.bio || "",
+          short_summary: scrapeData.short_summary || "",
+          summary: scrapeData.summary || "",
+          languages: scrapeData.languages || [],
+          qualifications: scrapeData.qualifications || [],
+          specialties: scrapeData.specialties || [],
+          approaches: scrapeData.approaches || [],
+        };
+        console.log("new profileData state:", newState);
+        setProfileData(newState);
+      } else {
+        console.log("No web scrape data available");
+      }
     }
-  }, [userObj?.webScrapeData]);
+  }, [user]);
 
-  if (userObj?.profileStarted === false) {
+  if (user?.unsafeMetadata?.profileStarted === false) {
     return (
       <Link
         href={"/profile"}
@@ -188,19 +204,14 @@ const EditProfileForm = ({ userObj, handleManualProfile }) => {
   };
 
   const determineProfileStatusText = () => {
-    if (userObj?.profileSaved) {
-      return <p>Your profile is live!</p>;
+    if (user?.unsafeMetadata?.profileSaved === true) {
+      return <p>Status: Your profile is live!</p>;
     }
 
-    if (userObj?.profileStarted) {
-      user.update({
-        unsafeMetadata: {
-          profileStarted: false,
-        },
-      });
+    if (user?.unsafeMetadata?.profileStarted === true) {
       return (
         <div className="flex flex-row gap-4">
-          <p>Your profile is not live yet.</p>
+          <span>Status: Your profile is not live yet.</span>
           <Link
             href={`/profile`}
             className="underline underline-offset-2"
@@ -229,7 +240,7 @@ const EditProfileForm = ({ userObj, handleManualProfile }) => {
                 <h1 className="text-2xl font-bold">
                   Awesome! Here’s what we’ve found about you:
                 </h1>
-                <p>Status: {determineProfileStatusText()}</p>
+                {determineProfileStatusText()}
               </div>
             ) : (
               <div className="flex flex-col gap-2">
