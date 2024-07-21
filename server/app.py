@@ -1,36 +1,53 @@
+import logging
 from chalice import Chalice, CORSConfig, Response
 from chalicelib.utils import current_epoch_time
 from chalicelib.mimir_chat import chat_function_call, determine_assistant_tool_messages
 from chalicelib.update_table import get_all_messages_for_chat
 from chalicelib.update_table import store_message, get_all_messages_for_chat
 import ast
+
 from chalicelib.web_scraper import (
     delete_records,
     find_therapist,
     get_embedding,
-    scrape_profile,
     upload_therapist,
 )
 
-app = Chalice(app_name="kitsune-backend")
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+app = Chalice(app_name="matchya")
+
+logger.info("Matchya Backend App initialized")
+
+allow_origin = "*"
+# allow_origin = "https://therapy.matchya.app"
+
+logger.info("Allowed origins %s", allow_origin)
 
 cors_config = CORSConfig(
     # allow_origin="http://localhost:3000",
     # wildcard: testing only
-    allow_origin="https://therapy.matchya.app",
-    allow_headers=["Content-Type", "X-Special-Header", "Authorization"],
+    allow_origin=allow_origin,
+    allow_headers=[
+        "Content-Type",
+        "X-Amz-Date",
+        "Authorization",
+        "X-Api-Key",
+        "X-Amz-Security-Token",
+    ],
     max_age=600,
+    expose_headers=["X-Custom-Header"],
     allow_credentials=True,
 )
+logger.info(f"CORS config set up with allow_origin: {cors_config.allow_origin}")
+print(f"print CORS config set up with allow_origin: {cors_config.allow_origin}")
 
 
 @app.route("/", cors=cors_config)
 def index():
-    """
-    Verify the server status by going to http://127.0.0.1:8000/
-
-    Documentation: https://aws.github.io/chalice/quickstart.html
-    """
+    logger.info("Logger route / accessed")
+    print("Print route / accessed ")
     return {"Welcome": "to the future!"}
 
 
@@ -42,16 +59,14 @@ def get_chat_messages(chat_id):
     return {"data": messages}
 
 
-@app.route("/profile/scrape", methods=["GET"], cors=cors_config)
-def scrape_therapist_bio_route():
-    print("called profile start")
+@app.route("/profile", methods=["GET"], cors=cors_config)
+def fetch_pinecone_profile():
     bio_link = app.current_request.query_params.get("bio_link", None)
-
     try:
         if not bio_link.startswith("https://"):
-            raise ValueError("Should be an https:// URL to web scrape")
+            raise ValueError("Should be an https:// URL. Received %s", bio_link)
 
-        result = scrape_profile(bio_link)
+        matches = find_therapist(bio_link=bio_link)
     except Exception as e:
         print(f"error scraping {e}")
         return {
@@ -60,9 +75,10 @@ def scrape_therapist_bio_route():
             "status_code": 500,
         }
 
+    print(f"got profile result {matches}")
     return {
-        "data": result.get("data"),
-        "error": result.get("errors"),
+        "data": matches[0].metadata,
+        "error": None,
         "status_code": 200,
     }
 

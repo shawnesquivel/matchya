@@ -3,7 +3,6 @@ from chalicelib.mimir_embeddings import (
 )
 from openai import OpenAI
 import json
-import os
 import logging
 from chalicelib.utils_s3 import get_ssm_parameter
 

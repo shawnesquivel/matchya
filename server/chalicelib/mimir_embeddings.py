@@ -1,9 +1,5 @@
-from langchain_openai import OpenAIEmbeddings
-from chalicelib.mimir_loaders import youtube_to_docs, website_to_docs
-import os
-from pinecone import Pinecone, ServerlessSpec
+from pinecone import Pinecone
 from dotenv import load_dotenv
-from langchain_pinecone import PineconeVectorStore
 from chalicelib.utils_s3 import get_ssm_parameter
 from openai import OpenAI
 
@@ -23,9 +19,6 @@ def therapist_similarity_search(user_msg) -> str:
     """
     Do a similarity search on the Pinecone vector store.
 
-    Documentation
-    ----
-    https://api.python.langchain.com/en/latest/vectorstores/langchain_pinecone.vectorstores.PineconeVectorStore.html#langchain_pinecone.vectorstores.PineconeVectorStore.similarity_search
     """
     try:
         pc = Pinecone(api_key=get_ssm_parameter("PINECONE_API_KEY"))
