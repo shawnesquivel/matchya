@@ -41,39 +41,59 @@ const EditProfileForm = ({ handleManualProfile }) => {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (user) {
-        if (user.unsafeMetadata.profileSavedOnPinecone) {
-          console.log("profile available through pinecone.", user?.bio_link);
-          // set the user through the pinecone API.
-          await fetchPineconeProfile(user?.unsafeMetadata?.bio_link);
-        }
+      if (!user) return;
 
-        if (user.unsafeMetadata && user.unsafeMetadata.webScrapeData?.data) {
-          const scrapeData = user.unsafeMetadata.webScrapeData.data;
-          const newState = {
-            name: scrapeData.name || "",
-            gender: scrapeData.gender || "male",
-            location: scrapeData.location || "",
-            country: scrapeData.country || "",
-            clinic: scrapeData.clinic || "",
-            available_online: scrapeData.available_online || false,
-            fees: scrapeData.fees || [],
-            email: scrapeData.emailAddress || "",
-            bio_link: scrapeData.bio_link || "",
-            booking_link: scrapeData.booking_link || "",
-            profile_link: scrapeData.profile_link || "",
-            bio: scrapeData.bio || "",
-            short_summary: scrapeData.short_summary || "",
-            summary: scrapeData.summary || "",
-            languages: scrapeData.languages || [],
-            qualifications: scrapeData.qualifications || [],
-            specialties: scrapeData.specialties || [],
-            approaches: scrapeData.approaches || [],
-          };
-          setProfileData(newState);
-        } else {
-          console.log("User unsafe metadata was empty.", user?.unsafeMetadata);
-        }
+      const { unsafeMetadata } = user;
+      const { profileSavedOnPinecone, webScrapeData, bio_link } =
+        unsafeMetadata || {};
+
+      if (profileSavedOnPinecone) {
+        console.log("profile available through pinecone.", bio_link);
+        const pineconeProfile = await fetchPineconeProfile(bio_link);
+        setProfileData({
+          name: pineconeProfile.name || "",
+          gender: pineconeProfile.gender || "male",
+          location: pineconeProfile.location || "",
+          country: pineconeProfile.country || "",
+          clinic: pineconeProfile.clinic || "",
+          available_online: pineconeProfile.available_online || false,
+          fees: pineconeProfile.fees || [],
+          email: pineconeProfile.emailAddress || "",
+          bio_link: pineconeProfile.bio_link || "",
+          booking_link: pineconeProfile.booking_link || "",
+          profile_link: pineconeProfile.profile_link || "",
+          bio: pineconeProfile.bio || "",
+          short_summary: pineconeProfile.short_summary || "",
+          summary: pineconeProfile.summary || "",
+          languages: pineconeProfile.languages || [],
+          qualifications: pineconeProfile.qualifications || [],
+          specialties: pineconeProfile.specialties || [],
+          approaches: pineconeProfile.approaches || [],
+        });
+      } else if (webScrapeData?.data) {
+        const scrapeData = webScrapeData.data;
+        setProfileData({
+          name: scrapeData.name || "",
+          gender: scrapeData.gender || "male",
+          location: scrapeData.location || "",
+          country: scrapeData.country || "",
+          clinic: scrapeData.clinic || "",
+          available_online: scrapeData.available_online || false,
+          fees: scrapeData.fees || [],
+          email: scrapeData.emailAddress || "",
+          bio_link: scrapeData.bio_link || "",
+          booking_link: scrapeData.booking_link || "",
+          profile_link: scrapeData.profile_link || "",
+          bio: scrapeData.bio || "",
+          short_summary: scrapeData.short_summary || "",
+          summary: scrapeData.summary || "",
+          languages: scrapeData.languages || [],
+          qualifications: scrapeData.qualifications || [],
+          specialties: scrapeData.specialties || [],
+          approaches: scrapeData.approaches || [],
+        });
+      } else {
+        console.log("User unsafe metadata was empty.", unsafeMetadata);
       }
     };
 
@@ -242,7 +262,7 @@ const EditProfileForm = ({ handleManualProfile }) => {
   const fetchPineconeProfile = async (bioLink) => {
     if (!bioLink) {
       console.warn("Warning: No bio link supplied");
-      return;
+      return null;
     }
 
     try {
@@ -256,8 +276,10 @@ const EditProfileForm = ({ handleManualProfile }) => {
       }
       const data = await response.json();
       console.log("fetchPineconeProfile", data);
+      return data?.data;
     } catch (error) {
       console.error("Error fetching profile:", error);
+      return null;
     }
   };
 
