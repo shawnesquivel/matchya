@@ -11,17 +11,8 @@ const EditProfilePage = () => {
   const router = useRouter();
 
   useEffect(() => {
-    if (user) {
-      userObj = {
-        firstName: user?.firstName,
-        lastName: user?.lastName,
-        emailAddress: user?.externalAccounts[0].emailAddress,
-        profileStarted: user?.unsafeMetadata?.profileStarted,
-        ...user?.unsafeMetadata,
-      };
-    }
-
     if (user?.unsafeMetadata?.profileStarted === false) {
+      console.log("Profile not started, re-routing to /profile.");
       router.push(`/profile`);
     }
   }, [user]);
@@ -33,25 +24,15 @@ const EditProfilePage = () => {
       </SignedOut>
     );
 
-  let userObj;
-
-  if (user) {
-    userObj = {
-      firstName: user?.firstName,
-      lastName: user?.lastName,
-      emailAddress: user?.externalAccounts[0].emailAddress,
-      profileStarted: user?.unsafeMetadata?.profileStarted,
-      ...user?.unsafeMetadata,
-    };
-  }
-
   const handleManualProfile = (e, profileStarted) => {
-    console.log("hello wrold");
+    /** Update the profileStarted property */
     e.preventDefault();
-    console.log("hello wrold");
     if (user) {
       try {
-        console.log("setting profileStarted to ", profileStarted);
+        console.log(
+          "updating user.unsafeMetadata.profileStarted: ",
+          profileStarted
+        );
         user.update({
           unsafeMetadata: {
             profileStarted: profileStarted,
@@ -68,10 +49,7 @@ const EditProfilePage = () => {
   return (
     <>
       <SignedIn>
-        <EditProfileForm
-          userObj={userObj}
-          handleManualProfile={handleManualProfile}
-        />
+        <EditProfileForm handleManualProfile={handleManualProfile} />
       </SignedIn>
     </>
   );

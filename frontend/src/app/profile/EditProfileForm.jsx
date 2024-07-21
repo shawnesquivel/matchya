@@ -37,39 +37,47 @@ const EditProfileForm = ({ handleManualProfile }) => {
     approaches: "",
   });
   const [savingProfile, setSavingProfile] = useState(false);
-  const [success, setSuccess] = useState("");
+  const [success, setSuccess] = useState(false);
 
   useEffect(() => {
-    if (user) {
-      console.log("User object:", user);
-      if (user.unsafeMetadata && user.unsafeMetadata.webScrapeData.data) {
-        const scrapeData = user.unsafeMetadata.webScrapeData.data;
-        const newState = {
-          name: scrapeData.name || "",
-          gender: scrapeData.gender || "male",
-          location: scrapeData.location || "",
-          country: scrapeData.country || "",
-          clinic: scrapeData.clinic || "",
-          available_online: scrapeData.available_online || false,
-          fees: scrapeData.fees || [],
-          email: scrapeData.emailAddress || "",
-          bio_link: scrapeData.bio_link || "",
-          booking_link: scrapeData.booking_link || "",
-          profile_link: scrapeData.profile_link || "",
-          bio: scrapeData.bio || "",
-          short_summary: scrapeData.short_summary || "",
-          summary: scrapeData.summary || "",
-          languages: scrapeData.languages || [],
-          qualifications: scrapeData.qualifications || [],
-          specialties: scrapeData.specialties || [],
-          approaches: scrapeData.approaches || [],
-        };
-        console.log("new profileData state:", newState);
-        setProfileData(newState);
-      } else {
-        console.log("No web scrape data available");
+    const fetchData = async () => {
+      if (user) {
+        if (user.unsafeMetadata.profileSavedOnPinecone) {
+          console.log("profile available through pinecone.", user?.bio_link);
+          // set the user through the pinecone API.
+          await fetchPineconeProfile(user?.unsafeMetadata?.bio_link);
+        }
+
+        if (user.unsafeMetadata && user.unsafeMetadata.webScrapeData?.data) {
+          const scrapeData = user.unsafeMetadata.webScrapeData.data;
+          const newState = {
+            name: scrapeData.name || "",
+            gender: scrapeData.gender || "male",
+            location: scrapeData.location || "",
+            country: scrapeData.country || "",
+            clinic: scrapeData.clinic || "",
+            available_online: scrapeData.available_online || false,
+            fees: scrapeData.fees || [],
+            email: scrapeData.emailAddress || "",
+            bio_link: scrapeData.bio_link || "",
+            booking_link: scrapeData.booking_link || "",
+            profile_link: scrapeData.profile_link || "",
+            bio: scrapeData.bio || "",
+            short_summary: scrapeData.short_summary || "",
+            summary: scrapeData.summary || "",
+            languages: scrapeData.languages || [],
+            qualifications: scrapeData.qualifications || [],
+            specialties: scrapeData.specialties || [],
+            approaches: scrapeData.approaches || [],
+          };
+          setProfileData(newState);
+        } else {
+          console.log("User unsafe metadata was empty.", user?.unsafeMetadata);
+        }
       }
-    }
+    };
+
+    fetchData();
   }, [user]);
 
   if (user?.unsafeMetadata?.profileStarted === false) {
@@ -174,29 +182,33 @@ const EditProfileForm = ({ handleManualProfile }) => {
   const saveProfile = async () => {
     setSavingProfile(true);
     try {
-      const response = await fetch(`${process.env.API_URL}/profile/update`, {
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/profile/update`;
+      const body = JSON.stringify(profileData);
+      console.log("fetching", url, body);
+      const response = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(profileData),
+        body: body,
       });
       if (!response.ok) {
         throw new Error("Failed to fetch");
       }
       const data = await response.json();
-      console.log("profile saved", data);
-
+      console.log("Profile was saved!", data);
       if (user) {
         await user.update({
           unsafeMetadata: {
+            profileSavedOnPinecone: true,
             profileStarted: true,
-            profileSaved: true,
+            bio_link: profileData.bio_link,
             webScrapeData: {},
           },
         });
       }
       setSavingProfile(false);
+      setSuccess(true);
     } catch (error) {
       console.error("Error fetching profile:", error);
       setSavingProfile(false);
@@ -204,7 +216,7 @@ const EditProfileForm = ({ handleManualProfile }) => {
   };
 
   const determineProfileStatusText = () => {
-    if (user?.unsafeMetadata?.profileSaved === true) {
+    if (user?.unsafeMetadata?.profileSavedOnPinecone === true) {
       return <p>Status: Your profile is live!</p>;
     }
 
@@ -227,6 +239,28 @@ const EditProfileForm = ({ handleManualProfile }) => {
     return null;
   };
 
+  const fetchPineconeProfile = async (bioLink) => {
+    if (!bioLink) {
+      console.warn("Warning: No bio link supplied");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${
+          process.env.NEXT_PUBLIC_API_URL
+        }/profile?bio_link=${encodeURIComponent(bioLink)}`
+      );
+      if (!response.ok) {
+        throw new Error("Failed to fetch");
+      }
+      const data = await response.json();
+      console.log("fetchPineconeProfile", data);
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+    }
+  };
+
   return (
     <>
       <div
@@ -238,7 +272,7 @@ const EditProfileForm = ({ handleManualProfile }) => {
             {profileData?.name ? (
               <div className="flex flex-col gap-2">
                 <h1 className="text-2xl font-bold">
-                  Awesome! Here’s what we’ve found about you:
+                  Awesome! Here's what we've found about you:
                 </h1>
                 {determineProfileStatusText()}
               </div>
@@ -508,185 +542,6 @@ const EditProfileForm = ({ handleManualProfile }) => {
               )}
             </div>
           </div>
-          {/* 
-          <div className="grid grid-cols-[2fr_1fr] gap-6">
-            <div className="flex flex-col gap-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="profile-field">
-                  <label>Name</label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={profileData?.name}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div className="profile-field">
-                  <label>Gender</label>
-                  <input
-                    // this should be select
-                    type="text"
-                    name="gender"
-                    value={profileData?.gender}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div className="profile-field">
-                  <label>Location</label>
-                  <input
-                    type="text"
-                    name="location"
-                    value={profileData?.location}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div className="profile-field">
-                  <label>Country</label>
-                  <input
-                    type="text"
-                    name="country"
-                    value={profileData?.country}
-                    onChange={handleChange}
-                  />
-                </div>
-
-                <div className="profile-field">
-                  <label>Clinic</label>
-                  <input
-                    type="text"
-                    name="clinic"
-                    value={profileData?.clinic}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div className="profile-field">
-                  <label>Available Online</label>
-                  <input
-                    type="checkbox"
-                    name="available_online"
-                    checked={profileData?.available_online}
-                    onChange={handleChange}
-                  />
-                </div>
-                <div className="profile-field">
-                  <label>Fees</label>
-                  <input
-                    type="text"
-                    name="fees"
-                    value={profileData?.fees.join(", ")}
-                    onChange={(e) =>
-                      setProfileData({
-                        ...profileData,
-                        fees: e.target.value.split(", "),
-                      })
-                    }
-                  />
-                </div>
-                <div className="profile-field">
-                  <label>Email</label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={profileData?.email}
-                    onChange={handleChange}
-                  />
-                </div>
-              </div>
-              <div className="profile-field">
-                <label>Languages</label>
-                <div className="chips-container">
-                  <div className="chips">
-                    {renderArrayInputs(profileData?.languages, "languages")}
-                  </div>
-                </div>
-              </div>
-              <div className="profile-field">
-                <label>Qualifications</label>
-                <div className="chips-container">
-                  <div className="chips">
-                    {renderArrayInputs(
-                      profileData?.qualifications,
-                      "qualifications"
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div className="profile-field">
-                <label>Specialties</label>
-                <div className="chips-container">
-                  <div className="chips">
-                    {renderArrayInputs(profileData?.specialties, "specialties")}
-                  </div>
-                </div>
-              </div>
-              <div className="profile-field">
-                <label>Approaches</label>
-                <div className="chips-container">
-                  <div className="chips">
-                    {renderArrayInputs(profileData?.approaches, "approaches")}
-                  </div>
-                </div>
-              </div>
-
-              <div className="profile-field">
-                <label>Bio Link</label>
-                <input
-                  type="text"
-                  name="bio_link"
-                  value={profileData?.bio_link}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="profile-field">
-                <label>Booking Link</label>
-                <input
-                  type="text"
-                  name="booking_link"
-                  value={profileData?.booking_link}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <div className="profile-field">
-                <label>Profile Link</label>
-                <input
-                  type="text"
-                  name="profile_link"
-                  value={profileData?.profile_link}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-            <div className="grid grid-rows-3">
-              <div className="profile-field">
-                <label>Bio</label>
-                <textarea
-                  name="bio"
-                  value={profileData?.bio}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="profile-field">
-                <label>Short Summary</label>
-                <textarea
-                  name="short_summary"
-                  value={profileData?.short_summary}
-                  onChange={handleChange}
-                />
-              </div>
-              <div className="profile-field">
-                <label>Summary</label>
-                <textarea
-                  name="summary"
-                  value={profileData?.summary}
-                  onChange={handleChange}
-                />
-              </div>
-            </div>
-          </div> */}
-          {/* <button className="bg-green-500 text-white" onClick={saveProfile}>
-            Save Profile (console.log(profileData))
-          </button> */}
         </div>
       </div>
     </>

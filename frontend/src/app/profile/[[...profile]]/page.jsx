@@ -42,12 +42,24 @@ const ProfilePage = () => {
         lastName: user?.lastName,
         emailAddress: user?.externalAccounts[0].emailAddress,
         profileStarted: user?.unsafeMetadata?.profileStarted,
-        ...user?.unsafeMetadata,
+        ...user?.unsafeMetadata?.webScrapeData?.data,
       };
+      console.log("fetched user object", userObj);
     }
 
-    if (isLoaded && isSignedIn && user?.unsafeMetadata?.profileStarted) {
+    if (
+      isLoaded &&
+      isSignedIn &&
+      user?.unsafeMetadata?.profileStarted === true
+    ) {
       router.push(`/profile/edit`);
+    } else {
+      console.log(
+        "not started",
+        isLoaded,
+        isSignedIn,
+        user?.unsafeMetadata?.profileStarted
+      );
     }
   }, [user]);
 
@@ -63,7 +75,7 @@ const ProfilePage = () => {
     try {
       const response = await fetch(
         `${
-          process.env.NEXT_PUBLIC_API_URL
+          process.env.NEXT_PUBLIC_WEBSCRAPE_URL
         }/profile/scrape?bio_link=${encodeURIComponent(bioLink)}`
       );
       if (!response.ok) {
@@ -72,12 +84,16 @@ const ProfilePage = () => {
       const data = await response.json();
       console.log(data); // Handle the response data as needed
       console.log("fetched the result");
+
+      const newMetadata = {
+        profileStarted: true,
+        bio_link: bioLink,
+        webScrapeData: data,
+      };
+      console.log("updating the unsafeMetadata", newMetadata);
       // if success, change user.unsafeMetadatata.profileStarted to  True
       user.update({
-        unsafeMetadata: {
-          profileStarted: true,
-          webScrapeData: data,
-        },
+        unsafeMetadata: newMetadata,
       });
       console.log("updating clerk user");
       console.log("user updated", user?.unsafeMetadata?.profileStarted);
@@ -99,12 +115,8 @@ const ProfilePage = () => {
     <>
       <SignedIn>
         {/* TODO: The EditProfile Form should only appear if the therapist is signed in. */}
-        {/* <EditProfileForm /> */}
         {user?.unsafeMetadata?.profileStarted ? (
-          <EditProfileForm
-            userObj={userObj}
-            handleManualProfile={handleManualProfile}
-          />
+          <EditProfileForm handleManualProfile={handleManualProfile} />
         ) : (
           <SubmitBioForm
             handleSubmit={handleCreateProfile}
