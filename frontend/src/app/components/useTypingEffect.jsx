@@ -1,19 +1,29 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from "react";
 
-const useTypingEffect = (text, speed = 23) => { // Set speed to a faster value
-  const [displayedText, setDisplayedText] = useState('');
-  const [index, setIndex] = useState(0);
+const useTypingEffect = (text, isTyping, speed = 30) => {
+  const [displayedText, setDisplayedText] = useState("");
+  const indexRef = useRef(0);
 
   useEffect(() => {
-    if (index < text.length) {
-      const timer = setTimeout(() => {
-        setDisplayedText((prev) => prev + text[index]);
-        setIndex((prev) => prev + 1);
-      }, speed);
-
-      return () => clearTimeout(timer);
+    if (!isTyping) {
+      setDisplayedText(text);
+      return;
     }
-  }, [index, text, speed]);
+
+    setDisplayedText("");
+    indexRef.current = 0;
+
+    const intervalId = setInterval(() => {
+      if (indexRef.current < text.length) {
+        setDisplayedText((prev) => prev + text[indexRef.current]);
+        indexRef.current++;
+      } else {
+        clearInterval(intervalId);
+      }
+    }, speed);
+
+    return () => clearInterval(intervalId);
+  }, [text, isTyping, speed]);
 
   return displayedText;
 };

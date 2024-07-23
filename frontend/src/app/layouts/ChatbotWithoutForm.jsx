@@ -34,12 +34,6 @@ const Chatbot = ({
     handlePromptChange,
     fetchInitialChatMessages,
     handleSubmit,
-    promptTemplate,
-    setPromptTemplate,
-    model,
-    setModel,
-    temperature,
-    setTemperature,
     newChat,
     chatId,
   } = useChatbot(debug);

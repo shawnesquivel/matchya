@@ -84,17 +84,51 @@ const useChatbot = (debug = false) => {
     {
       role: "bot",
       content:
-        "hihi. i'm matchya, and i'm here to match ya with your perfect therapist! just like brewing the perfect matcha 🍵, every detail you provide will improve your match. oh ya and dw, everything is 100% confidential - chats are deleted after 24h. most of our therapists located in USA/Canada, but we have online therapists too. where are you located?",
+        "hihi. i'm matchya, and i'm here to match you with your ideal therapist. but first, i need your help. the more details you can provide, the better match i can find you.",
     },
+    {
+      role: "bot",
+      content:
+        "first, what best describes your main reason for seeking therapy? ",
+    },
+    // Fetch buttons
   ];
 
   const fetchInitialChatMessages = async () => {
     try {
       setLoadingNewMsg(true);
-
-      setMessages(initialChatMessages);
-      setLoadingNewMsg(false);
+      setMessages([]);
       setError("");
+
+      for (let i = 0; i < initialChatMessages.length; i++) {
+        const message = initialChatMessages[i];
+
+        // Add the full message immediately, but with a flag to indicate it's not fully typed
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          { ...message, content: message.content, isTyping: true },
+        ]);
+
+        // Simulate typing delay
+        await new Promise((resolve) =>
+          setTimeout(resolve, message.content.length * 30)
+        );
+
+        // Update the message to indicate typing is complete
+        setMessages((prevMessages) =>
+          prevMessages.map((msg, index) =>
+            index === prevMessages.length - 1
+              ? { ...msg, isTyping: false }
+              : msg
+          )
+        );
+
+        if (i < initialChatMessages.length - 1) {
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+      }
+
+      setLoadingNewMsg(false);
     } catch (err) {
       setLoadingNewMsg(false);
       console.error(err);
