@@ -113,6 +113,8 @@ const useChatbot = (debug = false) => {
       const chatId = getChatID();
       const timestamp = generateTimeStamp();
       setLoadingNewMsg(true);
+
+      // Add user message to the local state
       setMessages((prevMessages) => [
         ...prevMessages,
         {
@@ -124,33 +126,25 @@ const useChatbot = (debug = false) => {
         },
       ]);
 
-      const body = JSON.stringify({
-        // message settings
+      const requestBody = JSON.stringify({
         chat_id: chatId,
-        timestamp: timestamp,
         message: userMessage,
-        // chatbot settings
-        model: model,
-        prompt_template: promptTemplate,
-        temperature: temperature,
-        // additional settings, add as necesary.
-        apiKey: null,
       });
 
-      console.log("sending request", { body });
+      console.log("sending CHAT request", { requestBody });
 
       setUserMessage("");
 
       const url = `${process.env.NEXT_PUBLIC_API_URL}/chat`;
 
-      console.log({ url });
+      console.log("Fetching Chat", { url });
 
       const response = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: body,
+        body: requestBody,
       });
 
       if (!response.ok) {
@@ -161,13 +155,16 @@ const useChatbot = (debug = false) => {
 
       console.log(`Response from ${url}`, { resJson });
 
+      // Add assistant message to the local state
       setMessages((prevMessages) => [
         ...prevMessages,
         {
-          content: resJson?.content,
-          role: "assistant",
-          audio_file_url: resJson?.audio_file_url,
-          sourceDocuments: resJson?.source_documents,
+          content: resJson.content,
+          role: resJson.role,
+          audio_file_url: resJson.audio_file_url,
+          sourceDocuments: resJson.source_documents,
+          timestamp: resJson.timestamp,
+          chat_id: resJson.chat_id,
         },
       ]);
 
