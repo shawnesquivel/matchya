@@ -46,10 +46,9 @@ const EditProfileForm = ({ handleManualProfile }) => {
       const { unsafeMetadata } = user;
       const { profileSavedOnPinecone, webScrapeData, bio_link } =
         unsafeMetadata || {};
-
-      if (profileSavedOnPinecone) {
-        console.log("profile available through pinecone.", bio_link);
-        const pineconeProfile = await fetchPineconeProfile(bio_link);
+      const pineconeProfile = await fetchPineconeProfile(bio_link);
+      console.log("fetch Pinecone Profile", pineconeProfile);
+      if (pineconeProfile?.bio_link) {
         setProfileData({
           name: pineconeProfile.name || "",
           gender: pineconeProfile.gender || "male",
@@ -70,7 +69,11 @@ const EditProfileForm = ({ handleManualProfile }) => {
           specialties: pineconeProfile.specialties || [],
           approaches: pineconeProfile.approaches || [],
         });
-      } else if (webScrapeData?.data) {
+        return;
+      }
+
+      // If no Pinecone data was found, check if there was a webscrape done.
+      if (webScrapeData?.data) {
         const scrapeData = webScrapeData.data;
         setProfileData({
           name: scrapeData.name || "",

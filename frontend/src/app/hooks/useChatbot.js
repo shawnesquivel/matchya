@@ -72,7 +72,7 @@ const useChatbot = (debug = false) => {
     };
 
     if (debug) {
-      testLambda();
+      // testLambda();
     }
   }, []);
 
