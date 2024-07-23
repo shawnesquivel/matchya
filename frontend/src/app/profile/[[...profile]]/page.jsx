@@ -74,9 +74,9 @@ const ProfilePage = () => {
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}?bio_link=${encodeURIComponent(
-          bioLink
-        )}`
+        `${
+          process.env.NEXT_PUBLIC_API_URL
+        }/profile/scrape?bio_link=${encodeURIComponent(bioLink)}`
       );
       if (!response.ok) {
         throw new Error("Failed to fetch");
