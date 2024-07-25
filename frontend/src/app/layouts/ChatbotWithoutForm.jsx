@@ -1,15 +1,10 @@
 import React, { useEffect } from "react";
 import useChatbot from "../hooks/useChatbot";
-import useChatSession from "../hooks/useChatSession";
 import Title from "../components/Title";
-import PageHeader from "../components/PageHeader";
 import ChatInput from "../components/ChatInput";
 import ChatMessages from "../components/ChatMessages";
 import TwoColumnLayout from "../components/TwoColumnLayout";
 import NewChatButton from "./NewChatButton";
-import ChatbotSettings from "./ChatbotSettings";
-import Loader from "../components/Loader";
-import Link from "next/link";
 import Footer from "../components/Footer";
 
 const Chatbot = ({
@@ -36,10 +31,20 @@ const Chatbot = ({
     handleSubmit,
     newChat,
     chatId,
+    handleButtonClick,
+    questionStage,
   } = useChatbot(debug);
 
   useEffect(() => {
-    fetchInitialChatMessages();
+    async function initializeChat() {
+      try {
+        await fetchInitialChatMessages();
+      } catch (err) {
+        console.error("Failed to fetch initial messages:", err);
+      }
+    }
+
+    initializeChat();
   }, []);
 
   return (
@@ -48,14 +53,7 @@ const Chatbot = ({
         <TwoColumnLayout
           leftColumn={
             <>
-              {" "}
               <Title emoji={emoji} headingText={headingText} />
-              {/* <Link
-                href={"/profile"}
-                className="underline underline-offset-2 ml-4 mt-4"
-              >
-                Are you a therapist? Get listed today.
-              </Link> */}
               <a
                 href="/profile"
                 className="flex items-center gap-2 text-grey-extraDark hover:-translate-x-1 transition-transform"
@@ -90,14 +88,18 @@ const Chatbot = ({
               isLoadingMessages={isLoadingMessages}
               loadingNewMsg={loadingNewMsg}
               botPngFile={botPngFile}
+              onButtonClick={handleButtonClick}
+              questionStage={questionStage}
             />
-            <ChatInput
-              prompt={userMessage}
-              handlePromptChange={handlePromptChange}
-              handleSubmit={handleSubmit}
-              placeHolderText={`Type your message...`}
-              error={error}
-            />
+            {questionStage === 4 && (
+              <ChatInput
+                prompt={userMessage}
+                handlePromptChange={handlePromptChange}
+                handleSubmit={handleSubmit}
+                placeHolderText={`Type your message...`}
+                error={error}
+              />
+            )}
           </div>
         </>
       </div>

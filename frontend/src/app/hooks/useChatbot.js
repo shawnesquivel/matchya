@@ -20,6 +20,8 @@ const useChatbot = (debug = false) => {
   const [promptTemplate, setPromptTemplate] = useState("girlfriend");
   const [temperature, setTemperature] = useState(0.5);
   const [loadingNewMsg, setLoadingNewMsg] = useState(false);
+  const [questionStage, setQuestionStage] = useState(0);
+
   useEffect(() => {
     /**
      *  Fetch old messages on page load.
@@ -80,18 +82,180 @@ const useChatbot = (debug = false) => {
     setUserMessage(e.target.value);
   };
 
+  const questions = [
+    {
+      role: "bot",
+      content: "what best describes your main reason for seeking therapy?",
+      type: "questionnaire",
+      questionIndex: 0,
+      buttons: [
+        {
+          content:
+            "i have a specific situational problem i want to address with therapy.",
+          icon: "hazard",
+          value: [
+            "cognitive behavioral therapy",
+            "solution-focused brief therapy",
+          ],
+          questionIndex: 0,
+        },
+        {
+          content:
+            "i have specific characteristics i want to change or improve in therapy.",
+          icon: "brain",
+          value: [
+            "cognitive behavioral therapy",
+            "dialectical behavior therapy",
+          ],
+          questionIndex: 0,
+        },
+        {
+          content: "i want to become a mentally healthier version of myself.",
+          icon: "heart",
+          value: [
+            "person-centered therapy",
+            "mindfulness-based cognitive therapy",
+          ],
+          questionIndex: 0,
+        },
+        {
+          content: "i don't know why i want to see a therapist.",
+          icon: "question-mark",
+          value: ["psychodynamic therapy", "integrative therapy"],
+          questionIndex: 0,
+        },
+      ],
+    },
+    {
+      role: "bot",
+      content:
+        "which describes your situation best regarding therapy duration and frequency?",
+      type: "questionnaire",
+      questionIndex: 1,
+      buttons: [
+        {
+          content: "i want to try therapy and see what would be best for me.",
+          icon: "hazard",
+          value: ["integrative therapy", "person-centered therapy"],
+          questionIndex: 1,
+        },
+        {
+          content: "i want to see a therapist just one time.",
+          icon: "brain",
+          value: ["single session therapy", "crisis counselling"],
+          questionIndex: 1,
+        },
+        {
+          content: "i want to address a problem in 2-4 sessions.",
+          icon: "heart",
+          value: ["psychodynamic therapy", "dialetical behavior therapy"],
+          questionIndex: 1,
+        },
+        {
+          content:
+            "i have low insurance coverage and a limited number of sessions.",
+          icon: "question-mark",
+          value: ["cognitive behavioral therapy", "group therapy"],
+          questionIndex: 1,
+        },
+      ],
+    },
+    {
+      role: "bot",
+      content: "which therapeutic approach resonates most with you?",
+      type: "questionnaire",
+      questionIndex: 2,
+      buttons: [
+        {
+          content:
+            'structured and goal-oriented. "i like structure and a clear outcome"',
+          icon: "hazard",
+          value: [
+            "cognitive behavioral therapy",
+            "solution-focused brief therapy",
+          ],
+          questionIndex: 2,
+        },
+        {
+          content:
+            'exploratory and insight-oriented. "i want to explore my thoughts and emotions"',
+          icon: "brain",
+          value: ["psychodynamic therapy", "integrative therapy"],
+          questionIndex: 2,
+        },
+        {
+          content:
+            'skill-building and mindfulness-focused. "i want to build skills and healthy habits"',
+          icon: "heart",
+          value: [
+            "dialectical behavior therapy",
+            "mindfulness-based cognitive therapy",
+          ],
+          questionIndex: 2,
+        },
+        {
+          content:
+            'flexible and client-centered. "i\'m not sure what i need yet"',
+          icon: "question-mark",
+          value: ["person-centered therapy", "integrative therapy"],
+          questionIndex: 2,
+        },
+      ],
+    },
+    {
+      role: "bot",
+      content:
+        "what type of therapy setting are you most comfortable with? select one or more. don't worry, you can always change this later.",
+      type: "questionnaire",
+      questionIndex: 3,
+      buttons: [
+        {
+          content: "i prefer one-on-one sessions.",
+          icon: "hazard",
+          value: ["most therapeutic approaches"],
+          questionIndex: 3,
+        },
+        {
+          content: "i'm open to group sessions.",
+          icon: "brain",
+          value: ["group therapy", "dialectical behavior therapy"],
+          questionIndex: 3,
+        },
+        {
+          content: "i'd like online/remote sessions.",
+          icon: "heart",
+          value: ["cognitive behavioral therapy", "integrative therapy"],
+          questionIndex: 3,
+        },
+        {
+          content: "i prefer in-person sessions.",
+          icon: "question-mark",
+          value: ["most therapeutic approaches"],
+          questionIndex: 3,
+        },
+      ],
+    },
+    {
+      role: "bot",
+      content:
+        "thanks for the info! do you have any other soft preferences you'd like to share?",
+      type: "chat",
+      questionIndex: 4,
+    },
+  ];
+
   let initialChatMessages = [
     {
       role: "bot",
       content:
-        "hihi. i'm matchya, and i'm here to match you with your ideal therapist. but first, i need your help. the more details you can provide, the better match i can find you.",
+        "hihi. i'm matchya, and i'm here to match you with your ideal therapist.",
     },
     {
       role: "bot",
       content:
-        "first, what best describes your main reason for seeking therapy? ",
+        "the more details you can provide, the better match i can find you.",
     },
-    // Fetch buttons
+    questions[0],
   ];
 
   const fetchInitialChatMessages = async () => {
@@ -111,7 +275,7 @@ const useChatbot = (debug = false) => {
 
         // Simulate typing delay
         await new Promise((resolve) =>
-          setTimeout(resolve, message.content.length * 30)
+          setTimeout(resolve, message.content.length * 10)
         );
 
         // Update the message to indicate typing is complete
@@ -287,6 +451,53 @@ const useChatbot = (debug = false) => {
     }
   }, [chatId, messages]);
 
+  const handleButtonClick = async (value, clickedQuestionIndex) => {
+    try {
+      const newQuestionIndex = clickedQuestionIndex + 1;
+      setQuestionStage(newQuestionIndex);
+
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        {
+          content: value,
+          role: "user",
+          timestamp: generateTimeStamp(),
+          chat_id: getChatID(),
+        },
+      ]);
+
+      if (newQuestionIndex <= 4) {
+        const message = questions[newQuestionIndex];
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          { ...message, content: message.content, isTyping: true },
+        ]);
+
+        await new Promise((resolve) =>
+          setTimeout(resolve, message.content.length * 10)
+        );
+        setMessages((prevMessages) =>
+          prevMessages.map((msg, index) =>
+            index === prevMessages.length - 1
+              ? { ...msg, isTyping: false }
+              : msg
+          )
+        );
+      }
+
+      if (newQuestionIndex === 4) {
+        // enable the chat again
+        // render the last quesiton in the list
+      }
+
+      setLoadingNewMsg(false);
+    } catch (err) {
+      console.error(err);
+      setError("Error processing your choice. Please try again.");
+      setLoadingNewMsg(false);
+    }
+  };
+
   return {
     userMessage,
     messages,
@@ -306,6 +517,8 @@ const useChatbot = (debug = false) => {
     chatId,
     newChat,
     fetchInitialChatMessages,
+    handleButtonClick,
+    questionStage,
   };
 };
 
