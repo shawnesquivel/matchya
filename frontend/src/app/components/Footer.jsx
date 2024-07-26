@@ -18,8 +18,8 @@ const Footer = () => {
         </Link>
       </div>
       <p className={`sm:text-right text-center ${aspekta.className}`}>
-        This is a beta version and prototype. Your data is stored for less than
-        24 hours. Experiencing a software issue? &nbsp;
+        Your data is stored for less than 24 hours. Experiencing a software
+        issue? &nbsp;
         <a
           href="#tally-open=nG0l1Z&tally-hide-title=1&tally-emoji-text=🍵&tally-emoji-animation=heart-beat"
           target="_blank"
