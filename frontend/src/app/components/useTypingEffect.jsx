@@ -1,19 +1,20 @@
 import { useState, useEffect, useRef } from "react";
 
 const useTypingEffect = (text, isTyping, speed = 30) => {
+  const safeText = text || "";
   const [displayedText, setDisplayedText] = useState("");
   const indexRef = useRef(0);
-  const wordsRef = useRef(text.split(" "));
+  const wordsRef = useRef(safeText.split(" "));
 
   useEffect(() => {
     if (!isTyping) {
-      setDisplayedText(text);
+      setDisplayedText(safeText);
       return;
     }
 
     setDisplayedText("");
     indexRef.current = 0;
-    wordsRef.current = text.split(" ");
+    wordsRef.current = safeText.split(" ");
 
     const intervalId = setInterval(() => {
       if (indexRef.current < wordsRef.current.length) {
@@ -29,7 +30,7 @@ const useTypingEffect = (text, isTyping, speed = 30) => {
     }, speed);
 
     return () => clearInterval(intervalId);
-  }, [text, isTyping, speed]);
+  }, [safeText, isTyping, speed]);
 
   return displayedText;
 };
