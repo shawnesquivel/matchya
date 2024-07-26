@@ -484,7 +484,10 @@ const useChatbot = (debug = false) => {
       };
       setQuestionStage(newQuestionIndex);
 
-      const previousBotMsg = messages[messages.length - 1];
+      const previousBotMsg = {
+        content: messages[messages.length - 1].content,
+        role: messages[messages.length - 1].role,
+      };
 
       // Update render messages object
       setMessages((prevMessages) => [...prevMessages, userResponse]);
