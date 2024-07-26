@@ -86,7 +86,7 @@ const useChatbot = (debug = false) => {
 
   const questions = [
     {
-      role: "bot",
+      role: "assistant",
       content:
         "first, what best describes your main reason for seeking therapy?",
       type: "questionnaire",
@@ -131,7 +131,7 @@ const useChatbot = (debug = false) => {
       ],
     },
     {
-      role: "bot",
+      role: "assistant",
       content:
         "great, thanks for sharing! do you have an idea for how frequently you want to see a therapist?",
       type: "questionnaire",
@@ -165,7 +165,7 @@ const useChatbot = (debug = false) => {
       ],
     },
     {
-      role: "bot",
+      role: "assistant",
       content:
         "mm, i see! just 3 more questions to go, you're doing great :) there are many types of therapy. which of the following resonates best with you?",
       type: "questionnaire",
@@ -208,7 +208,7 @@ const useChatbot = (debug = false) => {
       ],
     },
     {
-      role: "bot",
+      role: "assistant",
       content:
         "awesome! do you have a type of therapy setting you prefer? don't worry, you can always change this later :)",
       type: "questionnaire",
@@ -241,7 +241,7 @@ const useChatbot = (debug = false) => {
       ],
     },
     {
-      role: "bot",
+      role: "assistant",
       content: `got it, last question ~ do you have preferences you'd like to share? some users share experience with specific issues, preferences for gender/ethnicity/sexuality, language(s), faith. you can enter it in the chat below.`,
       type: "chat",
       questionIndex: 4,
@@ -250,12 +250,12 @@ const useChatbot = (debug = false) => {
 
   let initialChatMessages = [
     {
-      role: "bot",
+      role: "assistant",
       content:
         "hihi. i'm matchya. i'm here to help you find your ideal therapist!",
     },
     {
-      role: "bot",
+      role: "assistant",
       content:
         "to help match you with the right therapist, i'll ask you some questions. it'll be quick and 100% confidential.",
     },

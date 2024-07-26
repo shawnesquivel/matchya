@@ -62,7 +62,7 @@ const MessageItem = memo(
       <div className={`flex flex-col mb-2 ${isLast ? "flex-grow" : ""}`}>
         <div
           className={`flex lg:max-w-[80%]  message p-4 h-fit max-w-full rounded-2xl w-fit ${
-            message.role === "user" ? "user" : "bot"
+            message.role === "user" ? "user" : "assistant"
           }`}
         >
           <div className="rounded mr-4 h-10 w-10 relative overflow-hidden h-fit">
@@ -73,7 +73,7 @@ const MessageItem = memo(
               width={32}
               height={32}
               className={`w-8 h-8 rounded ${
-                message.role === "user" ? "user" : "bot"
+                message.role === "user" ? "user" : "assistant"
               }`}
               priority
               unoptimized
@@ -83,7 +83,7 @@ const MessageItem = memo(
           <div className="flex justify-start align-middle gap-4 w-full h-fit">
             <p
               className={`sm:mt-[2px] mt-[unset] max-w-full h-fit ${
-                message.role === "user" ? "user" : "bot"
+                message.role === "user" ? "user" : "assistant"
               }`}
             >
               {typedText}
