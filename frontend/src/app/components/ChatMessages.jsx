@@ -203,7 +203,7 @@ const MessageItem = memo(
           </div>
         )}
         {message.type === "questionnaire" && message.buttons && (
-          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-3">
             {message.buttons.map((button, index) => (
               <button
                 key={index}
@@ -211,9 +211,9 @@ const MessageItem = memo(
                 onClick={() =>
                   onButtonClick(button.content, button.questionIndex)
                 }
-                className="flex flex-col items-start p-4 bg-white rounded-xl hover:bg-[#F8F8F2] transition-colors shadow-sm border border-gray-200"
+                className="flex flex-col items-start p-4 bg-white rounded-xl hover:bg-[#F8F8F2] transition-colors shadow-sm border border-gray-200 w-full"
               >
-                <div className="w-8 h-8 mb-2">
+                <div className="w-8 h-8 mb-4">
                   <Image
                     src={`/assets/images/${button.icon}.png`}
                     alt={button.icon}
@@ -222,7 +222,7 @@ const MessageItem = memo(
                     className="text-orange-500"
                   />
                 </div>
-                <span className="text-base font-normal text-left">
+                <span className="text-sm sm:text-base md:text-lg font-normal text-left">
                   {button.content}
                 </span>
               </button>
