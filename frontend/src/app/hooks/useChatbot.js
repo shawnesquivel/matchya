@@ -22,7 +22,7 @@ const useChatbot = (debug = false) => {
   const [loadingNewMsg, setLoadingNewMsg] = useState(false);
   const [questionStage, setQuestionStage] = useState(0);
   const [finishedQuestions, setFinishedQuestions] = useState([]);
-  const [initialChatMsg, setInitialChatMsg] = useState(false);
+  const [initialChatMsg, setInitialChatMsg] = useState(true);
 
   useEffect(() => {
     /**
