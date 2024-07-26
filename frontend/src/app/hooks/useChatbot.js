@@ -21,6 +21,8 @@ const useChatbot = (debug = false) => {
   const [temperature, setTemperature] = useState(0.5);
   const [loadingNewMsg, setLoadingNewMsg] = useState(false);
   const [questionStage, setQuestionStage] = useState(0);
+  const [finishedQuestions, setFinishedQuestions] = useState([]);
+  const [initialChatMsg, setInitialChatMsg] = useState(false);
 
   useEffect(() => {
     /**
@@ -85,7 +87,8 @@ const useChatbot = (debug = false) => {
   const questions = [
     {
       role: "bot",
-      content: "what best describes your main reason for seeking therapy?",
+      content:
+        "first, what best describes your main reason for seeking therapy?",
       type: "questionnaire",
       questionIndex: 0,
       buttons: [
@@ -119,7 +122,8 @@ const useChatbot = (debug = false) => {
           questionIndex: 0,
         },
         {
-          content: "i don't know why i want to see a therapist.",
+          content:
+            "i don't have an exact reason for why i want to see a therapist.",
           icon: "question-mark",
           value: ["psychodynamic therapy", "integrative therapy"],
           questionIndex: 0,
@@ -129,7 +133,7 @@ const useChatbot = (debug = false) => {
     {
       role: "bot",
       content:
-        "which describes your situation best regarding therapy duration and frequency?",
+        "great, thanks for sharing! do you have an idea for how frequently you want to see a therapist?",
       type: "questionnaire",
       questionIndex: 1,
       buttons: [
@@ -162,7 +166,8 @@ const useChatbot = (debug = false) => {
     },
     {
       role: "bot",
-      content: "which therapeutic approach resonates most with you?",
+      content:
+        "mm, i see! just 3 more questions to go, you're doing great :) there are many types of therapy. which of the following resonates best with you?",
       type: "questionnaire",
       questionIndex: 2,
       buttons: [
@@ -205,7 +210,7 @@ const useChatbot = (debug = false) => {
     {
       role: "bot",
       content:
-        "what type of therapy setting are you most comfortable with? select one or more. don't worry, you can always change this later.",
+        "awesome! do you have a type of therapy setting you prefer? don't worry, you can always change this later :)",
       type: "questionnaire",
       questionIndex: 3,
       buttons: [
@@ -237,8 +242,7 @@ const useChatbot = (debug = false) => {
     },
     {
       role: "bot",
-      content:
-        "thanks for the info! do you have any other soft preferences you'd like to share?",
+      content: `got it, last question ~ do you have preferences you'd like to share? some users share experience with specific issues, preferences for gender/ethnicity/sexuality, language(s), faith. you can enter it in the chat below.`,
       type: "chat",
       questionIndex: 4,
     },
@@ -248,12 +252,12 @@ const useChatbot = (debug = false) => {
     {
       role: "bot",
       content:
-        "hihi. i'm matchya, and i'm here to match you with your ideal therapist.",
+        "hihi. i'm matchya. i'm here to help you find your ideal therapist!",
     },
     {
       role: "bot",
       content:
-        "the more details you can provide, the better match i can find you.",
+        "to help match you with the right therapist, i'll ask you some questions. it'll be quick and 100% confidential.",
     },
     questions[0],
   ];
@@ -299,6 +303,7 @@ const useChatbot = (debug = false) => {
       setError("Error fetching messages. Please try again.");
     }
   };
+
   const handleSubmit = async () => {
     /**
      * Run the chat function
@@ -323,11 +328,22 @@ const useChatbot = (debug = false) => {
           chat_id: chatId,
         },
       ]);
-
-      const requestBody = JSON.stringify({
+      const request = {
         chat_id: chatId,
         message: userMessage,
-      });
+        questionnaire: null,
+      };
+      if (initialChatMsg && finishedQuestions && finishedQuestions.length > 0) {
+        console.log(
+          "The questionnaire has not been included yet, we'll include it.",
+          initialChatMsg
+        );
+        request.questionnaire = finishedQuestions;
+      } else {
+        console.log("The questionnaire was already sent. I won't include it.");
+      }
+
+      const requestBody = JSON.stringify(request);
 
       console.log("sending CHAT request", { requestBody });
 
@@ -366,6 +382,7 @@ const useChatbot = (debug = false) => {
         },
       ]);
 
+      setInitialChatMsg(false);
       setError("");
       setLoadingNewMsg(false);
     } catch (err) {
@@ -450,21 +467,30 @@ const useChatbot = (debug = false) => {
       console.log(`Found messages for ${chatId}`, { messages });
     }
   }, [chatId, messages]);
-
   const handleButtonClick = async (value, clickedQuestionIndex) => {
+    /**
+     * Handles the button click event by updating the state with the user's response,
+     * advancing the question stage, and adding the bot's and user's messages to the finished questions array.
+     * If there are more questions, it sets the next question as typing and then updates it to not typing after a delay.
+     */
     try {
       const newQuestionIndex = clickedQuestionIndex + 1;
+
+      const userResponse = {
+        content: value,
+        role: "user",
+        timestamp: generateTimeStamp(),
+        chat_id: getChatID(),
+      };
       setQuestionStage(newQuestionIndex);
 
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        {
-          content: value,
-          role: "user",
-          timestamp: generateTimeStamp(),
-          chat_id: getChatID(),
-        },
-      ]);
+      const previousBotMsg = messages[messages.length - 1];
+
+      // Update render messages object
+      setMessages((prevMessages) => [...prevMessages, userResponse]);
+
+      // Update the questionnaire holder
+      setFinishedQuestions((prev) => [...prev, previousBotMsg, userResponse]);
 
       if (newQuestionIndex <= 4) {
         const message = questions[newQuestionIndex];
@@ -483,11 +509,6 @@ const useChatbot = (debug = false) => {
               : msg
           )
         );
-      }
-
-      if (newQuestionIndex === 4) {
-        // enable the chat again
-        // render the last quesiton in the list
       }
 
       setLoadingNewMsg(false);
