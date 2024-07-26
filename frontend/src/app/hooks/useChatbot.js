@@ -139,26 +139,35 @@ const useChatbot = (debug = false) => {
       buttons: [
         {
           content: "i want to try therapy and see what would be best for me.",
-          icon: "hazard",
+          icon: "door",
           value: ["integrative therapy", "person-centered therapy"],
           questionIndex: 1,
         },
         {
           content: "i want to see a therapist just one time.",
-          icon: "brain",
-          value: ["single session therapy", "crisis counselling"],
+          icon: "clock",
+          value: ["single session therapy (SST)", "crisis counselling"],
           questionIndex: 1,
         },
         {
           content: "i want to address a problem in 2-4 sessions.",
-          icon: "heart",
+          icon: "hourglass",
+          value: [
+            "solution focused brief therapy (SFBT)",
+            "crisis counselling",
+          ],
+          questionIndex: 1,
+        },
+        {
+          content: "i'm looking for a longer term therapist.",
+          icon: "chat",
           value: ["psychodynamic therapy", "dialetical behavior therapy"],
           questionIndex: 1,
         },
         {
           content:
             "i have low insurance coverage and a limited number of sessions.",
-          icon: "question-mark",
+          icon: "money",
           value: ["cognitive behavioral therapy", "group therapy"],
           questionIndex: 1,
         },
@@ -174,7 +183,7 @@ const useChatbot = (debug = false) => {
         {
           content:
             'structured and goal-oriented. "i like structure and a clear outcome"',
-          icon: "hazard",
+          icon: "target",
           value: [
             "cognitive behavioral therapy",
             "solution-focused brief therapy",
@@ -184,14 +193,14 @@ const useChatbot = (debug = false) => {
         {
           content:
             'exploratory and insight-oriented. "i want to explore my thoughts and emotions"',
-          icon: "brain",
+          icon: "compass",
           value: ["psychodynamic therapy", "integrative therapy"],
           questionIndex: 2,
         },
         {
           content:
             'skill-building and mindfulness-focused. "i want to build skills and healthy habits"',
-          icon: "heart",
+          icon: "mind",
           value: [
             "dialectical behavior therapy",
             "mindfulness-based cognitive therapy",
@@ -201,7 +210,7 @@ const useChatbot = (debug = false) => {
         {
           content:
             'flexible and client-centered. "i\'m not sure what i need yet"',
-          icon: "question-mark",
+          icon: "expand",
           value: ["person-centered therapy", "integrative therapy"],
           questionIndex: 2,
         },
@@ -216,25 +225,25 @@ const useChatbot = (debug = false) => {
       buttons: [
         {
           content: "i prefer one-on-one sessions.",
-          icon: "hazard",
+          icon: "one-on-one",
           value: ["most therapeutic approaches"],
           questionIndex: 3,
         },
         {
           content: "i'm open to group sessions.",
-          icon: "brain",
+          icon: "group",
           value: ["group therapy", "dialectical behavior therapy"],
           questionIndex: 3,
         },
         {
           content: "i'd like online/remote sessions.",
-          icon: "heart",
+          icon: "video",
           value: ["cognitive behavioral therapy", "integrative therapy"],
           questionIndex: 3,
         },
         {
           content: "i prefer in-person sessions.",
-          icon: "question-mark",
+          icon: "in-person",
           value: ["most therapeutic approaches"],
           questionIndex: 3,
         },
