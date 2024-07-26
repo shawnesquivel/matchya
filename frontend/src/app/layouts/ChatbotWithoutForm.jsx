@@ -6,6 +6,7 @@ import ChatMessages from "../components/ChatMessages";
 import TwoColumnLayout from "../components/TwoColumnLayout";
 import NewChatButton from "./NewChatButton";
 import Footer from "../components/Footer";
+import { aspekta } from "../styles/fonts";
 
 const Chatbot = ({
   emoji = "🤖",
@@ -100,6 +101,10 @@ const Chatbot = ({
                 error={error}
               />
             )}
+            <p className={`mt-4 text-xs text-center ${aspekta.className}`}>
+              100% confidentiality, we never store your data. Most therapists
+              are physically located in British Columbia, Canada.
+            </p>
           </div>
         </>
       </div>
