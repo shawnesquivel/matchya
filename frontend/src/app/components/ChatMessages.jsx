@@ -1,60 +1,26 @@
 "use client";
-import React, { useState, useEffect, useRef, useCallback, memo } from "react";
+import React, { useCallback, memo, useEffect, useRef } from "react";
 import Image from "next/image";
 import styles from "../styles/spinner.module.css";
 import Loader from "./Loader";
 import useTypingEffect from "./useTypingEffect";
-// Memo: Do not re-render the component if props havent changed between re-renders
+
 const MessageItem = memo(
   ({ message, botPngFile, isLast, onButtonClick, questionStage }) => {
-    /**
-     * Render the chat message for user/bots, showing a profile picture.
-     * Optionally, it can play audio clips or show source documents.
-     *
-     * Props:
-     * - message: An object representing the chat message, which includes:
-     *   - type: 'user' or 'bot'.
-     *   - message: Message in text format
-     *   - audio_file_url: (optional) A string URL to an audio file that can be played.
-     *   - sourceDocuments: (optional) An array of document objects related to the message, each containing:
-     *     - pageContent: The text content of the document.
-     *     - metadata: An object containing metadata about the document.
-     *
-     * - botPngFile: A string specifying the filename of the bot's image to use from the `/assets/images` directory.
-     *
-     * - isLast: A boolean indicating if this is the last message in the chat sequence, which can affect styling.
-     *
-     * Example:
-     * <MessageItem
-     *   message={{
-     *     type: "bot",
-     *     message: "Hi, I'm your friendly assistant.",
-     *     audio_file_url: "https://example.com/audio.mp3",
-     *     sourceDocuments: [{
-     *       pageContent: "Four score and seven years ago...",
-     *       metadata: { created: "1863-11-19" }
-     *     }]
-     *   }}
-     *   botPngFile="girlfriend"
-     *   isLast={true}
-     * />
-     */
-
-    /** PHASE 1: Define the URLs for the profile picture for the user and bot */
-    const userImage = "/assets/images/green-square.png";
-    const botImage = `/assets/images/${botPngFile}.png`;
-    const [showSources, setShowSources] = useState(false);
+    const assistantImage = `/assets/images/${botPngFile}.png`;
 
     /* PHASE 2: Play the audio if it's present */
     const playAudio = useCallback((audioUrl) => {
-      /** Play an audio object from a given URL. Created on first render only. */
       const audio = new Audio(audioUrl);
       audio.play().catch((e) => console.error("Playback failed:", e));
       // console.log({ audioUrl });
     }, []);
     const matches = message?.sourceDocuments?.matches;
 
-    const typedText = useTypingEffect(message.content || "", message.isTyping);
+    const typedText = useTypingEffect(
+      message.content || "",
+      message.role === "assistant" && message.isTyping
+    );
 
     if (!message.content) return null; // Don't render empty messages
 
@@ -65,28 +31,27 @@ const MessageItem = memo(
             message.role === "user" ? "user" : "assistant"
           }`}
         >
-          <div className="rounded mr-4 h-10 w-10 relative overflow-hidden h-fit">
-            {/* PHASE 1: How we choose between the user and bot image. */}
-            <Image
-              src={message.role === "user" ? userImage : botImage}
-              alt={`${message.role}'s profile`}
-              width={32}
-              height={32}
-              className={`w-8 h-8 rounded ${
-                message.role === "user" ? "user" : "assistant"
-              }`}
-              priority
-              unoptimized
-            />
-          </div>
-          {/* PHASE 1: How we get the messages parameter. */}
+          {message.role === "assistant" && (
+            <div className="rounded mr-4 w-10 relative overflow-hidden h-fit">
+              <Image
+                src={assistantImage}
+                alt={`${message.role}'s profile`}
+                width={32}
+                height={32}
+                className="w-8 h-8 rounded assistant"
+                priority
+                unoptimized
+              />
+            </div>
+          )}
+
           <div className="flex justify-start align-middle gap-4 w-full h-fit">
             <p
               className={`sm:mt-[2px] mt-[unset] max-w-full h-fit ${
                 message.role === "user" ? "user" : "assistant"
               }`}
             >
-              {typedText}
+              {message.role === "assistant" ? typedText : message.content}
             </p>
             {/* PHASE 2: Show the audio if it's present */}
             {message.audio_file_url && (
@@ -238,7 +203,7 @@ const MessageItem = memo(
           </div>
         )}
         {message.type === "questionnaire" && message.buttons && (
-          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
             {message.buttons.map((button, index) => (
               <button
                 key={index}
@@ -278,22 +243,15 @@ const ChatMessages = ({
   onButtonClick,
   questionStage,
 }) => {
-  /**
-   * 
-   * The useRef hook in React is used to access a DOM element directly and persist values across renders without triggering a re-render of the component.
+  const messagesEndRef = useRef(null);
 
-      In your ChatMessages component, useRef is used to create a ref object (messagesContainerRef) that is attached to the chat messages container DOM element. This allows your code to directly manipulate the DOM element.
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
-      The useEffect hook in your code is used to scroll the container to the bottom every time the messages array changes, ensuring the latest message is visible. Here's how it works:
-
-      1. A new message is added to the messages array, the component re-renders.
-      2. The useEffect hook runs because its dependency array includes [messages].
-      3. The useEffect hook accesses messagesContainerRef.current, which is the container div.
-      4. It sets the `scrollTop` to the `scrollHeight` of the container -> scrolls to the bottom.
-      
-      There is no other way to directly manipulate the DOM for scrolling purposes in React's declarative paradigm. 
-      The ref persists throughout the life of the component, allowing direct access to the DOM node without causing additional renders, which would happen if you were to use state for this purpose.
-    */
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   return (
     <div className="overflow-y-scroll">
@@ -320,6 +278,7 @@ const ChatMessages = ({
             );
           })}
       {loadingNewMsg && <Loader />}
+      <div ref={messagesEndRef} />
     </div>
   );
 };
