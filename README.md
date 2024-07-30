@@ -1,112 +1,159 @@
 # Project Organization
 
-Welcome to our project! Below you'll find step-by-step instructions to set up and run the frontend and backend components.
+Machya
+
+## Table of Contents
+
+1. [Frontend Setup](#frontend-setup)
+2. [Backend Setup](#backend-setup)
+3. [AWS Credentials Configuration](#aws-credentials-configuration)
+4. [Backend Deployment](#backend-deployment)
+5. [Important URLs](#important-urls)
 
 ## Frontend Setup
 
-Our frontend is built with NextJS, a powerful framework for building web applications. To get started:
+Our frontend is built with NextJS, a powerful and efficient framework for building modern web applications.
+
+### Prerequisites
+
+- Node.js (latest LTS version recommended)
+- npm (comes with Node.js)
+
+### Steps
 
 1. Open your terminal.
-2. Change directory to the frontend folder:
-   ```
+2. Navigate to the frontend folder:
+   ```bash
    cd frontend
    ```
-3. Install all the necessary dependencies:
-   ```
+3. Install dependencies:
+   ```bash
    npm install
    ```
 4. Start the development server:
-   ```
+   ```bash
    npm run dev
    ```
-5. Open your web browser and go to [http://localhost:3000](http://localhost:3000) to see the application running.
-
+5. Open your web browser and visit [http://localhost:3000](http://localhost:3000) to view the application.
 
 ## Backend Setup
 
-Our backend is a Chalice project, which is a framework for writing serverless apps in Python. Follow these steps to set it up:
+Our backend is developed using Chalice, a framework for creating serverless applications in Python.
 
-1. **Test AWS CLI Configuration**:
-   - Open your terminal and run:
-     ```
-     aws configure list
-     ```
-   - If you see an error or if your credentials are not displayed correctly, refer to the [Setup AWS Credentials](#setup-aws-credentials) section below.
-2. Navigate to the backend directory:
+### Prerequisites
+
+- Python 3.7 or higher
+- pip (Python package installer)
+- AWS CLI (configured with valid credentials)
+
+### Steps
+
+1. Verify AWS CLI configuration:
+
+   ```bash
+   aws configure list
    ```
+
+   If you encounter any issues, refer to the [AWS Credentials Configuration](#aws-credentials-configuration) section.
+
+2. Navigate to the backend directory:
+
+   ```bash
    cd server
    ```
-3. Create a new virtual environment named `env`:
-   ```
+
+3. Create a virtual environment:
+
+   ```bash
    python -m venv env
    ```
-   Alternatively
-   ```
+
+   or
+
+   ```bash
    python3 -m venv env
    ```
+
 4. Activate the virtual environment:
-   ```
-   source env/bin/activate  # On Unix/macOS
-   env\Scripts\activate  # On Windows
-   ```
-5. Install all the required dependencies:
-   ```
+
+   - On Unix/macOS:
+     ```bash
+     source env/bin/activate
+     ```
+   - On Windows:
+     ```bash
+     env\Scripts\activate
+     ```
+
+5. Install required dependencies:
+
+   ```bash
    pip install -r requirements.txt
    ```
-6. To run the backend locally:
-   ```
+
+6. Run the backend locally:
+
+   ```bash
    chalice local
    ```
-7. Go to the link provided, usually, http://127.0.0.1:8000/
 
-   You should see this response:
-
-   ```
-   {"hello": "world"}
+7. Visit the provided link (usually http://127.0.0.1:8000/) in your browser. You should see:
+   ```json
+   { "hello": "world" }
    ```
 
-## Setup AWS Credentials
+## AWS Credentials Configuration
 
-To set up your AWS credentials for deploying the backend:
+To deploy the backend, you need properly configured AWS credentials.
 
-1. Follow the guide here: [Chalice Quickstart Credentials](https://aws.github.io/chalice/quickstart.html#credentials)
-2. If you do not have an AWS account, create one here: [AWS Management Console](https://aws.amazon.com/marketplace/management/signin)
+1. Follow the [Chalice Quickstart Credentials](https://aws.github.io/chalice/quickstart.html#credentials) guide.
+
+2. If you don't have an AWS account, create one at [AWS Management Console](https://aws.amazon.com/marketplace/management/signin).
+
 3. Set up your AWS credentials:
-   - Open your terminal.
-   - Run the following commands to create the AWS credentials file:
-     ```
-     mkdir ~/.aws
-     cat >> ~/.aws/config
-     ```
-   - Input the following details:
-     ```
-     [default]
-     aws_access_key_id=YOUR_ACCESS_KEY_HERE
-     aws_secret_access_key=YOUR_SECRET_ACCESS_KEY
-     region=YOUR_REGION (such as us-west-2, us-west-1, etc)
-     ```
-4. Verify that AWS CLI is configured correctly by running `aws configure list`.
 
-## Deploy Backend
+   ```bash
+   mkdir ~/.aws
+   cat >> ~/.aws/config
+   ```
 
-Before deploying, ensure you have set up an AWS account and configured your credentials as described below.
+   Enter the following, replacing the placeholders with your actual credentials:
 
-## URLs
+   ```
+   [default]
+   aws_access_key_id=YOUR_ACCESS_KEY_HERE
+   aws_secret_access_key=YOUR_SECRET_ACCESS_KEY
+   region=YOUR_REGION (e.g., us-west-2, us-west-1)
+   ```
 
-Local Host
+4. Verify the configuration:
+   ```bash
+   aws configure list
+   ```
 
-```
-http://127.0.0.1:8000/
-```
+## Backend Deployment
 
-Tutorial
+Ensure you have set up an AWS account and configured your credentials before attempting to deploy the backend. The deployment process will be specific to your project and should be detailed here.
 
-```
-https://jk88xtfj1j.execute-api.us-west-2.amazonaws.com/api
-```
+## Important URLs
 
-Production (Example)
+- **Local Development**
 
-```
-https://dm9k979b9h.execute-api.us-west-2.amazonaws.com/api
-```
+  ```
+  http://127.0.0.1:8000/
+  ```
+
+- **Tutorial API**
+
+  ```
+  https://jk88xtfj1j.execute-api.us-west-2.amazonaws.com/api
+  ```
+
+- **Production API** (Example)
+  ```
+  https://dm9k979b9h.execute-api.us-west-2.amazonaws.com/api
+  ```
+
+---
+
+For any issues or additional information, please refer to the project documentation or contact the development team.
