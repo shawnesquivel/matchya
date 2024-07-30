@@ -17,6 +17,10 @@ export default function RootLayout({ children }) {
       <html lang="en">
         <head>
           <script async src="https://tally.so/widgets/embed.js"></script>
+          <script
+            async
+            src="https://js.stripe.com/v3/pricing-table.js"
+          ></script>
         </head>
         <body className={`flex flex-col ${aspekta.className}`}>
           <main className="min-h-screen">{children}</main>
