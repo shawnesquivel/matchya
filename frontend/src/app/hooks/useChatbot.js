@@ -391,8 +391,6 @@ const useChatbot = (debug = false) => {
         },
       ]);
 
-      
-
       setInitialChatMsg(false);
       setError("");
       setLoadingNewMsg(false);
