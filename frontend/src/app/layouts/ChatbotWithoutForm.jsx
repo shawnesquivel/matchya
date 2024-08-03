@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import useChatbot from "../hooks/useChatbot";
 import Title from "../components/Title";
 import ChatInput from "../components/ChatInput";
@@ -64,6 +64,29 @@ const Chatbot = ({
     setTimeout(() => setSelectedUserId(null), 300);
   };
 
+  const memoizedChatMessages = useMemo(
+    () => (
+      <ChatMessages
+        messages={messages}
+        isLoadingMessages={isLoadingMessages}
+        loadingNewMsg={loadingNewMsg}
+        botPngFile={botPngFile}
+        onButtonClick={handleButtonClick}
+        questionStage={questionStage}
+        onOpenModal={handleOpenModal}
+      />
+    ),
+    [
+      messages,
+      isLoadingMessages,
+      loadingNewMsg,
+      botPngFile,
+      handleButtonClick,
+      questionStage,
+      handleOpenModal,
+    ]
+  );
+
   return (
     <>
       <div className="bg-grey gap-2 flex flex-col px-2 pt-0 lg:gap-6 lg:px-20 md:px-10 h-full pb-14">
@@ -100,15 +123,7 @@ const Chatbot = ({
 
         <>
           <div className="min-w-full bg-white pt-0 pb-6 md:px-6 px-2 rounded-3xl overflow-hidden border-grey-dark border h-full justify-end flex flex-col max-w-[1440px] mx-auto lg:h-[85vh] md:h-[84vh] sm:h-[85vh] h-[70vh] w-full">
-            <ChatMessages
-              messages={messages}
-              isLoadingMessages={isLoadingMessages}
-              loadingNewMsg={loadingNewMsg}
-              botPngFile={botPngFile}
-              onButtonClick={handleButtonClick}
-              questionStage={questionStage}
-              onOpenModal={handleOpenModal}
-            />
+            {memoizedChatMessages}
             {questionStage === 4 && (
               <ChatInput
                 prompt={userMessage}
