@@ -1,14 +1,53 @@
 import React, { useState, useEffect } from "react";
+import useChatbot from "../hooks/useChatbot";
+import { fetchPineconeProfile } from "../utils/pineconeHelpers";
 
-const ProfileModal = ({ userId }) => {
+const ProfileModal = ({ userId, onClose }) => {
   const [activeTab, setActiveTab] = useState("info");
+  const [userData, setUserData] = useState(null);
+
+  // Pinecone Call to Fetch the UserID Data.
+  useEffect(() => {
+    const fetchPinecone = async () => {
+      const data = await fetchPineconeProfile(userId);
+      console.log("data", data);
+
+      // if data is successful, set it to the user data
+      if (data) {
+        setUserData(data);
+      }
+    };
+
+    fetchPinecone();
+    console.log("re-ndering ProfileModal for userId", userId);
+  }, [userId]);
+
+  if (!userData)
+    return (
+      <div className="absolute bg-gray-800 bg-opacity-10 w-full h-full flex flex-row justify-end">
+        <div className="bg-white w-6/12 p-12 flex flex-col gap-8">
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              onClose();
+            }}
+          >
+            back to chat
+          </button>
+          <div className="flex flex-row justify-between">
+            Loading profile for {userId}...
+          </div>
+        </div>
+      </div>
+    );
+
   return (
     <>
       <div className="absolute bg-gray-800 bg-opacity-10 w-full h-full flex flex-row justify-end">
         <div className="bg-white w-6/12 p-12 flex flex-col gap-8">
           <div className="flex flex-row justify-between">
             <a
-              href="/profile"
+              href="/"
               className="flex items-center gap-2 text-grey-extraDark hover:-translate-x-1 transition-transform"
             >
               <svg
@@ -23,7 +62,14 @@ const ProfileModal = ({ userId }) => {
                   fill="#878787"
                 />
               </svg>
-              <span>back to chat</span>
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  onClose();
+                }}
+              >
+                back to chat
+              </button>
             </a>
             <a
               href="#"
@@ -58,7 +104,7 @@ const ProfileModal = ({ userId }) => {
 
                 <p className="md:text-m text-sm">location</p>
               </div>
-              <p className="md:text-3xl text-xl">name</p>
+              <p className="md:text-3xl text-xl">name // {userId}</p>
             </div>
           </div>
           <div className="w-full flex gap-14 justify-center">
@@ -114,6 +160,12 @@ const ProfileModal = ({ userId }) => {
               </div>
             </div>
           )}
+          {/* Display Data */}
+          <p>Approach: {userData?.approaches[0]}</p>
+          {/* <p>Test Data: {userData?.bio}</p> */}
+          <p>Test Data: {userData?.location}</p>
+          <p>Test Data: {userData?.country}</p>
+          <p>Test Data: {userData?.profile_link}</p>
         </div>
       </div>
     </>

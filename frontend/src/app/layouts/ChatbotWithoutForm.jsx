@@ -1,4 +1,5 @@
-import React, { useEffect } from "react";
+"use client";
+import React, { useEffect, useState } from "react";
 import useChatbot from "../hooks/useChatbot";
 import Title from "../components/Title";
 import ChatInput from "../components/ChatInput";
@@ -22,6 +23,9 @@ const Chatbot = ({
    *
    *
    */
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState(null);
+
   const {
     userMessage,
     messages,
@@ -48,6 +52,17 @@ const Chatbot = ({
 
     initializeChat();
   }, []);
+
+  const handleOpenModal = (userId) => {
+    setSelectedUserId(userId);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    // Optionally, reset the selectedUserId after a short delay
+    setTimeout(() => setSelectedUserId(null), 300);
+  };
 
   return (
     <>
@@ -92,6 +107,7 @@ const Chatbot = ({
               botPngFile={botPngFile}
               onButtonClick={handleButtonClick}
               questionStage={questionStage}
+              onOpenModal={handleOpenModal}
             />
             {questionStage === 4 && (
               <ChatInput
@@ -110,7 +126,9 @@ const Chatbot = ({
         </>
       </div>
       <Footer />
-      <ProfileModal userId={"user-123"} />
+      {isModalOpen && (
+        <ProfileModal userId={selectedUserId} onClose={handleCloseModal} />
+      )}
     </>
   );
 };

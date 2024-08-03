@@ -5,9 +5,10 @@ import { aspekta } from "../styles/fonts";
 import DeleteIcon from "../components/DeleteIcon";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
+import { fetchPineconeProfile } from "../utils/pineconeHelpers";
 
 const EditProfileForm = ({ handleManualProfile }) => {
-const { user } = useUser();
+  const { user } = useUser();
   const [editingIndex, setEditingIndex] = useState(null);
   const [profileData, setProfileData] = useState({
     name: "",
@@ -262,29 +263,30 @@ const { user } = useUser();
     return null;
   };
 
-  const fetchPineconeProfile = async (bioLink) => {
-    if (!bioLink) {
-      console.warn("Warning: No bio link supplied");
-      return null;
-    }
+  // TO DO: See if this works with refactoring to utils/pineconeHelpers otherwise remove it
+  // const fetchPineconeProfile = async (bioLink) => {
+  //   if (!bioLink) {
+  //     console.warn("Warning: No bio link supplied");
+  //     return null;
+  //   }
 
-    try {
-      const response = await fetch(
-        `${
-          process.env.NEXT_PUBLIC_API_URL
-        }/profile?bio_link=${encodeURIComponent(bioLink)}`
-      );
-      if (!response.ok) {
-        throw new Error("Failed to fetch");
-      }
-      const data = await response.json();
-      console.log("fetchPineconeProfile", data);
-      return data?.data;
-    } catch (error) {
-      console.error("Error fetching profile:", error);
-      return null;
-    }
-  };
+  //   try {
+  //     const response = await fetch(
+  //       `${
+  //         process.env.NEXT_PUBLIC_API_URL
+  //       }/profile?bio_link=${encodeURIComponent(bioLink)}`
+  //     );
+  //     if (!response.ok) {
+  //       throw new Error("Failed to fetch");
+  //     }
+  //     const data = await response.json();
+  //     console.log("fetchPineconeProfile", data);
+  //     return data?.data;
+  //   } catch (error) {
+  //     console.error("Error fetching profile:", error);
+  //     return null;
+  //   }
+  // };
 
   return (
     <>

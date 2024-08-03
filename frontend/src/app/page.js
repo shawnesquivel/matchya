@@ -2,7 +2,7 @@
 import React from "react";
 import ChatbotWithoutForm from "./layouts/ChatbotWithoutForm";
 
-const Kitsune = () => {
+const HomePage = () => {
   return (
     <>
       <ChatbotWithoutForm
@@ -14,4 +14,4 @@ const Kitsune = () => {
   );
 };
 
-export default Kitsune;
+export default HomePage;

@@ -6,7 +6,14 @@ import Loader from "./Loader";
 import useTypingEffect from "./useTypingEffect";
 
 const MessageItem = memo(
-  ({ message, botPngFile, isLast, onButtonClick, questionStage }) => {
+  ({
+    message,
+    botPngFile,
+    isLast,
+    onButtonClick,
+    questionStage,
+    onOpenModal,
+  }) => {
     const assistantImage = `/assets/images/${botPngFile}.png`;
 
     /* PHASE 2: Play the audio if it's present */
@@ -73,7 +80,6 @@ const MessageItem = memo(
         {message.sourceDocuments && (
           <div className="">
             <div className="mt-3 grid lg:grid-cols-3 gap-4 grid-cols-1">
-              
               {matches &&
                 matches.map((match) => {
                   console.log(match);
@@ -197,13 +203,18 @@ const MessageItem = memo(
                             "
                           </a>
                         )}
-                        <a
-                          href={`/profile-page/${id}`}
-                          target="_blank"
+                        <button
+                          onClick={() => {
+                            console.log(
+                              "Passing bio link to modal",
+                              validatedBioLink
+                            );
+                            onOpenModal(validatedBioLink);
+                          }}
                           className="wfull px-4 pt-3 rounded-full flex align-middle justify-center"
                         >
                           View profile
-                        </a>
+                        </button>
                       </div>
                     </div>
                   );
@@ -252,6 +263,7 @@ const ChatMessages = ({
   loadingNewMsg,
   onButtonClick,
   questionStage,
+  onOpenModal,
 }) => {
   const messagesEndRef = useRef(null);
 
@@ -284,6 +296,7 @@ const ChatMessages = ({
                 botPngFile={botPngFile}
                 onButtonClick={onButtonClick}
                 questionStage={questionStage}
+                onOpenModal={onOpenModal}
               />
             );
           })}
