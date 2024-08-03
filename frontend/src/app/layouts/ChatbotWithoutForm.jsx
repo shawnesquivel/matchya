@@ -7,6 +7,7 @@ import TwoColumnLayout from "../components/TwoColumnLayout";
 import NewChatButton from "./NewChatButton";
 import Footer from "../components/Footer";
 import { aspekta } from "../styles/fonts";
+import ProfileModal from "../components/ProfileModal";
 
 const Chatbot = ({
   emoji = "🤖",
@@ -50,7 +51,7 @@ const Chatbot = ({
 
   return (
     <>
-      <div className="bg-grey gap-2 flex flex-col px-2 pt-0 lg:gap-6 lg:px-20 md:px-10 h-screen">
+      <div className="bg-grey gap-2 flex flex-col px-2 pt-0 lg:gap-6 lg:px-20 md:px-10 h-full pb-14">
         <TwoColumnLayout
           leftColumn={
             <>
@@ -109,6 +110,7 @@ const Chatbot = ({
         </>
       </div>
       <Footer />
+      <ProfileModal userId={"user-123"} />
     </>
   );
 };

@@ -73,8 +73,10 @@ const MessageItem = memo(
         {message.sourceDocuments && (
           <div className="">
             <div className="mt-3 grid lg:grid-cols-3 gap-4 grid-cols-1">
+              
               {matches &&
                 matches.map((match) => {
+                  console.log(match);
                   const id = match.id;
                   const metadata = match.metadata;
                   let bookingLink;
@@ -195,6 +197,13 @@ const MessageItem = memo(
                             "
                           </a>
                         )}
+                        <a
+                          href={`/profile-page/${id}`}
+                          target="_blank"
+                          className="wfull px-4 pt-3 rounded-full flex align-middle justify-center"
+                        >
+                          View profile
+                        </a>
                       </div>
                     </div>
                   );

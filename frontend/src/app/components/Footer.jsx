@@ -4,9 +4,9 @@ import { aspekta } from "../styles/fonts";
 const Footer = () => {
   return (
     <footer
-      className={`sm:p-4 px-1 py-2 gap-1 bg-white-dark text-mblack w-full flex flex-col-reverse sm:flex-row justify-between align-center text-xs ${aspekta.className}`}
+      className={`absolute bottom-0 sm:p-4 px-1 py-2 gap-1 bg-white-dark text-mblack w-full flex flex-col-reverse sm:flex-row justify-between align-center text-xs ${aspekta.className}`}
     >
-      <div className="flex flex-col">
+      <div className="flex gap-2">
         <p className={`sm:text-left text-center ${aspekta.className}`}>
           &copy; matchya.
         </p>

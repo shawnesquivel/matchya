@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 
 const EditProfileForm = ({ handleManualProfile }) => {
-  const { user } = useUser();
+const { user } = useUser();
   const [editingIndex, setEditingIndex] = useState(null);
   const [profileData, setProfileData] = useState({
     name: "",
