@@ -40,7 +40,7 @@ const ProfilePage = () => {
       userObj = {
         firstName: user?.firstName,
         lastName: user?.lastName,
-        emailAddress: user?.externalAccounts[0].emailAddress,
+        emailAddress: user?.externalAccounts[0]?.emailAddress,
         profileStarted: user?.unsafeMetadata?.profileStarted,
         ...user?.unsafeMetadata?.webScrapeData?.data,
       };
