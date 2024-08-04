@@ -53,7 +53,7 @@ const StripeSubscriptions = ({
 
   return (
     <div
-    className={`md:h-screen bg-white gap-2 flex flex-col p-4 h-screen ${aspekta.className} transition ease-in-out`}
+    className={`md:h-screen bg-beige-light gap-2 flex flex-col sm-p-4 h-screen ${aspekta.className} transition ease-in-out`}
     id="page-layout"
   >
     <div className="h-full">
@@ -116,7 +116,7 @@ const StripeSubscriptions = ({
               <span>Back to matchya directory</span>
             </a>
 
-            <div className="flex flex-col md:gap-6 gap-2 lg:text-left text-center">
+            <div className="flex flex-col md:gap-6 gap-2 lg:text-left text-center sm:my-0 my-4">
               <h1 className="lg:text-7xl text-3xl">Automate your online referrals</h1>
               <h2 className="lg:text-2xl text-md">
                 Get listed on Matchya today
@@ -125,7 +125,7 @@ const StripeSubscriptions = ({
 
           </div>
 
-          <div className="flex items-center justify-center z-20 bg-[#fff] rounded-2xl border border-gray-300 w-8/12 m-auto p-8" id="">
+          <div className="flex items-center justify-center z-20 bg-[#fff] rounded-2xl border border-gray-300 sm:w-8/12 sm:m-auto w-full p-8" id="">
               <StripePricingTable
             pricingTableId="prctbl_1Pi1cqI5HXM3pHflJ4c6fBLz"
             publishableKey={process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}

@@ -6,6 +6,7 @@ import DeleteIcon from "../components/DeleteIcon";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 import { fetchPineconeProfile } from "../utils/pineconeHelpers";
+import { UserButton } from "@clerk/clerk-react";
 
 const EditProfileForm = ({ handleManualProfile }) => {
   const { user } = useUser();
@@ -246,7 +247,7 @@ const EditProfileForm = ({ handleManualProfile }) => {
 
     if (user?.unsafeMetadata?.profileStarted === true) {
       return (
-        <div className="flex flex-row gap-4">
+        <div className="flex sm:flex-row sm:gap-4 flex-col gap-2">
           <span>Status: Your profile is not live yet.</span>
           <Link
             href={`/profile`}
@@ -291,14 +292,17 @@ const EditProfileForm = ({ handleManualProfile }) => {
   return (
     <>
       <div
-        className={`bg-white gap-2 flex flex-col p-4 h-full lg:h-screen ${aspekta.className} transition ease-in-out`}
+        className={`bg-white gap-2 flex flex-col sm:p-4 p-1 h-full lg:h-screen ${aspekta.className} transition ease-in-out`}
       >
         <div className="bg-grey px-2 pt-0 flex flex-col lg:gap-6 lg:px-20 lg:py-16 md:px-10 rounded-2xl h-full z-10 overflow-hidden relative">
           {" "}
-          <div className="flex w-full justify-between items-center">
+          <div className="absolute right-4 top-4">
+            <UserButton userProfileUrl="/profile" />
+          </div>
+          <div className="flex sm:w-full justify-between items-center sm:p-unset p-2 flex-col sm:flex-row w-8/12">
             {profileData?.name ? (
               <div className="flex flex-col gap-2">
-                <h1 className="text-2xl font-bold">
+                <h1 className="sm:text-2xl font-bold text-base">
                   Awesome! Here's what we've found about you:
                 </h1>
                 {determineProfileStatusText()}
@@ -317,17 +321,17 @@ const EditProfileForm = ({ handleManualProfile }) => {
                 </Link>
               </div>
             )}
-            <div className="flex flex-col gap-2 items-center">
+            <div className="flex flex-col gap-2 items-center sm:relative absolute bottom-0  z-10 ">
               <PrimaryBtn
                 text={`${savingProfile ? `Saving...` : `Save Profile`}`}
                 onClick={saveProfile}
-                className="border-green-light"
+                className="border-green-light bg-white sm:bg-unset"
               />
               {success && <p className="text-xs">Your profile was saved.</p>}
             </div>
           </div>
-          <div className="flex gap-6 h-full">
-            <div className="flex flex-col gap-1">
+          <div className="flex gap-6 h-full sm:flex-row flex-col">
+            <div className="flex sm:flex-col sm:gap-1 flex-row gap-3">
               <button
                 onClick={() => setActiveTab("info")}
                 className={`relative py-1 px-2 text-left w-fit ${
@@ -370,9 +374,9 @@ const EditProfileForm = ({ handleManualProfile }) => {
                 ></span>
               </button>
             </div>
-            <div className="h-full w-full">
+            <div className="h-full w-full overflow-y-scroll pb-40">
               {activeTab === "info" && (
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4 mb-8">
                   <div className="profile-field">
                     <label>Name</label>
                     <input
