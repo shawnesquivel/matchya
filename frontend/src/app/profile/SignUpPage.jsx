@@ -25,7 +25,7 @@ const SignUpPage = () => {
             className="w-auto md:h-11 h-8"
             alt="matchya for therapists"
           />
-          <div className="flex-row gap-2 md:flex hidden">
+          {/* <div className="flex-row gap-2 md:flex hidden">
             <PrimaryBtn
               text="Log In"
               onClick={undefined}
@@ -36,7 +36,7 @@ const SignUpPage = () => {
               onClick={undefined}
               className="bg-green-light"
             />
-          </div>
+          </div> */}
         </div>
 
         <div

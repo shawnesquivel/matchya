@@ -25,7 +25,7 @@ const ProfileModal = ({ userId, onClose }) => {
   if (!userData)
     return (
       <div className="absolute bg-gray-800 bg-opacity-10 w-full h-full flex flex-row justify-end">
-        <div className="bg-white w-6/12 p-12 flex flex-col gap-8">
+        <div className="bg-white md:w-6/12 w-full p-12 flex flex-col gap-8">
           <button
             onClick={(e) => {
               e.preventDefault();
@@ -35,7 +35,7 @@ const ProfileModal = ({ userId, onClose }) => {
             back to chat
           </button>
           <div className="flex flex-row justify-between">
-            Loading profile for {userId}...
+            Loading profile...
           </div>
         </div>
       </div>
@@ -43,12 +43,16 @@ const ProfileModal = ({ userId, onClose }) => {
 
   return (
     <>
-      <div className="absolute bg-gray-800 bg-opacity-10 w-full h-full flex flex-row justify-end">
-        <div className="bg-white w-6/12 p-12 flex flex-col gap-8">
-          <div className="flex flex-row justify-between">
+      <div className="absolute bg-gray-800 bg-opacity-10 w-full h-screen flex flex-row justify-end">
+        <div className="bg-white md:w-6/12 w-full sm:p-12 p-4 flex flex-col sm:gap-8 gap-4 h-full">
+          <div className="flex sm:flex-row flex-col justify-between">
             <a
-              href="/"
-              className="flex items-center gap-2 text-grey-extraDark hover:-translate-x-1 transition-transform"
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                onClose();
+              }}
+              className="flex w-full items-center gap-2 text-grey-extraDark hover:-translate-x-1 transition-transform"
             >
               <svg
                 width="9"
@@ -71,19 +75,86 @@ const ProfileModal = ({ userId, onClose }) => {
                 back to chat
               </button>
             </a>
-            <a
-              href="#"
-              target="_blank"
-              className="wfull bg-mblack text-white px-4 py-3 rounded-full flex align-middle justify-center"
-            >
-              book with
-            </a>
+            <div className="flex sm:gap-3 gap-1 justify-between w-full sm:justify-end">
+              <a
+                href={userData?.bio_link}
+                target="_blank"
+                className="wfull text-mblack px-4 py-3 rounded-full flex align-middle justify-center lowercase"
+              >
+                <div className="flex justify-center items-center mr-1">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 14 14"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <g clip-path="url(#clip0_416_2225)">
+                      <path
+                        d="M7.00033 12.8337C10.222 12.8337 12.8337 10.222 12.8337 7.00033C12.8337 3.77866 10.222 1.16699 7.00033 1.16699C3.77866 1.16699 1.16699 3.77866 1.16699 7.00033C1.16699 10.222 3.77866 12.8337 7.00033 12.8337Z"
+                        stroke="black"
+                        stroke-width="1.16667"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                      <path
+                        d="M1.16699 7H12.8337"
+                        stroke="black"
+                        stroke-width="1.16667"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                      <path
+                        d="M7.00033 12.8337C8.289 12.8337 9.33366 10.222 9.33366 7.00033C9.33366 3.77866 8.289 1.16699 7.00033 1.16699C5.71165 1.16699 4.66699 3.77866 4.66699 7.00033C4.66699 10.222 5.71165 12.8337 7.00033 12.8337Z"
+                        stroke="black"
+                        stroke-width="1.16667"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                      <path
+                        d="M2.87598 2.95801C3.9316 4.01364 5.38994 4.66656 7.00075 4.66656C8.6116 4.66656 10.0699 4.01364 11.1256 2.95801"
+                        stroke="black"
+                        stroke-width="1.16667"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                      <path
+                        d="M11.1256 11.0425C10.0699 9.98691 8.6116 9.33398 7.00075 9.33398C5.38994 9.33398 3.9316 9.98691 2.87598 11.0425"
+                        stroke="black"
+                        stroke-width="1.16667"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                      />
+                    </g>
+                    <defs>
+                      <clipPath id="clip0_416_2225">
+                        <rect width="14" height="14" fill="white" />
+                      </clipPath>
+                    </defs>
+                  </svg>
+                </div>
+                website
+              </a>
+              <a
+                href={userData?.booking_link}
+                target="_blank"
+                className="wfull bg-mblack text-white px-4 py-3 rounded-full flex align-middle justify-center lowercase"
+              >
+                book with {userData?.name.split(" ")[0]}
+              </a>
+            </div>
           </div>
-          <div className="flex gap-8">
+          <div className="flex sm:gap-8 gap-4">
             <div className="relative h-20 w-20 aspect-square">
               <img
-                src="#"
-                // alt={`profile pic ${metadata.name}`}
+                src={
+                  userData?.profile_link &&
+                  userData.profile_link.startsWith("http") &&
+                  userData.profile_link !== "None"
+                    ? userData.profile_link
+                    : "/assets/images/default-pp.png"
+                }
+                // alt={`profile pic ${userData?.name}`}
                 className="aspect-square absolute inset-0 w-full h-full object-cover rounded-full"
               />
             </div>
@@ -102,19 +173,19 @@ const ProfileModal = ({ userId, onClose }) => {
                   />
                 </svg>
 
-                <p className="md:text-m text-sm">location</p>
+                <p className="md:text-m text-sm">{userData?.location}</p>
               </div>
-              <p className="md:text-3xl text-xl">name // {userId}</p>
+              <p className="md:text-3xl text-xl">{userData?.name}</p>
             </div>
           </div>
-          <div className="w-full flex gap-14 justify-center">
+          <div className="w-full flex sm:gap-14 justify-center gap-4">
             <button
               onClick={() => setActiveTab("info")}
               className={`relative py-1 px-2 text-left w-fit ${
                 activeTab === "info" ? "text-gray-800" : "text-gray-600"
               } transition-all duration-300 group`}
             >
-              info
+              summary
               <span
                 className={`absolute bottom-0 left-0 h-0.5 bg-gray-600 transition-width duration-300 group-hover:w-full ${
                   activeTab === "info" ? "w-full" : "w-0"
@@ -134,38 +205,82 @@ const ProfileModal = ({ userId, onClose }) => {
                 }`}
               ></span>
             </button>
+            <button
+              onClick={() => setActiveTab("fees")}
+              className={`relative py-1 px-2 text-left w-fit ${
+                activeTab === "specialties" ? "text-gray-800" : "text-gray-600"
+              } transition-all duration-300 group`}
+            >
+              fees
+              <span
+                className={`absolute bottom-0 left-0 h-0.5 bg-gray-600 transition-width duration-300 group-hover:w-full ${
+                  activeTab === "fees" ? "w-full" : "w-0"
+                }`}
+              ></span>
+            </button>
           </div>
           {activeTab === "info" && (
-            <div className="w-full">
-              <div className="profile-field">
-                <p>
-                  Lorem ipsum dolor sit amet consectetur. Senectus tempor sed
-                  enim orci. Arcu id quam lacus vitae sagittis erat suspendisse
-                  ut quis. Pharetra phasellus consequat orci sed posuere. Tortor
-                  tempor lectus mi morbi vitae. Quisque nibh felis cursus eu
-                  lorem nibh. Bibendum nisi elementum ac nisl nibh vel. Quis
-                  faucibus dolor consequat lacus.
-                </p>
+            <div className="w-full h-full overflow-y-scroll">
+              <div className=" flex flex-col gap-8">
+                <div className="flex flex-col gap-2">
+                  <p className="uppercase text-xs">About</p>
+                  <p className="lg:text-md text-md leading-tight">
+                    {userData?.bio}
+                  </p>
+                </div>
               </div>
             </div>
           )}
           {activeTab === "specialties" && (
-            <div className="w-full">
-              <div className="profile-field">
-                <p>
-                  Lorem ipsum dolor sit amet consectetur. Senectus tempor sed
-                  enim orci. Arcu id quam lacus vitae sagittis erat suspendisse
-                  ut quis.
-                </p>
+            <div className="w-full h-full overflow-y-scroll">
+              <div className=" flex flex-col gap-8">
+                <div className="flex flex-col gap-2">
+                  <p className="uppercase text-xs">Works at</p>
+                  <p className="lg:text-md text-md leading-tight">
+                    {userData?.clinic}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <p className="uppercase text-xs">Speaks</p>
+                  <p className="lg:text-md text-md leading-tight">
+                    {userData?.languages}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <p className="uppercase text-xs">Qualifications</p>
+                  <div className="">
+                    <p className="lg:text-md text-md leading-tight">
+                      {userData?.qualifications}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <p className="uppercase text-xs">Works with</p>
+                  <ul className="flex gap-y-1 gap-x-2 wfull flex-wrap">
+                    {userData.specialties.slice(0, 4).map((el, index) => (
+                      <li className="whitespace-nowrap flex px-1 py-1 border border-orange rounded-full text-orange text-xs">
+                        {el}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             </div>
           )}
-          {/* Display Data */}
-          <p>Approach: {userData?.approaches[0]}</p>
-          {/* <p>Test Data: {userData?.bio}</p> */}
-          <p>Test Data: {userData?.location}</p>
-          <p>Test Data: {userData?.country}</p>
-          <p>Test Data: {userData?.profile_link}</p>
+          {activeTab === "fees" && (
+            <div className="w-full h-full overflow-y-scroll">
+              <div className=" flex flex-col gap-8">
+                <div className="flex flex-col gap-2">
+                  <p className="uppercase text-xs">Pricing summary</p>
+                  <ul className="flex flex-col gap-3">
+                    {userData.fees.slice(0, 4).map((el, index) => (
+                      <li className="tex-md">{el}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </>

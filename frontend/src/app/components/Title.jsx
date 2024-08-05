@@ -7,9 +7,13 @@ const Title = ({ emoji, headingText }) => {
   return (
     <>
       {/* <p className="text-center mb-4 text-2xl">{emoji}</p> */}
-      <div className="py-4">      
+      <div className="py-4">
         <a href="#">
-          <img className="w-fit h-10" src="/assets/images/matchyalogo.png" alt="" />
+          <img
+            className="w-fit sm:h-10 h-6"
+            src="/assets/images/matchyalogo.png"
+            alt=""
+          />
         </a>
       </div>
 

@@ -137,8 +137,11 @@ const MessageItem = memo(
                           <div className="relative h-20 aspect-square">
                             <img
                               src={
-                                metadata?.image ||
-                                "/assets/images/default-pp.png"
+                                metadata?.profile_link &&
+                                metadata.profile_link.startsWith("http") &&
+                                metadata.profile_link !== "None"
+                                  ? metadata.profile_link
+                                  : "/assets/images/default-pp.png"
                               }
                               alt={`profile pic ${metadata.name}`}
                               className="aspect-square absolute inset-0 w-full h-full object-cover rounded-full"
@@ -157,7 +160,7 @@ const MessageItem = memo(
                           </div>
                         </div>
                         <p className="lg:text-lg text-md leading-tight">
-                          {metadata?.summary.slice(0, 150)}.
+                          {metadata?.summary.slice(0, 150)}...
                         </p>
                         {/* <p>{metadata?.bio.slice(0, 50)}</p> */}
                         <ul className="flex gap-y-1 gap-x-2 wfull flex-wrap">
@@ -169,7 +172,7 @@ const MessageItem = memo(
                         </ul>
                       </div>
                       <div className="flex flex-col align-center">
-                        {validatedBookingLink ? (
+                        {/* {validatedBookingLink ? (
                           <a
                             href={validatedBookingLink}
                             target="_blank"
@@ -185,8 +188,8 @@ const MessageItem = memo(
                           >
                             Find on Google
                           </a>
-                        )}
-                        {validatedBioLink ? (
+                        )} */}
+                        {/* {validatedBioLink ? (
                           <a
                             href={validatedBioLink}
                             target="_blank"
@@ -201,8 +204,8 @@ const MessageItem = memo(
                             className="wfull text-transparent px-4 pt-3 rounded-full flex align-middle justify-center pointer-events-none"
                           >
                             "
-                          </a>
-                        )}
+                          </a> 
+                        )}*/}
                         <button
                           onClick={() => {
                             console.log(
@@ -211,7 +214,7 @@ const MessageItem = memo(
                             );
                             onOpenModal(validatedBioLink);
                           }}
-                          className="wfull px-4 pt-3 rounded-full flex align-middle justify-center"
+                          className="wfull bg-mblack text-white px-4 py-3 rounded-full flex align-middle justify-center"
                         >
                           View profile
                         </button>
