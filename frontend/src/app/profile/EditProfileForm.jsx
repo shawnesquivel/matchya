@@ -305,6 +305,7 @@ const EditProfileForm = ({ handleManualProfile }) => {
                 <h1 className="sm:text-2xl font-bold text-base">
                   Awesome! Here's what we've found about you:
                 </h1>
+                <CustomerProfileBtn />
                 {determineProfileStatusText()}
               </div>
             ) : (
