@@ -5,3 +5,4 @@ mimir-env
 .chalice/venv/
 __pycache__
 env/
+demos/
