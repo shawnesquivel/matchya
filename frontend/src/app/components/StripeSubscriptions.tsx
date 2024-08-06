@@ -1,8 +1,9 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import StripePricingTable from "./StripePricingTable";
 import { aspekta } from "../styles/fonts";
+import { useUser } from "@clerk/nextjs";
 
 const StripeSubscriptions = ({
   userId = "user_test_123",
@@ -12,6 +13,11 @@ const StripeSubscriptions = ({
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { user } = useUser();
+
+  useEffect(() => {
+    console.log("loaded user", user);
+  }, [user]);
 
   useEffect(() => {
     const query = new URLSearchParams(window.location.search);
@@ -22,34 +28,6 @@ const StripeSubscriptions = ({
       setMessage("Subscription canceled. You can try again when youre ready.");
     }
   }, []);
-
-  const handleSubscribe = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch("/api/create-checkout-session", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          lookup_key: "6_Month_Subscription-c11167f",
-          client_reference_id: userId,
-        }),
-      });
-      const data = await response.json();
-
-      // Navigate to Stripe checkout page
-      if (data.url) {
-        router.push(data.url);
-      } else {
-        setMessage("An error occurred. Please try again.");
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      setMessage("An error occurred. Please try again.");
-    }
-    setIsLoading(false);
-  };
 
   return (
     <div
@@ -127,9 +105,9 @@ const StripeSubscriptions = ({
 
           <div className="flex items-center justify-center z-20 bg-[#fff] rounded-2xl border border-gray-300 sm:w-8/12 sm:m-auto w-full p-8" id="">
               <StripePricingTable
-            pricingTableId="prctbl_1Pi1cqI5HXM3pHflJ4c6fBLz"
-            publishableKey={process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
-            clientReferenceId={userId}
+                pricingTableId="prctbl_1Pi1cqI5HXM3pHflJ4c6fBLz"
+                publishableKey={process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}
+                clientReferenceId={userId}
           />
           </div>
         </div>

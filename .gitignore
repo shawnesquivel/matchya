@@ -6,3 +6,4 @@ mimir-env
 __pycache__
 env/
 demos/
+.env
