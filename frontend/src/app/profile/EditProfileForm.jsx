@@ -7,7 +7,6 @@ import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 import { fetchPineconeProfile } from "../utils/pineconeHelpers";
 import { UserButton } from "@clerk/clerk-react";
-
 const EditProfileForm = ({ handleManualProfile }) => {
   const { user } = useUser();
   const [editingIndex, setEditingIndex] = useState(null);
@@ -305,7 +304,6 @@ const EditProfileForm = ({ handleManualProfile }) => {
                 <h1 className="sm:text-2xl font-bold text-base">
                   Awesome! Here's what we've found about you:
                 </h1>
-                <CustomerProfileBtn />
                 {determineProfileStatusText()}
               </div>
             ) : (
