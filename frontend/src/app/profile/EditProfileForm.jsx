@@ -51,7 +51,7 @@ const EditProfileForm = ({ handleManualProfile }) => {
       console.log("fetch Pinecone Profile", pineconeProfile);
       if (pineconeProfile?.bio_link) {
         setProfileData({
-          clerk_user_id: user.id || "",
+          clerk_user_id: pineconeProfile?.clerk_user_id || user.id || "",
           name: pineconeProfile.name || "",
           gender: pineconeProfile.gender || "male",
           subscription_id: pineconeProfile.subscription_id || "",
@@ -79,7 +79,7 @@ const EditProfileForm = ({ handleManualProfile }) => {
       if (webScrapeData?.data) {
         const scrapeData = webScrapeData.data;
         setProfileData({
-          clerk_user_id: user.id || "",
+          clerk_user_id: pineconeProfile?.clerk_user_id || user.id || "",
           subscription_id: scrapeData?.subscription_id || "",
           name: scrapeData.name || "",
           gender: scrapeData.gender || "male",
@@ -284,6 +284,7 @@ const EditProfileForm = ({ handleManualProfile }) => {
                   Awesome! Here's what we've found about you:
                 </h1>
                 <p>Clerk User ID: {user.id}</p>
+                <p>Pinecone Clerk User ID: {profileData?.clerk_user_id}</p>
                 {determineProfileStatusText()}
                 <p>Subscription Status: {profileData?.subscription_id}</p>
                 <Link href="/subscriptions">Manage My Subscription</Link>
@@ -297,6 +298,7 @@ const EditProfileForm = ({ handleManualProfile }) => {
                     : "Help clients find you by filling in your profile."}
                 </h1>
                 <p>Clerk User ID: {user.id}</p>
+                <p>Pinecone Clerk User ID: {profileData?.clerk_user_id}</p>
                 <Link
                   href={`/profile`}
                   className="underline underline-offset-4"
