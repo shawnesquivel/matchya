@@ -53,6 +53,7 @@ const EditProfileForm = ({ handleManualProfile }) => {
         setProfileData({
           name: pineconeProfile.name || "",
           gender: pineconeProfile.gender || "male",
+          subscription_id: pineconeProfile.subscription_id || "",
           location: pineconeProfile.location || "",
           country: pineconeProfile.country || "",
           clinic: pineconeProfile.clinic || "",
