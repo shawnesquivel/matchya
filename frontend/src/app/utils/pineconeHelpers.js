@@ -24,7 +24,6 @@ export const fetchPineconeProfile = async (bioLink) => {
 
 export const updatePineconeProfileSubscription = async (
   clerkUserId,
-  pineconeEmbeddingsId,
   stripeCustomerId,
   stripeSubscriptionId
 ) => {
@@ -43,13 +42,12 @@ export const updatePineconeProfileSubscription = async (
         },
         body: JSON.stringify({
           clerkUserId,
-          pineconeEmbeddingsId,
           stripeCustomerId,
           stripeSubscriptionId,
         }),
       }
     );
-    // return dummy response
+    console.log("updatePineconeProfileSubscription", response);
 
     if (!response.ok) {
       throw new Error("Failed to update Pinecone profile subscription");

@@ -59,9 +59,6 @@ export async function POST(req: NextRequest) {
         const clerkUserId = session.client_reference_id;
         const stripeCustomerId = session.customer;
         const subscriptionId = session.subscription;
-        // find the user email from clerk
-
-        const { emailAddress } = await fetchPineconeProfile();
 
         const profileUpdateStatus = await updatePineconeProfileSubscription(
           clerkUserId,
@@ -75,9 +72,8 @@ export async function POST(req: NextRequest) {
           console.log(`Pinecone profile update failed for ${clerkUserId}`);
         }
 
-        console.log("Updated subscription status");
+        console.log("Updated subscription status returning", true);
         return NextResponse.json({ received: true });
-        break;
       default:
         console.log(`Unhandled event type ${event.type}`);
     }
