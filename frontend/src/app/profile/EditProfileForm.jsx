@@ -51,6 +51,7 @@ const EditProfileForm = ({ handleManualProfile }) => {
       console.log("fetch Pinecone Profile", pineconeProfile);
       if (pineconeProfile?.bio_link) {
         setProfileData({
+          clerk_user_id: user.id || "",
           name: pineconeProfile.name || "",
           gender: pineconeProfile.gender || "male",
           subscription_id: pineconeProfile.subscription_id || "",
@@ -78,6 +79,8 @@ const EditProfileForm = ({ handleManualProfile }) => {
       if (webScrapeData?.data) {
         const scrapeData = webScrapeData.data;
         setProfileData({
+          clerk_user_id: user.id || "",
+          subscription_id: scrapeData?.subscription_id || "",
           name: scrapeData.name || "",
           gender: scrapeData.gender || "male",
           location: scrapeData.location || "",
@@ -280,8 +283,10 @@ const EditProfileForm = ({ handleManualProfile }) => {
                 <h1 className="sm:text-2xl font-bold text-base">
                   Awesome! Here's what we've found about you:
                 </h1>
+                <p>Clerk User ID: {user.id}</p>
                 {determineProfileStatusText()}
                 <p>Subscription Status: {profileData?.subscription_id}</p>
+                <Link href="/subscriptions">Manage My Subscription</Link>
               </div>
             ) : (
               <div className="flex flex-col gap-2">
