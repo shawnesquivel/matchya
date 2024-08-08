@@ -1,23 +1,42 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
-import StripePricingTable from "./StripePricingTable";
+import React, { useState, useEffect } from "react";
 import { aspekta } from "../styles/fonts";
 import { useUser } from "@clerk/nextjs";
 
-const StripeSubscriptions = ({
-  userId = "user_test_123",
-}: {
-  userId: string;
-}) => {
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      "stripe-pricing-table": React.DetailedHTMLProps<
+        React.HTMLAttributes<HTMLElement>,
+        HTMLElement
+      >;
+    }
+  }
+}
+
+const StripeSubscriptions = () => {
   const [message, setMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
+  const [isScriptLoaded, setIsScriptLoaded] = useState(false);
   const { user } = useUser();
 
   useEffect(() => {
     console.log("loaded user", user);
   }, [user]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && !isScriptLoaded) {
+      const script = document.createElement("script");
+      script.src = "https://js.stripe.com/v3/pricing-table.js";
+      script.async = true;
+      script.onload = () => {
+        console.log("Stripe Pricing Table script loaded");
+        setIsScriptLoaded(true);
+      };
+      script.onerror = (error) =>
+        console.error("Error loading Stripe Pricing Table script:", error);
+      document.body.appendChild(script);
+    }
+  }, [isScriptLoaded]);
 
   useEffect(() => {
     const query = new URLSearchParams(window.location.search);
@@ -35,20 +54,6 @@ const StripeSubscriptions = ({
       id="page-layout"
     >
       <div className="h-full">
-        {/* <h1 className="text-2xl font-bold mb-4">Test Subscriptions</h1> */}
-        {/* {message && <p className="mb-4 text-green-600">{message}</p>} */}
-        {/* <div className="mb-4">
-        <h2 className="text-xl font-semibold">6 Month Subscription</h2>
-        <p className="text-gray-600">CA$69.99 every 6 months</p>
-      </div> */}
-        {/* <button
-        onClick={handleSubscribe}
-        disabled={isLoading}
-        className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 transition duration-200"
-      >
-        {isLoading ? "Processing..." : "Subscribe"}
-      </button> */}
-
         <div className="md:bg-grey px-2 pt-0 lg:gap-6 lg:px-20 md:px-10 md:rounded-2xl h-full z-10 md:overflow-hidden relative">
           <div
             className="absolute lg:w-6/12 lg:h-full md:right-0 lg:top-0 z-0 w-full h-1/2 bottom-0 hidden md:block"
@@ -106,20 +111,21 @@ const StripeSubscriptions = ({
               className="flex items-center justify-center z-20 bg-[#fff] rounded-2xl border border-gray-300 sm:w-8/12 sm:m-auto w-full p-8"
               id=""
             >
-              {user ? (
-                <>
-                  <StripePricingTable
-                    pricingTableId="prctbl_1Pi1cqI5HXM3pHflJ4c6fBLz"
-                    publishableKey={
+              {isScriptLoaded && user ? (
+                <div>
+                  <stripe-pricing-table
+                    pricing-table-id={
+                      process.env.NEXT_PUBLIC_STRIPE_PRICING_TABLE_ID
+                    }
+                    publishable-key={
                       process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
                     }
-                    clientReferenceId={user.id}
-                  />
-                  <p>{process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY}</p>
-                  <p>{user.id}</p>
-                </>
+                    client-reference-id={user?.id}
+                  ></stripe-pricing-table>
+                  {message && <p>{message}</p>}
+                </div>
               ) : (
-                <p>Loading User...</p>
+                <p>Loading...</p>
               )}
             </div>
           </div>

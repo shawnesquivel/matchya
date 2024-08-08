@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import {
+  updatePineconeProfileSubscription,
+  fetchPineconeProfile,
+} from "../../utils/pineconeHelpers";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2024-06-20",
@@ -52,13 +56,27 @@ export async function POST(req: NextRequest) {
         break;
       case "checkout.session.completed":
         const session = event.data.object as Stripe.Checkout.Session;
-        console.log(`Checkout session completed: ${session.id}`);
-        console.log(`Checkout session completed: ${session.id}`);
-        console.log(`Customer ID: ${session.customer}`);
-        console.log(`Subscription ID: ${session.subscription}`);
+        const clerkUserId = session.client_reference_id;
+        const stripeCustomerId = session.customer;
+        const subscriptionId = session.subscription;
+        // find the user email from clerk
 
-        // Handle successful checkout, maybe update order status
-        // await updateOrderStatus(session.client_reference_id, 'paid');
+        const { emailAddress } = await fetchPineconeProfile();
+
+        const profileUpdateStatus = await updatePineconeProfileSubscription(
+          clerkUserId,
+          stripeCustomerId,
+          subscriptionId
+        );
+
+        if (profileUpdateStatus === 200) {
+          console.log(`Pinecone profile updated for ${clerkUserId}`);
+        } else {
+          console.log(`Pinecone profile update failed for ${clerkUserId}`);
+        }
+
+        console.log("Updated subscription status");
+        return NextResponse.json({ received: true });
         break;
       default:
         console.log(`Unhandled event type ${event.type}`);

@@ -1,12 +1,13 @@
 import StripeSubscriptions from "../components/StripeSubscriptions";
 import CustomerPortalBtn from "../components/CustomerPortalBtn";
-const StripSubscriptionsPage = () => {
+
+const StripeSubscriptionsPage = () => {
   return (
     <>
-      <StripeSubscriptions userId="user_12345" />
+      <StripeSubscriptions />
       <CustomerPortalBtn />
     </>
   );
 };
 
-export default StripSubscriptionsPage;
+export default StripeSubscriptionsPage;

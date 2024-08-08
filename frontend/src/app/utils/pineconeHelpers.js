@@ -21,3 +21,43 @@ export const fetchPineconeProfile = async (bioLink) => {
     return null;
   }
 };
+
+export const updatePineconeProfileSubscription = async (
+  clerkUserId,
+  pineconeEmbeddingsId,
+  stripeCustomerId,
+  stripeSubscriptionId
+) => {
+  console.log("Calling updatePineconeProfileSubscription");
+
+  // Fetch API call to the Lambda function
+  // Return the status of the call
+
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/profile/subscription`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          clerkUserId,
+          pineconeEmbeddingsId,
+          stripeCustomerId,
+          stripeSubscriptionId,
+        }),
+      }
+    );
+    // return dummy response
+
+    if (!response.ok) {
+      throw new Error("Failed to update Pinecone profile subscription");
+    }
+
+    return response.status;
+  } catch (error) {
+    console.error("Error updating Pinecone profile subscription:", error);
+    return null;
+  }
+};
