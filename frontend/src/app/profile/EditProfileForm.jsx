@@ -263,31 +263,6 @@ const EditProfileForm = ({ handleManualProfile }) => {
     return null;
   };
 
-  // TO DO: See if this works with refactoring to utils/pineconeHelpers otherwise remove it
-  // const fetchPineconeProfile = async (bioLink) => {
-  //   if (!bioLink) {
-  //     console.warn("Warning: No bio link supplied");
-  //     return null;
-  //   }
-
-  //   try {
-  //     const response = await fetch(
-  //       `${
-  //         process.env.NEXT_PUBLIC_API_URL
-  //       }/profile?bio_link=${encodeURIComponent(bioLink)}`
-  //     );
-  //     if (!response.ok) {
-  //       throw new Error("Failed to fetch");
-  //     }
-  //     const data = await response.json();
-  //     console.log("fetchPineconeProfile", data);
-  //     return data?.data;
-  //   } catch (error) {
-  //     console.error("Error fetching profile:", error);
-  //     return null;
-  //   }
-  // };
-
   return (
     <>
       <div
@@ -305,6 +280,7 @@ const EditProfileForm = ({ handleManualProfile }) => {
                   Awesome! Here's what we've found about you:
                 </h1>
                 {determineProfileStatusText()}
+                <p>Subscription Status: {profileData?.subscription_id}</p>
               </div>
             ) : (
               <div className="flex flex-col gap-2">
