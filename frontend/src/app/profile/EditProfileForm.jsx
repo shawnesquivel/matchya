@@ -291,8 +291,12 @@ const EditProfileForm = ({ handleManualProfile }) => {
             ) : (
               <div className="flex flex-col gap-2">
                 <h1 className="text-2xl font-bold">
-                  Help clients find you by filling in your profile.
+                  {profileData.name}
+                  {profileData.name === ""
+                    ? "Loading your profile.."
+                    : "Help clients find you by filling in your profile."}
                 </h1>
+                <p>Clerk User ID: {user.id}</p>
                 <Link
                   href={`/profile`}
                   className="underline underline-offset-4"
