@@ -29,6 +29,11 @@ const EditProfileForm = ({ handleManualProfile }) => {
     qualifications: [],
     specialties: [],
     approaches: [],
+    mentalHealthRole: "therapist",
+    licenseNumber: "",
+    licenseProvince: "",
+    licenseExpirationMonth: "",
+    licenseExpirationYear: "",
   });
   const [activeTab, setActiveTab] = useState("info");
   const [newChips, setNewChips] = useState({
@@ -53,6 +58,7 @@ const EditProfileForm = ({ handleManualProfile }) => {
       if (pineconeProfile?.bio_link) {
         setProfileData({
           clerk_user_id: pineconeProfile?.clerk_user_id || user.id || "",
+          license_number: pineconeProfile?.license_number || null,
           name: pineconeProfile.name || "",
           gender: pineconeProfile.gender || "male",
           subscription_id: pineconeProfile.subscription_id || "",
@@ -72,6 +78,11 @@ const EditProfileForm = ({ handleManualProfile }) => {
           qualifications: pineconeProfile.qualifications || [],
           specialties: pineconeProfile.specialties || [],
           approaches: pineconeProfile.approaches || [],
+          mentalHealthRole: pineconeProfile.mentalHealthRole || "therapist",
+          licenseNumber: pineconeProfile.licenseNumber || "",
+          licenseProvince: pineconeProfile.licenseProvince || "",
+          licenseExpirationMonth: pineconeProfile.licenseExpirationMonth || "",
+          licenseExpirationYear: pineconeProfile.licenseExpirationYear || "",
         });
         return;
       }
@@ -81,6 +92,7 @@ const EditProfileForm = ({ handleManualProfile }) => {
         const scrapeData = webScrapeData.data;
         setProfileData({
           clerk_user_id: pineconeProfile?.clerk_user_id || user.id || "",
+          license_number: pineconeProfile?.license_number || null,
           subscription_id: scrapeData?.subscription_id || "",
           name: scrapeData.name || "",
           gender: scrapeData.gender || "male",
@@ -100,6 +112,11 @@ const EditProfileForm = ({ handleManualProfile }) => {
           qualifications: scrapeData.qualifications || [],
           specialties: scrapeData.specialties || [],
           approaches: scrapeData.approaches || [],
+          mentalHealthRole: scrapeData.mentalHealthRole || "therapist",
+          licenseNumber: scrapeData.licenseNumber || "",
+          licenseProvince: scrapeData.licenseProvince || "",
+          licenseExpirationMonth: scrapeData.licenseExpirationMonth || "",
+          licenseExpirationYear: scrapeData.licenseExpirationYear || "",
         });
       } else {
         console.log("User unsafe metadata was empty.", unsafeMetadata);
@@ -394,6 +411,21 @@ const EditProfileForm = ({ handleManualProfile }) => {
                   }`}
                 ></span>
               </button>
+              <button
+                onClick={() => setActiveTab("credentials")}
+                className={`relative py-1 px-2 text-left w-fit ${
+                  activeTab === "credentials"
+                    ? "text-gray-800"
+                    : "text-gray-600"
+                } transition-all duration-300 group`}
+              >
+                Credentials
+                <span
+                  className={`absolute bottom-0 left-0 h-0.5 bg-gray-600 transition-width duration-300 group-hover:w-full ${
+                    activeTab === "credentials" ? "w-full" : "w-0"
+                  }`}
+                ></span>
+              </button>
             </div>
             <div className="h-full w-full overflow-y-scroll pb-40">
               {activeTab === "info" && (
@@ -588,6 +620,100 @@ const EditProfileForm = ({ handleManualProfile }) => {
                           "approaches"
                         )}
                       </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {activeTab === "credentials" && (
+                <div className="grid grid-cols-2 gap-4 mb-8">
+                  <div className="profile-field">
+                    <label>Mental Health Role</label>
+                    <select
+                      name="mentalHealthRole"
+                      value={profileData.mentalHealthRole}
+                      onChange={handleChange}
+                    >
+                      <option value="therapist">Therapist</option>
+                      {/* Add more options as needed */}
+                    </select>
+                  </div>
+                  <div className="profile-field">
+                    <label>License Number</label>
+                    <input
+                      type="text"
+                      name="licenseNumber"
+                      value={profileData.licenseNumber}
+                      onChange={(e) => {
+                        const onlyNumbers = e.target.value.replace(
+                          /[^0-9]/g,
+                          ""
+                        );
+                        handleChange({
+                          target: { name: "licenseNumber", value: onlyNumbers },
+                        });
+                      }}
+                    />
+                  </div>
+                  <div className="profile-field">
+                    <label>License Province</label>
+                    <select
+                      name="licenseProvince"
+                      value={profileData.licenseProvince}
+                      onChange={handleChange}
+                    >
+                      <option value="">Select a province</option>
+                      <option value="AB">Alberta</option>
+                      <option value="BC">British Columbia</option>
+                      <option value="MB">Manitoba</option>
+                      <option value="NB">New Brunswick</option>
+                      <option value="NL">Newfoundland and Labrador</option>
+                      <option value="NS">Nova Scotia</option>
+                      <option value="ON">Ontario</option>
+                      <option value="PE">Prince Edward Island</option>
+                      <option value="QC">Quebec</option>
+                      <option value="SK">Saskatchewan</option>
+                      <option value="NT">Northwest Territories</option>
+                      <option value="NU">Nunavut</option>
+                      <option value="YT">Yukon</option>
+                    </select>
+                  </div>
+                  <div className="profile-field">
+                    <label>License Expiration</label>
+                    <div className="flex gap-2">
+                      <select
+                        name="licenseExpirationMonth"
+                        value={profileData.licenseExpirationMonth}
+                        onChange={handleChange}
+                        className="w-1/2"
+                      >
+                        <option value="">Month</option>
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map(
+                          (month) => (
+                            <option
+                              key={month}
+                              value={month.toString().padStart(2, "0")}
+                            >
+                              {month.toString().padStart(2, "0")}
+                            </option>
+                          )
+                        )}
+                      </select>
+                      <select
+                        name="licenseExpirationYear"
+                        value={profileData.licenseExpirationYear}
+                        onChange={handleChange}
+                        className="w-1/2"
+                      >
+                        <option value="">Year</option>
+                        {Array.from(
+                          { length: 10 },
+                          (_, i) => new Date().getFullYear() + i
+                        ).map((year) => (
+                          <option key={year} value={year.toString()}>
+                            {year}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
                 </div>
