@@ -29,11 +29,11 @@ const EditProfileForm = ({ handleManualProfile }) => {
     qualifications: [],
     specialties: [],
     approaches: [],
-    mentalHealthRole: "therapist",
-    licenseNumber: "",
-    licenseProvince: "",
-    licenseExpirationMonth: "",
-    licenseExpirationYear: "",
+    mental_health_role: "therapist",
+    license_number: "",
+    license_province: "",
+    license_expiration_month: "",
+    license_expiration_year: "",
   });
   const [activeTab, setActiveTab] = useState("info");
   const [newChips, setNewChips] = useState({
@@ -58,7 +58,6 @@ const EditProfileForm = ({ handleManualProfile }) => {
       if (pineconeProfile?.bio_link) {
         setProfileData({
           clerk_user_id: pineconeProfile?.clerk_user_id || user.id || "",
-          license_number: pineconeProfile?.license_number || null,
           name: pineconeProfile.name || "",
           gender: pineconeProfile.gender || "male",
           subscription_id: pineconeProfile.subscription_id || "",
@@ -78,11 +77,13 @@ const EditProfileForm = ({ handleManualProfile }) => {
           qualifications: pineconeProfile.qualifications || [],
           specialties: pineconeProfile.specialties || [],
           approaches: pineconeProfile.approaches || [],
-          mentalHealthRole: pineconeProfile.mentalHealthRole || "therapist",
-          licenseNumber: pineconeProfile.licenseNumber || "",
-          licenseProvince: pineconeProfile.licenseProvince || "",
-          licenseExpirationMonth: pineconeProfile.licenseExpirationMonth || "",
-          licenseExpirationYear: pineconeProfile.licenseExpirationYear || "",
+          mental_health_role: pineconeProfile.mental_health_role || "therapist",
+          license_number: pineconeProfile.license_number || "",
+          license_province: pineconeProfile.license_province || "",
+          license_expiration_month:
+            pineconeProfile.license_expiration_month || "",
+          license_expiration_year:
+            pineconeProfile.license_expiration_year || "",
         });
         return;
       }
@@ -92,7 +93,6 @@ const EditProfileForm = ({ handleManualProfile }) => {
         const scrapeData = webScrapeData.data;
         setProfileData({
           clerk_user_id: pineconeProfile?.clerk_user_id || user.id || "",
-          license_number: pineconeProfile?.license_number || null,
           subscription_id: scrapeData?.subscription_id || "",
           name: scrapeData.name || "",
           gender: scrapeData.gender || "male",
@@ -112,11 +112,11 @@ const EditProfileForm = ({ handleManualProfile }) => {
           qualifications: scrapeData.qualifications || [],
           specialties: scrapeData.specialties || [],
           approaches: scrapeData.approaches || [],
-          mentalHealthRole: scrapeData.mentalHealthRole || "therapist",
-          licenseNumber: scrapeData.licenseNumber || "",
-          licenseProvince: scrapeData.licenseProvince || "",
-          licenseExpirationMonth: scrapeData.licenseExpirationMonth || "",
-          licenseExpirationYear: scrapeData.licenseExpirationYear || "",
+          mental_health_role: scrapeData.mental_health_role || "therapist",
+          license_number: scrapeData.license_number || "",
+          license_province: scrapeData.license_province || "",
+          license_expiration_month: scrapeData.license_expiration_month || "",
+          license_expiration_year: scrapeData.license_expiration_year || "",
         });
       } else {
         console.log("User unsafe metadata was empty.", unsafeMetadata);
@@ -629,27 +629,32 @@ const EditProfileForm = ({ handleManualProfile }) => {
                   <div className="profile-field">
                     <label>Mental Health Role</label>
                     <select
-                      name="mentalHealthRole"
-                      value={profileData.mentalHealthRole}
+                      name="mental_health_role"
+                      value={profileData.mental_health_role}
                       onChange={handleChange}
                     >
                       <option value="therapist">Therapist</option>
-                      {/* Add more options as needed */}
+                      <option value="clinical counsellor">
+                        Clinical Counselor
+                      </option>
                     </select>
                   </div>
                   <div className="profile-field">
                     <label>License Number</label>
                     <input
                       type="text"
-                      name="licenseNumber"
-                      value={profileData.licenseNumber}
+                      name="license_number"
+                      value={profileData.license_number}
                       onChange={(e) => {
                         const onlyNumbers = e.target.value.replace(
                           /[^0-9]/g,
                           ""
                         );
                         handleChange({
-                          target: { name: "licenseNumber", value: onlyNumbers },
+                          target: {
+                            name: "license_number",
+                            value: onlyNumbers,
+                          },
                         });
                       }}
                     />
@@ -657,8 +662,8 @@ const EditProfileForm = ({ handleManualProfile }) => {
                   <div className="profile-field">
                     <label>License Province</label>
                     <select
-                      name="licenseProvince"
-                      value={profileData.licenseProvince}
+                      name="license_province"
+                      value={profileData.license_province}
                       onChange={handleChange}
                     >
                       <option value="">Select a province</option>
@@ -681,8 +686,8 @@ const EditProfileForm = ({ handleManualProfile }) => {
                     <label>License Expiration</label>
                     <div className="flex gap-2">
                       <select
-                        name="licenseExpirationMonth"
-                        value={profileData.licenseExpirationMonth}
+                        name="license_expiration_month"
+                        value={profileData.license_expiration_month}
                         onChange={handleChange}
                         className="w-1/2"
                       >
@@ -699,8 +704,8 @@ const EditProfileForm = ({ handleManualProfile }) => {
                         )}
                       </select>
                       <select
-                        name="licenseExpirationYear"
-                        value={profileData.licenseExpirationYear}
+                        name="license_expiration_year"
+                        value={profileData.license_expiration_year}
                         onChange={handleChange}
                         className="w-1/2"
                       >
