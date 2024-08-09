@@ -83,7 +83,7 @@ const SignUpPage = () => {
           </div>
 
           <div className="flex items-center justify-center" id="">
-            <SignUp />
+            <SignUp forceRedirectUrl="/profile" />
           </div>
         </div>
       </div>
