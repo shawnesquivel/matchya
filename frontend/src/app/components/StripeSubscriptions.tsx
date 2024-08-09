@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { aspekta } from "../styles/fonts";
 import { useUser } from "@clerk/nextjs";
+import CustomerPortalBtn from "../components/CustomerPortalBtn";
 
 declare global {
   namespace JSX {
@@ -104,6 +105,7 @@ const StripeSubscriptions = () => {
                 <h2 className="lg:text-2xl text-md">
                   Get listed on Matchya today
                 </h2>
+                <CustomerPortalBtn />
               </div>
             </div>
 
