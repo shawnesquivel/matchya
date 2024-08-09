@@ -38,7 +38,8 @@ const EditProfileForm = ({ handleManualProfile }) => {
     approaches: "",
   });
   const [savingProfile, setSavingProfile] = useState(false);
-  const [success, setSuccess] = useState(false);
+  const [saveProfileSuccess, setSaveProfileSuccess] = useState(false);
+  const [saveProfileError, setSaveProfileError] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -209,6 +210,7 @@ const EditProfileForm = ({ handleManualProfile }) => {
 
   const saveProfile = async () => {
     setSavingProfile(true);
+    setSaveProfileError(null);
     try {
       const url = `${process.env.NEXT_PUBLIC_API_URL}/profile/update`;
       const body = JSON.stringify(profileData);
@@ -236,9 +238,12 @@ const EditProfileForm = ({ handleManualProfile }) => {
         });
       }
       setSavingProfile(false);
-      setSuccess(true);
+      setSaveProfileSuccess(true);
     } catch (error) {
-      console.error("Error fetching profile:", error);
+      const errorMsg = `Your profile could not be saved. Please try again. If you continue to see this error, please contact us at ${process.env.NEXT_PUBLIC_SUPPORT_EMAIL}`;
+      console.error(error);
+      setSaveProfileError(errorMsg);
+      setSaveProfileSuccess(null);
       setSavingProfile(false);
     }
   };
@@ -276,49 +281,74 @@ const EditProfileForm = ({ handleManualProfile }) => {
           <div className="absolute right-4 top-4">
             <UserButton userProfileUrl="/profile" />
           </div>
-          <div className="flex sm:w-full justify-between items-center sm:p-unset p-2 flex-col sm:flex-row w-8/12">
-            {profileData?.name ? (
-              <div className="flex flex-col gap-2">
-                <h1 className="sm:text-2xl font-bold text-base">
-                  Edit Profile
-                </h1>
-                {/* <p>Clerk User ID: {user.id}</p> */}
-                {/* <p>Pinecone Clerk User ID: {profileData?.clerk_user_id}</p> */}
-                {/* <p>Subscription ID: {profileData?.subscription_id}</p> */}
-                {determineProfileStatusText()}
-                <Link
-                  href="/subscriptions"
-                  className="underline underline-offset-4"
-                >
-                  {profileData?.subscription_id === ""
-                    ? "Upgrade to Premium"
-                    : "Mange Your Subscription"}
-                </Link>
-              </div>
-            ) : (
-              <div className="flex flex-col gap-2">
-                <h1 className="text-2xl font-bold">
-                  Help clients find you by filling in your profile
-                </h1>
-                <p>Clerk User ID: {user.id}</p>
-                <p>Pinecone Clerk User ID: {profileData?.clerk_user_id}</p>
-                <Link
-                  href={`/profile`}
-                  className="underline underline-offset-4"
-                  onClick={(e) => handleManualProfile(e, false)}
-                >
-                  Pre-fill my profile with a link.
-                </Link>
-              </div>
-            )}
-            <div className="flex flex-col gap-2 items-center sm:relative absolute bottom-0  z-10 ">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center w-full">
+            <div className="flex flex-col gap-2 mb-4 sm:mb-0">
+              <h1 className="sm:text-2xl font-bold text-base">
+                {profileData.name
+                  ? "Edit your profile"
+                  : "Help clients find you by filling in your profile"}
+              </h1>
+              <p className="text-sm">
+                Having a good profile helps users find your practice.
+              </p>
+              {profileData?.name && (
+                <>
+                  {determineProfileStatusText()}
+                  <div className="flex flex-row gap-4">
+                    {profileData?.subscription_id === "" ? (
+                      <>
+                        <p>You're on the free plan.</p>
+                        <Link
+                          href="/subscriptions"
+                          className="underline underline-offset-4"
+                        >
+                          Upgrade Your Plan
+                        </Link>
+                      </>
+                    ) : (
+                      <>
+                        <p>Your profile is live.</p>
+                        <Link
+                          href="/subscriptions"
+                          className="underline underline-offset-4"
+                        >
+                          Manage Your Subscription
+                        </Link>
+                      </>
+                    )}
+                  </div>
+                </>
+              )}
+              {!profileData?.name && (
+                <>
+                  <p>Clerk User ID: {user.id}</p>
+                  <p>Pinecone Clerk User ID: {profileData?.clerk_user_id}</p>
+                  <Link
+                    href={`/profile`}
+                    className="underline underline-offset-4"
+                    onClick={(e) => handleManualProfile(e, false)}
+                  >
+                    Pre-fill my profile with a link.
+                  </Link>
+                </>
+              )}
+            </div>
+            <div className="flex flex-col items-end">
               <PrimaryBtn
-                text={`${savingProfile ? `Saving...` : `Save Profile`}`}
+                text={savingProfile ? "Saving..." : "Save Profile"}
                 onClick={saveProfile}
-                className="border-green-light bg-white sm:bg-unset"
+                className="border-green-light bg-white sm:bg-unset mb-2"
               />
-
-              {success && <p className="text-xs">Your profile was saved.</p>}
+              {saveProfileError && (
+                <p className="text-xs text-red-500 max-w-[200px] text-right">
+                  {saveProfileError}
+                </p>
+              )}
+              {saveProfileSuccess && (
+                <p className="text-xs text-green-500 text-right">
+                  Your profile was saved.
+                </p>
+              )}
             </div>
           </div>
           <div className="flex gap-6 h-full sm:flex-row flex-col">
