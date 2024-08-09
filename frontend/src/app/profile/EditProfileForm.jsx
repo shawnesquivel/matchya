@@ -245,20 +245,19 @@ const EditProfileForm = ({ handleManualProfile }) => {
 
   const determineProfileStatusText = () => {
     if (user?.unsafeMetadata?.profileSavedOnPinecone === true) {
-      return <p>Status: Your profile is live!</p>;
+      return <p>Your profile has been saved.</p>;
     }
 
     if (user?.unsafeMetadata?.profileStarted === true) {
       return (
         <div className="flex sm:flex-row sm:gap-4 flex-col gap-2">
-          <span>Status: Your profile is not live yet.</span>
+          <span>Please click Save Profile to save your changes.</span>
           <Link
             href={`/profile`}
             className="underline underline-offset-2"
-            // go backwards
             onClick={(e) => handleManualProfile(e, false)}
           >
-            Pre-fill my profile with a link.
+            Pre-fill your profile with your clinic website.
           </Link>
         </div>
       );
@@ -283,11 +282,18 @@ const EditProfileForm = ({ handleManualProfile }) => {
                 <h1 className="sm:text-2xl font-bold text-base">
                   Awesome! Here's what we've found about you:
                 </h1>
-                <p>Clerk User ID: {user.id}</p>
-                <p>Pinecone Clerk User ID: {profileData?.clerk_user_id}</p>
+                {/* <p>Clerk User ID: {user.id}</p> */}
+                {/* <p>Pinecone Clerk User ID: {profileData?.clerk_user_id}</p> */}
+                {/* <p>Subscription ID: {profileData?.subscription_id}</p> */}
                 {determineProfileStatusText()}
-                <p>Subscription Status: {profileData?.subscription_id}</p>
-                <Link href="/subscriptions">Manage My Subscription</Link>
+                <Link
+                  href="/subscriptions"
+                  className="underline underline-offset-4"
+                >
+                  {profileData?.subscription_id === ""
+                    ? "Upgrade to Premium"
+                    : "Mange Your Subscription"}
+                </Link>
               </div>
             ) : (
               <div className="flex flex-col gap-2">
