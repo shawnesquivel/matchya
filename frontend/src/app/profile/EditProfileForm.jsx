@@ -7,8 +7,11 @@ import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 import { fetchPineconeProfile } from "../utils/pineconeHelpers";
 import { UserButton } from "@clerk/clerk-react";
+import { useRouter } from "next/router";
+
 const EditProfileForm = ({ handleManualProfile }) => {
   const { user } = useUser();
+  const router = useRouter();
   const [editingIndex, setEditingIndex] = useState(null);
   const [profileData, setProfileData] = useState({
     name: "",
@@ -256,6 +259,7 @@ const EditProfileForm = ({ handleManualProfile }) => {
       }
       setSavingProfile(false);
       setSaveProfileSuccess(true);
+      router.push(`/subscriptions`);
     } catch (error) {
       const errorMsg = `Your profile could not be saved. Please try again. If you continue to see this error, please contact us at ${process.env.NEXT_PUBLIC_SUPPORT_EMAIL}`;
       console.error(error);
@@ -363,7 +367,7 @@ const EditProfileForm = ({ handleManualProfile }) => {
               )}
               {saveProfileSuccess && (
                 <p className="text-xs text-green-500 text-right">
-                  Your profile was saved.
+                  Your profile was saved!
                 </p>
               )}
             </div>
