@@ -65,7 +65,7 @@ const ProfilePage = () => {
 
   const handleCreateProfile = async () => {
     if (!bioLink) {
-      alert("Please enter a bio link.");
+      alert(`Please enter a bio link. Provided link: ${bioLink}`);
       return;
     }
 
@@ -101,7 +101,9 @@ const ProfilePage = () => {
     } catch (error) {
       console.error("Error fetching profile:", error);
       setIsScraping(false);
-      setError("There was an error fetching the profile.");
+      setError(
+        `There was an error fetching your profile. Please check that the link you have provided is a valid https:// link. Link provided: ${bioLink}. If you continue to see this error, please enter your profile manually.`
+      );
     }
   };
   if (!isLoaded || !isSignedIn) {
