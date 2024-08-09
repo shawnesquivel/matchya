@@ -68,7 +68,18 @@ const SubmitBioForm = ({
               Loading your profile, please wait....
             </p>
           )}
-          {errorMsg && <p className="text-red-400 italic">{errorMsg}</p>}
+          {errorMsg && (
+            <>
+              <p className="text-red-400 italic">{errorMsg}</p>
+              <Link
+                href={"/profile/edit"}
+                className="underline underline-offset-2 cursor-pointer"
+                onClick={(e) => handleManualProfile(e, true)}
+              >
+                Create my profile manually
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </div>
