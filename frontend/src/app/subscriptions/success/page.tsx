@@ -2,8 +2,10 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { aspekta } from "../../styles/fonts";
+import { SignedIn, SignedOut } from "@clerk/nextjs";
+import SignUpPage from "../../profile/SignUpPage";
 
-const SuccessPage = () => {
+const SuccessPageContent = () => {
   const [copied, setCopied] = useState(false);
 
   const handleShare = () => {
@@ -43,6 +45,19 @@ const SuccessPage = () => {
         )}
       </div>
     </div>
+  );
+};
+
+const SuccessPage = () => {
+  return (
+    <>
+      <SignedIn>
+        <SuccessPageContent />
+      </SignedIn>
+      <SignedOut>
+        <SignUpPage />
+      </SignedOut>
+    </>
   );
 };
 
