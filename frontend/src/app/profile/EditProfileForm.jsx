@@ -280,7 +280,7 @@ const EditProfileForm = ({ handleManualProfile }) => {
             {profileData?.name ? (
               <div className="flex flex-col gap-2">
                 <h1 className="sm:text-2xl font-bold text-base">
-                  Awesome! Here's what we've found about you:
+                  Edit Profile
                 </h1>
                 {/* <p>Clerk User ID: {user.id}</p> */}
                 {/* <p>Pinecone Clerk User ID: {profileData?.clerk_user_id}</p> */}
@@ -298,10 +298,7 @@ const EditProfileForm = ({ handleManualProfile }) => {
             ) : (
               <div className="flex flex-col gap-2">
                 <h1 className="text-2xl font-bold">
-                  {profileData.name}
-                  {profileData.name === ""
-                    ? "Loading your profile.."
-                    : "Help clients find you by filling in your profile."}
+                  Help clients find you by filling in your profile
                 </h1>
                 <p>Clerk User ID: {user.id}</p>
                 <p>Pinecone Clerk User ID: {profileData?.clerk_user_id}</p>
@@ -320,6 +317,7 @@ const EditProfileForm = ({ handleManualProfile }) => {
                 onClick={saveProfile}
                 className="border-green-light bg-white sm:bg-unset"
               />
+
               {success && <p className="text-xs">Your profile was saved.</p>}
             </div>
           </div>
