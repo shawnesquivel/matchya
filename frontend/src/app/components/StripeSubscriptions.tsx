@@ -21,10 +21,6 @@ const StripeSubscriptions = () => {
   const { user } = useUser();
 
   useEffect(() => {
-    console.log("loaded user", user);
-  }, [user]);
-
-  useEffect(() => {
     if (typeof window !== "undefined" && !isScriptLoaded) {
       const script = document.createElement("script");
       script.src = "https://js.stripe.com/v3/pricing-table.js";
