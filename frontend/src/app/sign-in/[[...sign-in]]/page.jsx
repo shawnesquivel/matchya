@@ -1,12 +1,6 @@
 import { SignIn } from "@clerk/nextjs";
-
-// export default function Page() {
-//   return <SignIn />;
-// }
 import React from "react";
-import PrimaryBtn from "../../components/PrimaryBtn";
 import { aspekta } from "../../styles/fonts";
-import { SignUp } from "@clerk/nextjs";
 
 const SignInPage = () => {
   return (
@@ -30,18 +24,6 @@ const SignInPage = () => {
             className="w-auto md:h-11 h-8"
             alt="matchya for therapists"
           />
-          {/* <div className="flex-row gap-2 md:flex hidden">
-            <PrimaryBtn
-              text="Log In"
-              onClick={undefined}
-              className="border-green-light"
-            />
-            <PrimaryBtn
-              text="Get Started"
-              onClick={undefined}
-              className="bg-green-light"
-            />
-          </div> */}
         </div>
 
         <div
@@ -75,16 +57,6 @@ const SignInPage = () => {
                 client acquisition for you.
               </h2>
             </div>
-            {/* <input type="text" placeholder="Your Email" />
-          <button
-            className="bg-green-300"
-            onClick={() => {
-              console.log("To Do: Create Profile in Clerk");
-              setSignedUp(true);
-            }}
-          >
-            Sign Up
-          </button> */}
           </div>
 
           <div className="flex items-center justify-center" id="">
