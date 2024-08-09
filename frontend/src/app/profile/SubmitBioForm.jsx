@@ -41,7 +41,7 @@ const SubmitBioForm = ({
               <input
                 type="text"
                 name="name"
-                placeholder="https://your-bio.com"
+                placeholder="https://clinic-site.com/therapist-name"
                 value={bioLink}
                 onChange={(e) => setBioLink(e.target.value)}
                 className="w-full"
