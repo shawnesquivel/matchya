@@ -7,7 +7,7 @@ import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 import { fetchPineconeProfile } from "../utils/pineconeHelpers";
 import { UserButton } from "@clerk/clerk-react";
-import { useRouter } from "next/router";
+import { useRouter } from "next/navigation";
 
 const EditProfileForm = ({ handleManualProfile }) => {
   const { user } = useUser();
