@@ -128,7 +128,7 @@ const Chatbot = ({
                 prompt={userMessage}
                 handlePromptChange={handlePromptChange}
                 handleSubmit={handleSubmit}
-                placeHolderText={`Type your message...`}
+                placeHolderText={`I'm looking for a female/male therapist that specializes in anxiety, with experience navigating Asian family dynamics.`}
                 error={error}
               />
             )}
