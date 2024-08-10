@@ -304,17 +304,8 @@ const useChatbot = (debug = false) => {
       const request = {
         chat_id: chatId,
         message: userMessage,
-        questionnaire: null,
+        questionnaire: finishedQuestions,
       };
-      // if (initialChatMsg && finishedQuestions && finishedQuestions.length > 0) {
-      //   console.log(
-      //     "The questionnaire has not been included yet, we'll include it.",
-      //     initialChatMsg
-      //   );
-      //   request.questionnaire = finishedQuestions;
-      // } else {
-      //   console.log("The questionnaire was already sent. I won't include it.");
-      // }
 
       request.questionnaire = finishedQuestions;
 
