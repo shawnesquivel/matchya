@@ -9,7 +9,7 @@ const SuccessPageContent = () => {
   const [copied, setCopied] = useState(false);
 
   const handleShare = () => {
-    const url = "https://matchya.app";
+    const url = "https://matchya.app/?page_id=474";
     navigator.clipboard.writeText(url).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 3000); // Reset after 3 seconds
