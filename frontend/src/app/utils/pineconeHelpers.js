@@ -1,6 +1,6 @@
 export const fetchPineconeProfile = async (bioLink) => {
   if (!bioLink) {
-    console.warn("Warning: No bio link supplied");
+    console.warn("No bio link supplied");
     return null;
   }
 
@@ -11,14 +11,14 @@ export const fetchPineconeProfile = async (bioLink) => {
       )}`
     );
     if (!response.ok) {
-      throw new Error("Failed to fetch");
+      throw new Error(`Failed to fetch: ${response.status}`);
     }
     const data = await response.json();
     console.log("fetchPineconeProfile", data);
     return data?.data;
   } catch (error) {
     console.error("Error fetching profile:", error);
-    return null;
+    throw error;
   }
 };
 

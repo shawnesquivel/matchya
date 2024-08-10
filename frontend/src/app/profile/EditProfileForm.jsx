@@ -56,72 +56,85 @@ const EditProfileForm = ({ handleManualProfile }) => {
       const { unsafeMetadata } = user;
       console.log("User Unsafe Metadata", { unsafeMetadata });
       const { webScrapeData, bio_link } = unsafeMetadata || {};
-      const pineconeProfile = await fetchPineconeProfile(bio_link);
-      if (pineconeProfile?.bio_link) {
-        setProfileData({
-          clerk_user_id: pineconeProfile?.clerk_user_id || user.id || "",
-          name: pineconeProfile.name || "",
-          gender: pineconeProfile.gender || "male",
-          subscription_id: pineconeProfile.subscription_id || "",
-          location: pineconeProfile.location || "",
-          country: pineconeProfile.country || "",
-          clinic: pineconeProfile.clinic || "",
-          available_online: pineconeProfile.available_online || false,
-          fees: pineconeProfile.fees || [],
-          email: pineconeProfile.emailAddress || "",
-          bio_link: pineconeProfile.bio_link || "",
-          booking_link: pineconeProfile.booking_link || "",
-          profile_link: pineconeProfile.profile_link || "",
-          bio: pineconeProfile.bio || "",
-          short_summary: pineconeProfile.short_summary || "",
-          summary: pineconeProfile.summary || "",
-          languages: pineconeProfile.languages || [],
-          qualifications: pineconeProfile.qualifications || [],
-          specialties: pineconeProfile.specialties || [],
-          approaches: pineconeProfile.approaches || [],
-          mental_health_role: pineconeProfile.mental_health_role || "therapist",
-          license_number: pineconeProfile.license_number || "",
-          license_province: pineconeProfile.license_province || "",
-          license_expiration_month:
-            pineconeProfile.license_expiration_month || "",
-          license_expiration_year:
-            pineconeProfile.license_expiration_year || "",
-        });
-        return;
-      }
 
-      // If no Pinecone data was found, check if there was a webscrape done.
-      if (webScrapeData?.data) {
-        const scrapeData = webScrapeData.data;
-        setProfileData({
-          clerk_user_id: pineconeProfile?.clerk_user_id || user.id || "",
-          subscription_id: scrapeData?.subscription_id || "",
-          name: scrapeData.name || "",
-          gender: scrapeData.gender || "male",
-          location: scrapeData.location || "",
-          country: scrapeData.country || "",
-          clinic: scrapeData.clinic || "",
-          available_online: scrapeData.available_online || false,
-          fees: scrapeData.fees || [],
-          email: scrapeData.emailAddress || "",
-          bio_link: scrapeData.bio_link || "",
-          booking_link: scrapeData.booking_link || "",
-          profile_link: scrapeData.profile_link || "",
-          bio: scrapeData.bio || "",
-          short_summary: scrapeData.short_summary || "",
-          summary: scrapeData.summary || "",
-          languages: scrapeData.languages || [],
-          qualifications: scrapeData.qualifications || [],
-          specialties: scrapeData.specialties || [],
-          approaches: scrapeData.approaches || [],
-          mental_health_role: scrapeData.mental_health_role || "therapist",
-          license_number: scrapeData.license_number || "",
-          license_province: scrapeData.license_province || "",
-          license_expiration_month: scrapeData.license_expiration_month || "",
-          license_expiration_year: scrapeData.license_expiration_year || "",
-        });
-      } else {
-        console.log("User unsafe metadata was empty.", unsafeMetadata);
+      try {
+        const pineconeProfile = await fetchPineconeProfile(bio_link);
+
+        if (pineconeProfile) {
+          setProfileData({
+            clerk_user_id: pineconeProfile?.clerk_user_id || user.id || "",
+            name: pineconeProfile.name || "",
+            gender: pineconeProfile.gender || "male",
+            subscription_id: pineconeProfile.subscription_id || "",
+            location: pineconeProfile.location || "",
+            country: pineconeProfile.country || "",
+            clinic: pineconeProfile.clinic || "",
+            available_online: pineconeProfile.available_online || false,
+            fees: pineconeProfile.fees || [],
+            email: pineconeProfile.emailAddress || "",
+            bio_link: pineconeProfile.bio_link || "",
+            booking_link: pineconeProfile.booking_link || "",
+            profile_link: pineconeProfile.profile_link || "",
+            bio: pineconeProfile.bio || "",
+            short_summary: pineconeProfile.short_summary || "",
+            summary: pineconeProfile.summary || "",
+            languages: pineconeProfile.languages || [],
+            qualifications: pineconeProfile.qualifications || [],
+            specialties: pineconeProfile.specialties || [],
+            approaches: pineconeProfile.approaches || [],
+            mental_health_role:
+              pineconeProfile.mental_health_role || "therapist",
+            license_number: pineconeProfile.license_number || "",
+            license_province: pineconeProfile.license_province || "",
+            license_expiration_month:
+              pineconeProfile.license_expiration_month || "",
+            license_expiration_year:
+              pineconeProfile.license_expiration_year || "",
+          });
+          return;
+        }
+
+        // If no Pinecone data was found, check if there was a webscrape done.
+        if (webScrapeData?.data) {
+          const scrapeData = webScrapeData.data;
+          setProfileData({
+            clerk_user_id: pineconeProfile?.clerk_user_id || user.id || "",
+            subscription_id: scrapeData?.subscription_id || "",
+            name: scrapeData.name || "",
+            gender: scrapeData.gender || "male",
+            location: scrapeData.location || "",
+            country: scrapeData.country || "",
+            clinic: scrapeData.clinic || "",
+            available_online: scrapeData.available_online || false,
+            fees: scrapeData.fees || [],
+            email: scrapeData.emailAddress || "",
+            bio_link: scrapeData.bio_link || "",
+            booking_link: scrapeData.booking_link || "",
+            profile_link: scrapeData.profile_link || "",
+            bio: scrapeData.bio || "",
+            short_summary: scrapeData.short_summary || "",
+            summary: scrapeData.summary || "",
+            languages: scrapeData.languages || [],
+            qualifications: scrapeData.qualifications || [],
+            specialties: scrapeData.specialties || [],
+            approaches: scrapeData.approaches || [],
+            mental_health_role: scrapeData.mental_health_role || "therapist",
+            license_number: scrapeData.license_number || "",
+            license_province: scrapeData.license_province || "",
+            license_expiration_month: scrapeData.license_expiration_month || "",
+            license_expiration_year: scrapeData.license_expiration_year || "",
+          });
+        } else {
+          console.log("No profile data found.");
+          setSaveProfileError(
+            "We couldn't find your profile. Please fill in your information manually."
+          );
+        }
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+        setSaveProfileError(
+          `Error fetching your profile: ${error.message}. Please contact ${process.env.NEXT_PUBLIC_SUPPORT_EMAIL}.`
+        );
       }
     };
 
