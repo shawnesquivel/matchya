@@ -8,6 +8,7 @@ import { useUser } from "@clerk/nextjs";
 import { fetchPineconeProfile } from "../utils/pineconeHelpers";
 import { UserButton } from "@clerk/clerk-react";
 import { useRouter } from "next/navigation";
+import ProfileLoadingSkeleton from "../components/ProfileLoadingSkeleton";
 
 const EditProfileForm = ({ handleManualProfile }) => {
   const { user } = useUser();
@@ -300,11 +301,7 @@ const EditProfileForm = ({ handleManualProfile }) => {
   };
 
   if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <p>Loading profile data...</p>
-      </div>
-    );
+    return <ProfileLoadingSkeleton />;
   }
 
   if (user?.unsafeMetadata?.profileStarted === false) {
