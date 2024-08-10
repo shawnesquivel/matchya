@@ -10,16 +10,11 @@ const ProfileModal = ({ userId, onClose }) => {
   useEffect(() => {
     const fetchPinecone = async () => {
       const data = await fetchPineconeProfile(userId);
-      console.log("data", data);
-
-      // if data is successful, set it to the user data
       if (data) {
         setUserData(data);
       }
     };
-
     fetchPinecone();
-    console.log("re-ndering ProfileModal for userId", userId);
   }, [userId]);
 
   if (!userData)

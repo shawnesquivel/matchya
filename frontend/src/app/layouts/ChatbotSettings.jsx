@@ -45,7 +45,6 @@ const ChatbotSettings = ({
           className="w-full p-2 text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
           value={promptTemplate}
           onChange={(e) => {
-            console.log(e.target.value);
             setPromptTemplate(e.target.value);
           }}
         >
@@ -67,7 +66,6 @@ const ChatbotSettings = ({
           className="w-full p-2 text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-50"
           value={model}
           onChange={(e) => {
-            console.log(e.target.value);
             setModel(e.target.value);
           }}
         >

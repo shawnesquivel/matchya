@@ -54,10 +54,9 @@ const EditProfileForm = ({ handleManualProfile }) => {
       if (!user) return;
 
       const { unsafeMetadata } = user;
-      const { profileSavedOnPinecone, webScrapeData, bio_link } =
-        unsafeMetadata || {};
+      console.log("User Unsafe Metadata", { unsafeMetadata });
+      const { webScrapeData, bio_link } = unsafeMetadata || {};
       const pineconeProfile = await fetchPineconeProfile(bio_link);
-      console.log("fetch Pinecone Profile", pineconeProfile);
       if (pineconeProfile?.bio_link) {
         setProfileData({
           clerk_user_id: pineconeProfile?.clerk_user_id || user.id || "",

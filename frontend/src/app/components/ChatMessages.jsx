@@ -20,7 +20,6 @@ const MessageItem = memo(
     const playAudio = useCallback((audioUrl) => {
       const audio = new Audio(audioUrl);
       audio.play().catch((e) => console.error("Playback failed:", e));
-      // console.log({ audioUrl });
     }, []);
     const matches = message?.sourceDocuments?.matches;
 
@@ -65,7 +64,6 @@ const MessageItem = memo(
               // Repositioned the play button to be inline with the message, making it a part of the message flow
               <button
                 onClick={() => {
-                  console.log("Playing audio");
                   playAudio(message.audio_file_url);
                 }}
                 className="items-center rounded-full bg-gray-200 text-blue-500 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 h-8 w-8 text-center"
@@ -82,7 +80,6 @@ const MessageItem = memo(
             <div className="mt-3 grid lg:grid-cols-3 gap-4 grid-cols-1">
               {matches &&
                 matches.map((match) => {
-                  console.log(match);
                   const id = match.id;
                   const metadata = match.metadata;
                   let bookingLink;
@@ -208,10 +205,6 @@ const MessageItem = memo(
                         )}*/}
                         <button
                           onClick={() => {
-                            console.log(
-                              "Passing bio link to modal",
-                              validatedBioLink
-                            );
                             onOpenModal(validatedBioLink);
                           }}
                           className="wfull bg-mblack text-white px-4 py-3 rounded-full flex align-middle justify-center"

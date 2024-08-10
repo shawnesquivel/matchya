@@ -26,7 +26,6 @@ const StripeSubscriptions = () => {
       script.src = "https://js.stripe.com/v3/pricing-table.js";
       script.async = true;
       script.onload = () => {
-        console.log("Stripe Pricing Table script loaded");
         setIsScriptLoaded(true);
       };
       script.onerror = (error) =>
