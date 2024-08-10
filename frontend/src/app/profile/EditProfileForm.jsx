@@ -8,7 +8,7 @@ import { useUser } from "@clerk/nextjs";
 import { fetchPineconeProfile } from "../utils/pineconeHelpers";
 import { UserButton } from "@clerk/clerk-react";
 import { useRouter } from "next/navigation";
-import ProfileLoadingSkeleton from "../components/ProfileLoadingSkeleton";
+import ProfileLoadingSkeleton from "./EditProfileLoadingSkeleton";
 
 const EditProfileForm = ({ handleManualProfile }) => {
   const { user } = useUser();
