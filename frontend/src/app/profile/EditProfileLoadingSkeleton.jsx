@@ -14,6 +14,8 @@ const ProfileLoadingSkeleton = () => {
           <div className="flex flex-col gap-2 mb-4 sm:mb-0">
             <div className="h-8 bg-gray-200 rounded w-3/4 animate-pulse"></div>
             <div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse"></div>
+            <div className="h-4 bg-gray-200 rounded w-1/3 animate-pulse"></div>
+            <div className="h-4 bg-gray-200 rounded w-2/3 animate-pulse"></div>
           </div>
           <div className="flex flex-col items-end">
             <div className="h-10 bg-gray-200 rounded w-32 animate-pulse mb-2"></div>
