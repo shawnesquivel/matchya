@@ -9,10 +9,24 @@ import {
 } from "../utils/chatHelpers";
 
 const useChatbot = (debug = false) => {
-  const [chatId, setChatId] = useState(getChatID());
+  const [chatId, setChatId] = useState(() => {
+    const newChatId = generateUniqueID();
+    setCookiesChatId(newChatId);
+    return newChatId;
+  });
+
+  const [messages, setMessages] = useState([]);
+
+  useEffect(() => {
+    setMessages([]);
+
+    if (debug) {
+      console.log({ chatId });
+    }
+  }, []);
+
   // ChatMessages
   const [userMessage, setUserMessage] = useState("");
-  const [messages, setMessages] = useState([]);
   const [error, setError] = useState(null);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   // Chatbot Form
@@ -23,62 +37,6 @@ const useChatbot = (debug = false) => {
   const [questionStage, setQuestionStage] = useState(0);
   const [finishedQuestions, setFinishedQuestions] = useState([]);
   const [initialChatMsg, setInitialChatMsg] = useState(true);
-
-  useEffect(() => {
-    /**
-     *  Fetch old messages on page load.
-     *
-     * 1. When the component is 'mounted' we check if the ChatID is present.
-     * 2. If present, get old from the database.
-     */
-    if (!chatId) {
-      const newChatId = generateUniqueID();
-      console.log({ newChatId });
-      setCookiesChatId(newChatId);
-      setChatId(newChatId);
-    } else {
-      fetchMessages();
-    }
-
-    async function fetchMessages() {
-      /** Fetches previous messages, or makes a new chat */
-      if (chatId && messages.length === 0) {
-        //
-        await fetchPreviousMessages();
-      } else {
-        newChat();
-      }
-    }
-  }, [chatId]);
-
-  useEffect(() => {
-    /**
-     *   Helper function, tests if the server is online..
-     */
-    async function testLambda() {
-      await testEndpoint();
-    }
-    const testEndpoint = async () => {
-      try {
-        console.log(
-          `Testing Chalice Deployed Root Endpoint: ${process.env.NEXT_PUBLIC_API_URL}`
-        );
-        const response = await fetch(process.env.NEXT_PUBLIC_API_URL);
-
-        console.log({ response });
-
-        const resJson = await response.json();
-
-        console.log({ resJson });
-      } catch (err) {
-        console.log(`error testing the endpoint: ${err}`);
-      }
-    };
-
-    if (debug) {
-      // testLambda();
-    }
-  }, []);
 
   const handlePromptChange = (e) => {
     setUserMessage(e.target.value);
