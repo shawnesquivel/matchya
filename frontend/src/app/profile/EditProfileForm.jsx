@@ -48,10 +48,13 @@ const EditProfileForm = ({ handleManualProfile }) => {
   const [savingProfile, setSavingProfile] = useState(false);
   const [saveProfileSuccess, setSaveProfileSuccess] = useState(false);
   const [saveProfileError, setSaveProfileError] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       if (!user) return;
+
+      setIsLoading(true);
 
       const { unsafeMetadata } = user;
       console.log("User Unsafe Metadata", { unsafeMetadata });
@@ -91,11 +94,9 @@ const EditProfileForm = ({ handleManualProfile }) => {
             license_expiration_year:
               pineconeProfile.license_expiration_year || "",
           });
+          setIsLoading(false);
           return;
-        }
-
-        // If no Pinecone data was found, check if there was a webscrape done.
-        if (webScrapeData?.data) {
+        } else if (webScrapeData?.data) {
           const scrapeData = webScrapeData.data;
           setProfileData({
             clerk_user_id: pineconeProfile?.clerk_user_id || user.id || "",
@@ -124,33 +125,27 @@ const EditProfileForm = ({ handleManualProfile }) => {
             license_expiration_month: scrapeData.license_expiration_month || "",
             license_expiration_year: scrapeData.license_expiration_year || "",
           });
+          setIsLoading(false);
         } else {
           console.log("No profile data found.");
           setSaveProfileError(
-            "We couldn't find your profile. Please fill in your information manually."
+            `We couldn't find your profile. Please fill in your information manually. ${JSON.stringify(
+              pineconeProfile
+            )} ${JSON.stringify(webScrapeData?.data)}`
           );
+          setIsLoading(false);
         }
       } catch (error) {
         console.error("Error fetching profile:", error);
         setSaveProfileError(
           `Error fetching your profile: ${error.message}. Please contact ${process.env.NEXT_PUBLIC_SUPPORT_EMAIL}.`
         );
+        setIsLoading(false);
       }
     };
 
     fetchData();
   }, [user]);
-
-  if (user?.unsafeMetadata?.profileStarted === false) {
-    return (
-      <Link
-        href={"/profile"}
-        className="underline underline-offset-2 ml-16 mt-16"
-      >
-        Profile not started. Go to bio.
-      </Link>
-    );
-  }
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -304,6 +299,25 @@ const EditProfileForm = ({ handleManualProfile }) => {
     return null;
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <p>Loading profile data...</p>
+      </div>
+    );
+  }
+
+  if (user?.unsafeMetadata?.profileStarted === false) {
+    return (
+      <Link
+        href={"/profile"}
+        className="underline underline-offset-2 ml-16 mt-16"
+      >
+        Profile not started. Go to bio.
+      </Link>
+    );
+  }
+
   return (
     <>
       <div
@@ -371,6 +385,7 @@ const EditProfileForm = ({ handleManualProfile }) => {
                 text={savingProfile ? "Saving..." : "Save Profile"}
                 onClick={saveProfile}
                 className="border-green-light bg-white sm:bg-unset mb-2"
+                disabled={isLoading || savingProfile}
               />
               {saveProfileError && (
                 <p className="text-xs text-red-500 max-w-[200px] text-right">
