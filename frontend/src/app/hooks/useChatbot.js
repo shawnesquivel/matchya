@@ -284,31 +284,39 @@ const useChatbot = (debug = false) => {
       const timestamp = generateTimeStamp();
       setLoadingNewMsg(true);
 
+      console.log("Messages before adding user message:", messages);
+
       // Add user message to the local state
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        {
-          content: userMessage,
-          role: "user",
-          sourceDocuments: null,
-          timestamp: timestamp,
-          chat_id: chatId,
-        },
-      ]);
+      setMessages((prevMessages) => {
+        const newMessages = [
+          ...prevMessages,
+          {
+            content: userMessage,
+            role: "user",
+            sourceDocuments: null,
+            timestamp: timestamp,
+            chat_id: chatId,
+          },
+        ];
+        console.log("Messages after adding user message:", newMessages);
+        return newMessages;
+      });
       const request = {
         chat_id: chatId,
         message: userMessage,
         questionnaire: null,
       };
-      if (initialChatMsg && finishedQuestions && finishedQuestions.length > 0) {
-        console.log(
-          "The questionnaire has not been included yet, we'll include it.",
-          initialChatMsg
-        );
-        request.questionnaire = finishedQuestions;
-      } else {
-        console.log("The questionnaire was already sent. I won't include it.");
-      }
+      // if (initialChatMsg && finishedQuestions && finishedQuestions.length > 0) {
+      //   console.log(
+      //     "The questionnaire has not been included yet, we'll include it.",
+      //     initialChatMsg
+      //   );
+      //   request.questionnaire = finishedQuestions;
+      // } else {
+      //   console.log("The questionnaire was already sent. I won't include it.");
+      // }
+
+      request.questionnaire = finishedQuestions;
 
       const requestBody = JSON.stringify(request);
 
@@ -337,17 +345,21 @@ const useChatbot = (debug = false) => {
       console.log(`Response from ${url}`, { resJson });
 
       // Add assistant message to the local state
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        {
-          content: resJson.content,
-          role: resJson.role,
-          audio_file_url: resJson.audio_file_url,
-          sourceDocuments: resJson.source_documents,
-          timestamp: resJson.timestamp,
-          chat_id: resJson.chat_id,
-        },
-      ]);
+      setMessages((prevMessages) => {
+        const newMessages = [
+          ...prevMessages,
+          {
+            content: resJson.content,
+            role: resJson.role,
+            audio_file_url: resJson.audio_file_url,
+            sourceDocuments: resJson.source_documents,
+            timestamp: resJson.timestamp,
+            chat_id: resJson.chat_id,
+          },
+        ];
+        console.log("Messages after adding bot response:", newMessages);
+        return newMessages;
+      });
 
       setInitialChatMsg(false);
       setError("");
