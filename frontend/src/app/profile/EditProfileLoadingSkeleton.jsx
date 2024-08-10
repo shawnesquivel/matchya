@@ -12,9 +12,11 @@ const ProfileLoadingSkeleton = () => {
         </div>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center w-full">
           <div className="flex flex-col gap-2 mb-4 sm:mb-0">
-            <div className="h-8 bg-gray-200 rounded w-3/4 animate-pulse"></div>
+            <h1 className="sm:text-2xl font-bold text-base">
+              Edit your profile
+            </h1>
+            <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse"></div>
             <div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/3 animate-pulse"></div>
             <div className="h-4 bg-gray-200 rounded w-2/3 animate-pulse"></div>
           </div>
           <div className="flex flex-col items-end">
