@@ -6,7 +6,6 @@ const ProfileModal = ({ userId, onClose }) => {
   const [activeTab, setActiveTab] = useState("info");
   const [userData, setUserData] = useState(null);
 
-  // Pinecone Call to Fetch the UserID Data.
   useEffect(() => {
     const fetchPinecone = async () => {
       const data = await fetchPineconeProfile(userId);
@@ -19,18 +18,42 @@ const ProfileModal = ({ userId, onClose }) => {
 
   if (!userData)
     return (
-      <div className="absolute bg-gray-800 bg-opacity-10 w-full h-full flex flex-row justify-end">
-        <div className="bg-white md:w-6/12 w-full p-12 flex flex-col gap-8">
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              onClose();
-            }}
-          >
-            back to chat
-          </button>
-          <div className="flex flex-row justify-between">
-            Loading profile...
+      <div className="absolute bg-gray-800 bg-opacity-10 w-full h-screen flex flex-row justify-end">
+        <div className="bg-white md:w-6/12 w-full sm:p-12 p-4 flex flex-col sm:gap-8 gap-4 h-full">
+          <div className="flex sm:flex-row flex-col justify-between">
+            <a
+              href="#"
+              className="flex w-full items-center gap-2 text-grey-extraDark"
+            >
+              <div className="w-24 h-6 bg-gray-200 rounded animate-pulse"></div>
+            </a>
+            <div className="flex sm:gap-3 gap-1 justify-between w-full sm:justify-end">
+              <div className="w-24 h-10 bg-gray-200 rounded-full animate-pulse"></div>
+              <div className="w-32 h-10 bg-gray-200 rounded-full animate-pulse"></div>
+            </div>
+          </div>
+          <div className="flex sm:gap-8 gap-4">
+            <div className="relative h-20 w-20 aspect-square bg-gray-200 rounded-full animate-pulse"></div>
+            <div className="flex flex-col gap-1 my-auto">
+              <div className="w-24 h-4 bg-gray-200 rounded animate-pulse"></div>
+              <div className="w-32 h-6 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+          </div>
+          <div className="w-full flex sm:gap-14 justify-center gap-4">
+            {["summary", "specialties", "fees"].map((tab, index) => (
+              <div
+                key={index}
+                className="w-24 h-8 bg-gray-200 rounded animate-pulse"
+              ></div>
+            ))}
+          </div>
+          <div className="w-full h-full overflow-y-scroll">
+            <div className="flex flex-col gap-8">
+              <div className="flex flex-col gap-2">
+                <div className="w-16 h-4 bg-gray-200 rounded animate-pulse"></div>
+                <div className="w-full h-32 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
