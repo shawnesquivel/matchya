@@ -532,27 +532,32 @@ const useChatbot = (debug = false) => {
       };
       setQuestionStage(newQuestionIndex);
 
-      const previousBotMsg = {
-        content: messages[messages.length - 1].content,
-        role: messages[messages.length - 1].role,
-      };
-
-      // Update render messages object
+      // Update messages
       setMessages((prevMessages) => [...prevMessages, userResponse]);
 
-      // Update the questionnaire holder
-      setFinishedQuestions((prev) => [...prev, previousBotMsg, userResponse]);
-
-      // If user selected no/unsure about insurance, skip the provider question
-      if (clickedQuestionIndex === 4 && !value.includes("has_insurance")) {
-        // Skip to the final chat question
-        const chatQuestion = questions[6];
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          { ...chatQuestion, content: chatQuestion.content, isTyping: true },
-        ]);
+      // Handle insurance flow
+      if (clickedQuestionIndex === 4) {
+        if (value.includes("has_insurance")) {
+          // Show insurance provider question
+          const providerQuestion = questions[5];
+          setMessages((prevMessages) => [
+            ...prevMessages,
+            {
+              ...providerQuestion,
+              content: providerQuestion.content,
+              isTyping: true,
+            },
+          ]);
+        } else {
+          // Skip to final chat question
+          const chatQuestion = questions[6];
+          setMessages((prevMessages) => [
+            ...prevMessages,
+            { ...chatQuestion, content: chatQuestion.content, isTyping: true },
+          ]);
+        }
       } else {
-        // Show next question normally
+        // Normal question flow
         const message = questions[newQuestionIndex];
         if (message) {
           setMessages((prevMessages) => [
