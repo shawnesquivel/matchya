@@ -522,7 +522,13 @@ const useChatbot = (debug = false) => {
   }, [chatId, messages]);
   const handleButtonClick = async (value, clickedQuestionIndex) => {
     try {
+      console.log("handleButtonClick called with:", {
+        value,
+        clickedQuestionIndex,
+      });
+
       const newQuestionIndex = clickedQuestionIndex + 1;
+      console.log("New question index:", newQuestionIndex);
 
       const userResponse = {
         content: value,
@@ -531,15 +537,27 @@ const useChatbot = (debug = false) => {
         chat_id: getChatID(),
       };
       setQuestionStage(newQuestionIndex);
+      console.log("Set question stage to:", newQuestionIndex);
 
       // Update messages
-      setMessages((prevMessages) => [...prevMessages, userResponse]);
+      setMessages((prevMessages) => {
+        console.log("Previous messages:", prevMessages);
+        return [...prevMessages, userResponse];
+      });
 
       // Handle insurance flow
       if (clickedQuestionIndex === 4) {
+        console.log("Insurance question flow triggered");
+        console.log(
+          "Value includes has_insurance:",
+          value.includes("has_insurance")
+        );
+
         if (value.includes("has_insurance")) {
           // Show insurance provider question
           const providerQuestion = questions[5];
+          console.log("Provider question:", providerQuestion);
+
           setMessages((prevMessages) => [
             ...prevMessages,
             {
@@ -551,6 +569,8 @@ const useChatbot = (debug = false) => {
         } else {
           // Skip to final chat question
           const chatQuestion = questions[6];
+          console.log("Skipping to chat question:", chatQuestion);
+
           setMessages((prevMessages) => [
             ...prevMessages,
             { ...chatQuestion, content: chatQuestion.content, isTyping: true },
@@ -558,7 +578,10 @@ const useChatbot = (debug = false) => {
         }
       } else {
         // Normal question flow
+        console.log("Normal question flow");
         const message = questions[newQuestionIndex];
+        console.log("Next question:", message);
+
         if (message) {
           setMessages((prevMessages) => [
             ...prevMessages,
@@ -580,12 +603,11 @@ const useChatbot = (debug = false) => {
 
       setLoadingNewMsg(false);
     } catch (err) {
-      console.error(err);
+      console.error("Error in handleButtonClick:", err);
       setError("Error processing your choice. Please try again.");
       setLoadingNewMsg(false);
     }
   };
-
   return {
     userMessage,
     messages,

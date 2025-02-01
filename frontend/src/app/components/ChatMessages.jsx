@@ -225,9 +225,14 @@ const MessageItem = memo(
               {message.buttons.map((button, index) => (
                 <button
                   key={index}
-                  onClick={() =>
-                    onButtonClick(button.content, button.questionIndex)
-                  }
+                  onClick={() => {
+                    console.log(
+                      "button clicked",
+                      button.content,
+                      button.questionIndex
+                    );
+                    onButtonClick(button.content, button.questionIndex);
+                  }}
                   className="flex flex-col items-start p-4 bg-white rounded-xl hover:bg-[#F8F8F2] transition-colors shadow-sm border border-gray-200 w-full"
                 >
                   <div className="w-8 h-8 mb-4">
