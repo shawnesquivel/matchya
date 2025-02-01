@@ -13,9 +13,6 @@ import ProfileModal from "../components/ProfileModal";
 const Chatbot = ({
   emoji = "🤖",
   headingText = "Chatbot",
-  heading = "Chat",
-  boldText = "Powered by OpenAI",
-  description = "Fully customizable",
   botPngFile = "girlfriend",
   debug = false,
 }) => {
@@ -123,7 +120,7 @@ const Chatbot = ({
         <>
           <div className="min-w-full bg-white pt-0 pb-2 md:px-6 px-2 rounded-3xl overflow-hidden border-grey-dark border h-full justify-end flex flex-col max-w-[1440px] mx-auto lg:h-[85vh] md:h-[84vh] sm:h-[85vh] h-[70vh] w-full">
             {memoizedChatMessages}
-            {questionStage === 4 && (
+            {questionStage === 6 && (
               <ChatInput
                 prompt={userMessage}
                 handlePromptChange={handlePromptChange}
