@@ -231,7 +231,11 @@ const MessageItem = memo(
                       button.content,
                       button.questionIndex
                     );
-                    onButtonClick(button.value, button.questionIndex);
+                    onButtonClick(
+                      button.value,
+                      button.content,
+                      button.questionIndex
+                    );
                   }}
                   className="flex flex-col items-start p-4 bg-white rounded-xl hover:bg-[#F8F8F2] transition-colors shadow-sm border border-gray-200 w-full"
                 >

@@ -520,15 +520,12 @@ const useChatbot = (debug = false) => {
       console.log(`Found messages for ${chatId}`, { messages });
     }
   }, [chatId, messages]);
-  const handleButtonClick = async (value, clickedQuestionIndex) => {
+  const handleButtonClick = async (value, content, clickedQuestionIndex) => {
     try {
       const newQuestionIndex = clickedQuestionIndex + 1;
 
-      // Convert value array to string for content display
-      const displayContent = Array.isArray(value) ? value[0] : value;
-
       const userResponse = {
-        content: displayContent,
+        content: content,
         role: "user",
         timestamp: generateTimeStamp(),
         chat_id: getChatID(),
@@ -539,7 +536,6 @@ const useChatbot = (debug = false) => {
 
       // Handle insurance flow
       if (clickedQuestionIndex === 4) {
-        // Check if any value in the array includes "has_insurance"
         const hasInsurance =
           Array.isArray(value) && value.some((v) => v === "has_insurance");
 
@@ -571,9 +567,7 @@ const useChatbot = (debug = false) => {
         }
       }
 
-      await new Promise((resolve) =>
-        setTimeout(resolve, displayContent.length * 10)
-      );
+      await new Promise((resolve) => setTimeout(resolve, content.length * 10));
 
       setMessages((prevMessages) =>
         prevMessages.map((msg, index) =>
