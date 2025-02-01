@@ -209,34 +209,28 @@ const useChatbot = (debug = false) => {
     },
     {
       role: "assistant",
-      content: `got it, last question ~ do you have preferences you'd like to share? some users share experience with specific issues, preferences for gender/ethnicity/sexuality, language(s), faith. you can enter it in the chat below.`,
-      type: "chat",
-      questionIndex: 4,
-    },
-    {
-      role: "assistant",
       content:
         "let's talk about insurance coverage. do you have extended health benefits?",
       type: "questionnaire",
-      questionIndex: 5,
+      questionIndex: 4,
       buttons: [
         {
           content: "yes, i have insurance coverage",
           icon: "checkmark",
           value: ["has_insurance"],
-          questionIndex: 5,
+          questionIndex: 4,
         },
         {
           content: "no insurance coverage",
           icon: "x-mark",
           value: ["no_insurance"],
-          questionIndex: 5,
+          questionIndex: 4,
         },
         {
           content: "i'm not sure about my coverage",
           icon: "question",
           value: ["unknown_insurance"],
-          questionIndex: 5,
+          questionIndex: 4,
         },
       ],
     },
@@ -244,57 +238,63 @@ const useChatbot = (debug = false) => {
       role: "assistant",
       content: "which insurance provider do you have?",
       type: "questionnaire",
-      questionIndex: 6,
+      questionIndex: 5,
       buttons: [
         {
           content: "Blue Cross",
           icon: "cross",
           value: ["blue_cross"],
-          questionIndex: 6,
+          questionIndex: 5,
         },
         {
           content: "Manulife",
           icon: "building",
           value: ["manulife"],
-          questionIndex: 6,
+          questionIndex: 5,
         },
         {
           content: "Canada Life",
           icon: "maple-leaf",
           value: ["canada_life"],
-          questionIndex: 6,
+          questionIndex: 5,
         },
         {
           content: "Sun Life Financial",
           icon: "sun",
           value: ["sun_life"],
-          questionIndex: 6,
+          questionIndex: 5,
         },
         {
           content: "Desjardins",
           icon: "building",
           value: ["desjardins"],
-          questionIndex: 6,
+          questionIndex: 5,
         },
         {
           content: "Green Shield Canada",
           icon: "shield",
           value: ["green_shield"],
-          questionIndex: 6,
+          questionIndex: 5,
         },
         {
           content: "GMS",
           icon: "building",
           value: ["gms"],
-          questionIndex: 6,
+          questionIndex: 5,
         },
         {
           content: "Other / Not mentioned",
           icon: "question",
           value: ["other_insurance"],
-          questionIndex: 6,
+          questionIndex: 5,
         },
       ],
+    },
+    {
+      role: "assistant",
+      content: `lastly ~ do you have any other preferences you'd like to share? some users share experience with specific issues, preferences for gender/ethnicity/sexuality, language(s), faith. you can enter it in the chat below.`,
+      type: "chat",
+      questionIndex: 6,
     },
   ];
 
@@ -543,43 +543,28 @@ const useChatbot = (debug = false) => {
       // Update the questionnaire holder
       setFinishedQuestions((prev) => [...prev, previousBotMsg, userResponse]);
 
-      // Check if we should show insurance questions
-      if (clickedQuestionIndex === 4) {
-        // After the free-form preferences question, show insurance question
-        const insuranceQuestion = questions[5]; // First insurance question
+      // If user selected no/unsure about insurance, skip the provider question
+      if (clickedQuestionIndex === 4 && !value.includes("has_insurance")) {
+        // Skip to the final chat question
+        const chatQuestion = questions[6];
         setMessages((prevMessages) => [
           ...prevMessages,
-          {
-            ...insuranceQuestion,
-            content: insuranceQuestion.content,
-            isTyping: true,
-          },
+          { ...chatQuestion, content: chatQuestion.content, isTyping: true },
         ]);
-      } else if (clickedQuestionIndex === 5) {
-        // If they selected "yes" to having insurance, show provider question
-        if (value.includes("has_insurance")) {
-          const providerQuestion = questions[6];
+      } else {
+        // Show next question normally
+        const message = questions[newQuestionIndex];
+        if (message) {
           setMessages((prevMessages) => [
             ...prevMessages,
-            {
-              ...providerQuestion,
-              content: providerQuestion.content,
-              isTyping: true,
-            },
+            { ...message, content: message.content, isTyping: true },
           ]);
         }
-      } else if (newQuestionIndex <= 4) {
-        // Handle original questions
-        const message = questions[newQuestionIndex];
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          { ...message, content: message.content, isTyping: true },
-        ]);
       }
 
       // Add typing delay
       await new Promise((resolve) =>
-        setTimeout(resolve, message.content.length * 10)
+        setTimeout(resolve, userResponse.content.length * 10)
       );
 
       setMessages((prevMessages) =>
