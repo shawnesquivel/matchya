@@ -521,11 +521,6 @@ const useChatbot = (debug = false) => {
     }
   }, [chatId, messages]);
   const handleButtonClick = async (value, clickedQuestionIndex) => {
-    /**
-     * Handles the button click event by updating the state with the user's response,
-     * advancing the question stage, and adding the bot's and user's messages to the finished questions array.
-     * If there are more questions, it sets the next question as typing and then updates it to not typing after a delay.
-     */
     try {
       const newQuestionIndex = clickedQuestionIndex + 1;
 
@@ -548,24 +543,50 @@ const useChatbot = (debug = false) => {
       // Update the questionnaire holder
       setFinishedQuestions((prev) => [...prev, previousBotMsg, userResponse]);
 
-      if (newQuestionIndex <= 4) {
+      // Check if we should show insurance questions
+      if (clickedQuestionIndex === 4) {
+        // After the free-form preferences question, show insurance question
+        const insuranceQuestion = questions[5]; // First insurance question
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          {
+            ...insuranceQuestion,
+            content: insuranceQuestion.content,
+            isTyping: true,
+          },
+        ]);
+      } else if (clickedQuestionIndex === 5) {
+        // If they selected "yes" to having insurance, show provider question
+        if (value.includes("has_insurance")) {
+          const providerQuestion = questions[6];
+          setMessages((prevMessages) => [
+            ...prevMessages,
+            {
+              ...providerQuestion,
+              content: providerQuestion.content,
+              isTyping: true,
+            },
+          ]);
+        }
+      } else if (newQuestionIndex <= 4) {
+        // Handle original questions
         const message = questions[newQuestionIndex];
         setMessages((prevMessages) => [
           ...prevMessages,
           { ...message, content: message.content, isTyping: true },
         ]);
-
-        await new Promise((resolve) =>
-          setTimeout(resolve, message.content.length * 10)
-        );
-        setMessages((prevMessages) =>
-          prevMessages.map((msg, index) =>
-            index === prevMessages.length - 1
-              ? { ...msg, isTyping: false }
-              : msg
-          )
-        );
       }
+
+      // Add typing delay
+      await new Promise((resolve) =>
+        setTimeout(resolve, message.content.length * 10)
+      );
+
+      setMessages((prevMessages) =>
+        prevMessages.map((msg, index) =>
+          index === prevMessages.length - 1 ? { ...msg, isTyping: false } : msg
+        )
+      );
 
       setLoadingNewMsg(false);
     } catch (err) {
