@@ -240,13 +240,24 @@ const MessageItem = memo(
                   className="flex flex-col items-start p-4 bg-white rounded-xl hover:bg-[#F8F8F2] transition-colors shadow-sm border border-gray-200 w-full"
                 >
                   <div className="w-8 h-8 mb-4">
-                    <Image
-                      src={`/assets/images/${button.icon}.png`}
-                      alt={button.icon}
-                      width={32}
-                      height={32}
-                      className="text-orange-500"
-                    />
+                    {button.icon ? (
+                      <Image
+                        src={`/assets/images/${button.icon}.png`}
+                        alt={button.icon}
+                        width={32}
+                        height={32}
+                        className="text-orange-500"
+                        onError={(e) => {
+                          // If image fails to load, replace with an empty div
+                          e.target.style.display = "none";
+                        }}
+                      />
+                    ) : (
+                      // Render an empty placeholder if no icon is specified
+                      <div className="w-8 h-8 flex items-center justify-center text-gray-300">
+                        {button.content.charAt(0).toUpperCase()}
+                      </div>
+                    )}
                   </div>
                   <span className="text-sm sm:text-base md:text-lg font-normal text-left">
                     {button.content}
