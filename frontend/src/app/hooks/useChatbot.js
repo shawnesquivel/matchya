@@ -134,7 +134,7 @@ const useChatbot = (debug = false) => {
     {
       role: "assistant",
       content:
-        "mm, i see! just 3 more questions to go, you're doing great :) there are many types of therapy. which of the following resonates best with you?",
+        "very helpful, thanks! you're doing great :) there are many types of therapy. which of the following resonates best with you?",
       type: "questionnaire",
       questionIndex: 2,
       buttons: [
