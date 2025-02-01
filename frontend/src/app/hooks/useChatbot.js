@@ -540,6 +540,7 @@ const useChatbot = (debug = false) => {
           Array.isArray(value) && value.some((v) => v === "has_insurance");
 
         if (hasInsurance) {
+          // Show insurance provider question (question 5)
           const providerQuestion = questions[5];
           setMessages((prevMessages) => [
             ...prevMessages,
@@ -550,12 +551,22 @@ const useChatbot = (debug = false) => {
             },
           ]);
         } else {
+          // Skip to chat question (question 6) for "no insurance" or "not sure"
+          setQuestionStage(6); // Important: Set stage to 6 to show chat input
           const chatQuestion = questions[6];
           setMessages((prevMessages) => [
             ...prevMessages,
             { ...chatQuestion, content: chatQuestion.content, isTyping: true },
           ]);
         }
+      } else if (clickedQuestionIndex === 5) {
+        // After insurance provider selection, show chat question
+        setQuestionStage(6); // Important: Set stage to 6 to show chat input
+        const chatQuestion = questions[6];
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          { ...chatQuestion, content: chatQuestion.content, isTyping: true },
+        ]);
       } else {
         // Normal question flow
         const message = questions[newQuestionIndex];
