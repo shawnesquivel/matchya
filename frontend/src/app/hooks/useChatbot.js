@@ -213,6 +213,89 @@ const useChatbot = (debug = false) => {
       type: "chat",
       questionIndex: 4,
     },
+    {
+      role: "assistant",
+      content:
+        "let's talk about insurance coverage. do you have extended health benefits?",
+      type: "questionnaire",
+      questionIndex: 5,
+      buttons: [
+        {
+          content: "yes, i have insurance coverage",
+          icon: "checkmark",
+          value: ["has_insurance"],
+          questionIndex: 5,
+        },
+        {
+          content: "no insurance coverage",
+          icon: "x-mark",
+          value: ["no_insurance"],
+          questionIndex: 5,
+        },
+        {
+          content: "i'm not sure about my coverage",
+          icon: "question",
+          value: ["unknown_insurance"],
+          questionIndex: 5,
+        },
+      ],
+    },
+    {
+      role: "assistant",
+      content: "which insurance provider do you have?",
+      type: "questionnaire",
+      questionIndex: 6,
+      buttons: [
+        {
+          content: "Blue Cross",
+          icon: "cross",
+          value: ["blue_cross"],
+          questionIndex: 6,
+        },
+        {
+          content: "Manulife",
+          icon: "building",
+          value: ["manulife"],
+          questionIndex: 6,
+        },
+        {
+          content: "Canada Life",
+          icon: "maple-leaf",
+          value: ["canada_life"],
+          questionIndex: 6,
+        },
+        {
+          content: "Sun Life Financial",
+          icon: "sun",
+          value: ["sun_life"],
+          questionIndex: 6,
+        },
+        {
+          content: "Desjardins",
+          icon: "building",
+          value: ["desjardins"],
+          questionIndex: 6,
+        },
+        {
+          content: "Green Shield Canada",
+          icon: "shield",
+          value: ["green_shield"],
+          questionIndex: 6,
+        },
+        {
+          content: "GMS",
+          icon: "building",
+          value: ["gms"],
+          questionIndex: 6,
+        },
+        {
+          content: "Other / Not mentioned",
+          icon: "question",
+          value: ["other_insurance"],
+          questionIndex: 6,
+        },
+      ],
+    },
   ];
 
   let initialChatMessages = [

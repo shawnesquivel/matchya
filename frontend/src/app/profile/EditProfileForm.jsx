@@ -21,7 +21,14 @@ const EditProfileForm = ({ handleManualProfile }) => {
     country: "",
     clinic: "",
     available_online: false,
-    fees: [],
+    fees: {
+      individual_50min: null,
+      individual_80min: null,
+      couples_50min: null,
+      couples_80min: null,
+      sliding_scale: false,
+      sliding_scale_details: "",
+    },
     email: "",
     bio_link: "",
     booking_link: "",
@@ -38,6 +45,11 @@ const EditProfileForm = ({ handleManualProfile }) => {
     license_province: "",
     license_expiration_month: "",
     license_expiration_year: "",
+    insurance: {
+      direct_billing: false,
+      accepted_providers: [],
+      direct_billing_providers: [],
+    },
   });
   const [activeTab, setActiveTab] = useState("info");
   const [newChips, setNewChips] = useState({
@@ -74,7 +86,14 @@ const EditProfileForm = ({ handleManualProfile }) => {
             country: pineconeProfile.country || "",
             clinic: pineconeProfile.clinic || "",
             available_online: pineconeProfile.available_online || false,
-            fees: pineconeProfile.fees || [],
+            fees: pineconeProfile.fees || {
+              individual_50min: null,
+              individual_80min: null,
+              couples_50min: null,
+              couples_80min: null,
+              sliding_scale: false,
+              sliding_scale_details: "",
+            },
             email: pineconeProfile.emailAddress || "",
             bio_link: pineconeProfile.bio_link || "",
             booking_link: pineconeProfile.booking_link || "",
@@ -94,6 +113,11 @@ const EditProfileForm = ({ handleManualProfile }) => {
               pineconeProfile.license_expiration_month || "",
             license_expiration_year:
               pineconeProfile.license_expiration_year || "",
+            insurance: pineconeProfile.insurance || {
+              direct_billing: false,
+              accepted_providers: [],
+              direct_billing_providers: [],
+            },
           });
           setIsLoading(false);
           return;
@@ -108,7 +132,14 @@ const EditProfileForm = ({ handleManualProfile }) => {
             country: scrapeData.country || "",
             clinic: scrapeData.clinic || "",
             available_online: scrapeData.available_online || false,
-            fees: scrapeData.fees || [],
+            fees: scrapeData.fees || {
+              individual_50min: null,
+              individual_80min: null,
+              couples_50min: null,
+              couples_80min: null,
+              sliding_scale: false,
+              sliding_scale_details: "",
+            },
             email: scrapeData.emailAddress || "",
             bio_link: scrapeData.bio_link || "",
             booking_link: scrapeData.booking_link || "",
@@ -125,6 +156,11 @@ const EditProfileForm = ({ handleManualProfile }) => {
             license_province: scrapeData.license_province || "",
             license_expiration_month: scrapeData.license_expiration_month || "",
             license_expiration_year: scrapeData.license_expiration_year || "",
+            insurance: scrapeData.insurance || {
+              direct_billing: false,
+              accepted_providers: [],
+              direct_billing_providers: [],
+            },
           });
           setIsLoading(false);
         } else {
