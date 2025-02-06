@@ -1,0 +1,168 @@
+## Approaches
+
+- Cognitive Behavioral Therapy
+- Body-Mind Therapy
+- Brainspotting
+- Chi Kung
+- Reiki
+- P.E.M.S.™ 4 Pillar Therapeutic Wellness System
+- Person-Centered Therapy
+- Mindfulness and self-compassion
+- Internal Family Systems
+- Trauma-Informed Parts Work
+- Psychedelic planning and integration
+- Compassion-Focused Therapy
+- Acceptance and Commitment Therapy
+- Dialectical Behavioral Therapy
+- Emotionally Focused Therapy
+- Humanistic Approach
+- Narrative Therapy
+- Solution Focused Therapy
+- Somatic Art Therapy
+- Brief Solution Focused therapy (B-SFT)
+- Strengths-Based Therapy
+- Attachment Theory
+- Psychoeducation
+- Coherence Therapy
+- Gestalt Therapy
+- Neuro Linguistic Programming (NLP)
+- Emotional Freedom Technique (EFT)
+- Relational Somatic Therapy
+- Trauma Informed Therapies
+- Mindfulness Coaching
+- Talk Therapy
+- Body-Based (Somatic) Approaches
+- Interpersonal Neurobiology
+- Polyvagal Theory
+- Gottman Method
+- Somatics (Somatic Experiencing)
+- Parts work (Inner Relationship Focusing)
+- Anti-capitalist, anti-oppressive practice
+- LGBTQI2S+ affirming
+- Sex worker allied
+- Sex + kink affirming
+- Adlerian Therapy
+- Rogerian Therapy
+- Play/Art Therapy
+- Feminist Theories
+- Group Therapy
+- Motivational Interviewing
+- EMDR
+- Emotion Focused Family Therapy
+- Spirituality
+- Trauma & Grief Informed
+- Client Centered
+- Intuitive Collaboration
+- Body-Centred Psychotherapy
+- Expressive therapy
+- Art therapy
+- Psychodynamic therapy
+- Relational therapy
+- Attachment-based therapy
+- Inner child work
+
+## Specialties
+
+- Anxiety
+- Depression
+- Burnout
+- Life changes/transitions
+- ADHD
+- Anger management
+- Trauma
+- Grief & loss
+- Relationships
+- Bipolar disorder
+- Neurodiverse clients
+- Attachments
+- Chronic Stress
+- Self-Esteem
+- Perfectionism
+- Family
+- Self-Love
+- Confidence & Self-Validation
+- Trauma & PTSD
+- Eating Disorder Recovery
+- Body Image
+- Anti-Diet Culture Education
+- Sexual Empowerment
+- Low Sexual Desire
+- Addiction
+- Codependency
+- Men's issues
+- Women's issues
+- LGBTIQA+ issues
+- Childhood trauma
+- Racial & cultural identity challenges
+- Personal growth & development
+- Self identity
+- Psychedelic integration
+- Couples issues
+- Shame & Guilt
+- Cultural & Racial Challenges
+- Adverse Childhood Experiences
+- Inner Child
+- Addictions
+- Toxic Relationships
+- Behavioural Issues
+- Chronic Pain
+- Coping Skills
+- Obsessive-Compulsive (OCD)
+- School Issues
+- Stress
+- Children & Youth
+- Negative Thinking & Thought Patterns
+- School-Related Challenges
+- Low self-worth
+- Miscarriage & pregnancy loss
+- Car accident recovery
+- Communication skills
+- Career & Education
+- Goal Setting
+- Peri/Post Natal Care
+- Post Concussion Syndrome
+- Post Traumatic Stress
+- Sexuality
+- Phobias
+- Self-Harm
+- Identity
+- Meaning and Purpose
+- BIPOC and Cultural Issues
+- Family Conflict
+- Minority Issues
+- Pain Management
+- Parenting
+- Sleep issues
+- Business/Professional Challenges
+- Workplace challenges
+- Core Beliefs
+- Relational Challenges
+- Boundary Setting
+- Break-Ups
+- Creative Blocks
+- Dating
+- Depersonalization
+- Dissociation
+- Domestic Violence
+- Emotional Abuse
+- Emotional Regulation and Anger
+- Harm Reduction
+- Incest Histories
+- Interpersonal Challenges
+- Kink and Sex Positive
+- Leadership Development
+- Life Meaning and Purpose
+- Motivation
+- Neglect
+- Nervous System Regulation
+- Relational Trauma
+- Sex Worker Allied
+- Sexual Trauma
+- Sexual Violence
+- Sexuality and Gender
+- Stress Management
+- Substance Use Issues
+- Chronic and Life-Limiting Illness
+- Sexual Orientation
+- Immigrants' Issues
+- Spirituality
