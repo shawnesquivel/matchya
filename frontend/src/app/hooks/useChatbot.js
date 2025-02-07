@@ -30,13 +30,47 @@ const useChatbot = (debug = false) => {
   const [error, setError] = useState(null);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   // Chatbot Form
-  const [model, setModel] = useState("gpt-3.5-turbo");
+  const [model, setModel] = useState("gpt-4o");
   const [promptTemplate, setPromptTemplate] = useState("girlfriend");
   const [temperature, setTemperature] = useState(0.5);
   const [loadingNewMsg, setLoadingNewMsg] = useState(false);
   const [questionStage, setQuestionStage] = useState(0);
   const [finishedQuestions, setFinishedQuestions] = useState([]);
   const [initialChatMsg, setInitialChatMsg] = useState(true);
+
+  // New: Structured preferences state with explicit keys (no therapyTypes field)
+  const [preferences, setPreferences] = useState({
+    reason: "", // question
+    frequency: "", // e.g., "one_time"
+    preferred_therapy: "", // e.g., "structured"
+    session_type: "", // e.g., "group"
+    insurance: null, // e.g., true/false
+    insurance_provider: "", // e.g., "sunlife"
+    gender: null, // e.g., "male" or "female"
+    location: "Vancouver, BC", // default location
+    additional_preferences: "", // any extra notes (freeform final user input)
+  });
+
+  // Update a specific preference field.
+  const updatePreference = (key, value) => {
+    console.log("updatePreference called", { key, value });
+    setPreferences((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+  };
+
+  // (Optional) A merge function if a field should aggregate multiple values,
+  // but for the keys above, we expect a single value.
+  const mergePreference = (key, valueArray) => {
+    console.warn("mergePreference should not be used for key:", key);
+    setPreferences((prev) => ({
+      ...prev,
+      [key]: Array.isArray(prev[key])
+        ? [...new Set([...prev[key], ...valueArray])]
+        : valueArray,
+    }));
+  };
 
   const handlePromptChange = (e) => {
     setUserMessage(e.target.value);
@@ -54,36 +88,27 @@ const useChatbot = (debug = false) => {
           content:
             "i have a specific situational problem i want to address with therapy.",
           icon: "hazard",
-          value: [
-            "cognitive behavioral therapy",
-            "solution-focused brief therapy",
-          ],
+          value: "specific_problem",
           questionIndex: 0,
         },
         {
           content:
             "i have specific characteristics i want to change or improve in therapy.",
           icon: "brain",
-          value: [
-            "cognitive behavioral therapy",
-            "dialectical behavior therapy",
-          ],
+          value: "improvement",
           questionIndex: 0,
         },
         {
           content: "i want to become a mentally healthier version of myself.",
           icon: "heart",
-          value: [
-            "person-centered therapy",
-            "mindfulness-based cognitive therapy",
-          ],
+          value: "growth",
           questionIndex: 0,
         },
         {
           content:
             "i don't have an exact reason for why i want to see a therapist.",
           icon: "question-mark",
-          value: ["psychodynamic therapy", "integrative therapy"],
+          value: "uncertain",
           questionIndex: 0,
         },
       ],
@@ -98,35 +123,32 @@ const useChatbot = (debug = false) => {
         {
           content: "i want to try therapy and see what would be best for me.",
           icon: "door",
-          value: ["integrative therapy", "person-centered therapy"],
+          value: "trial",
           questionIndex: 1,
         },
         {
           content: "i want to see a therapist just one time.",
           icon: "clock",
-          value: ["single session therapy (SST)", "crisis counselling"],
+          value: "one_time",
           questionIndex: 1,
         },
         {
           content: "i want to address a problem in 2-4 sessions.",
           icon: "hourglass",
-          value: [
-            "solution focused brief therapy (SFBT)",
-            "crisis counselling",
-          ],
+          value: "few_sessions",
           questionIndex: 1,
         },
         {
           content: "i'm looking for a longer term therapist.",
           icon: "chat",
-          value: ["psychodynamic therapy", "dialetical behavior therapy"],
+          value: "long_term",
           questionIndex: 1,
         },
         {
           content:
             "i have low insurance coverage and a limited number of sessions.",
           icon: "money",
-          value: ["cognitive behavioral therapy", "group therapy"],
+          value: "low_coverage",
           questionIndex: 1,
         },
       ],
@@ -142,34 +164,28 @@ const useChatbot = (debug = false) => {
           content:
             'structured and goal-oriented. "i like structure and a clear outcome"',
           icon: "target",
-          value: [
-            "cognitive behavioral therapy",
-            "solution-focused brief therapy",
-          ],
+          value: "structured",
           questionIndex: 2,
         },
         {
           content:
             'exploratory and insight-oriented. "i want to explore my thoughts and emotions"',
           icon: "compass",
-          value: ["psychodynamic therapy", "integrative therapy"],
+          value: "exploratory",
           questionIndex: 2,
         },
         {
           content:
             'skill-building and mindfulness-focused. "i want to build skills and healthy habits"',
           icon: "mind",
-          value: [
-            "dialectical behavior therapy",
-            "mindfulness-based cognitive therapy",
-          ],
+          value: "skill_building",
           questionIndex: 2,
         },
         {
           content:
             'flexible and client-centered. "i\'m not sure what i need yet"',
           icon: "expand",
-          value: ["person-centered therapy", "integrative therapy"],
+          value: "client_centered",
           questionIndex: 2,
         },
       ],
@@ -184,25 +200,25 @@ const useChatbot = (debug = false) => {
         {
           content: "i prefer one-on-one sessions.",
           icon: "one-on-one",
-          value: ["most therapeutic approaches"],
+          value: "one_on_one",
           questionIndex: 3,
         },
         {
           content: "i'm open to group sessions.",
           icon: "group",
-          value: ["group therapy", "dialectical behavior therapy"],
+          value: "group",
           questionIndex: 3,
         },
         {
           content: "i'd like online/remote sessions.",
           icon: "video",
-          value: ["cognitive behavioral therapy", "integrative therapy"],
+          value: "remote",
           questionIndex: 3,
         },
         {
           content: "i prefer in-person sessions.",
           icon: "in-person",
-          value: ["most therapeutic approaches"],
+          value: "in_person",
           questionIndex: 3,
         },
       ],
@@ -217,19 +233,19 @@ const useChatbot = (debug = false) => {
         {
           content: "yes, i have insurance coverage",
           icon: "checkmark",
-          value: ["has_insurance"],
+          value: "has_insurance",
           questionIndex: 4,
         },
         {
           content: "no insurance coverage",
           icon: "x-mark",
-          value: ["no_insurance"],
+          value: "no_insurance",
           questionIndex: 4,
         },
         {
           content: "i'm not sure about my coverage",
           icon: "question",
-          value: ["unknown_insurance"],
+          value: "unknown_insurance",
           questionIndex: 4,
         },
       ],
@@ -243,43 +259,43 @@ const useChatbot = (debug = false) => {
         {
           content: "Blue Cross",
           icon: "blue-cross",
-          value: ["blue_cross"],
+          value: "blue_cross",
           questionIndex: 5,
         },
         {
           content: "Sun Life",
           icon: "sun-life",
-          value: ["sun_life"],
+          value: "sun_life",
           questionIndex: 5,
         },
         {
           content: "Manulife",
           icon: "manulife",
-          value: ["manulife"],
+          value: "manulife",
           questionIndex: 5,
         },
         {
           content: "Desjardins",
           icon: "desjardins",
-          value: ["desjardins"],
+          value: "desjardins",
           questionIndex: 5,
         },
         {
           content: "GMS",
           icon: "gms",
-          value: ["gms"],
+          value: "gms",
           questionIndex: 5,
         },
         {
           content: "Greenshield",
           icon: "greenshield",
-          value: ["greenshield"],
+          value: "greenshield",
           questionIndex: 5,
         },
         {
           content: "Other Provider",
           icon: "other",
-          value: ["other_insurance"],
+          value: "other_insurance",
           questionIndex: 5,
         },
       ],
@@ -363,7 +379,6 @@ const useChatbot = (debug = false) => {
 
       console.log("Messages before adding user message:", messages);
 
-      // Add user message to the local state
       setMessages((prevMessages) => {
         const newMessages = [
           ...prevMessages,
@@ -373,18 +388,19 @@ const useChatbot = (debug = false) => {
             sourceDocuments: null,
             timestamp: timestamp,
             chat_id: chatId,
+            preferences: preferences,
           },
         ];
         console.log("Messages after adding user message:", newMessages);
         return newMessages;
       });
+
       const request = {
         chat_id: chatId,
         message: userMessage,
         questionnaire: finishedQuestions,
+        preferences: preferences, // pass on our structured preferences
       };
-
-      request.questionnaire = finishedQuestions;
 
       const requestBody = JSON.stringify(request);
 
@@ -392,9 +408,11 @@ const useChatbot = (debug = false) => {
 
       setUserMessage("");
 
+      // Production
       const url = `${process.env.NEXT_PUBLIC_API_URL}/chat`;
 
-      console.log("Fetching Chat", { url });
+      // Local
+      // const url = "http://127.0.0.1:3000/chat";
 
       const response = await fetch(url, {
         method: "POST",
@@ -463,10 +481,22 @@ const useChatbot = (debug = false) => {
     setCookiesChatId(newChatId);
     setChatId(newChatId);
 
-    // Reset messages
     if (messages.length > 0) {
       setMessages([]);
     }
+
+    // Reset the structured preferences to defaults.
+    setPreferences({
+      reason: "",
+      frequency: "",
+      preferred_therapy: "",
+      session_type: "",
+      insurance: null,
+      insurance_provider: "",
+      gender: null,
+      location: "Vancouver, BC",
+      additional_preferences: "",
+    });
   };
 
   const fetchPreviousMessages = async () => {
@@ -515,71 +545,77 @@ const useChatbot = (debug = false) => {
     }
   }, [chatId, messages]);
   const handleButtonClick = async (value, content, clickedQuestionIndex) => {
-    try {
-      const newQuestionIndex = clickedQuestionIndex + 1;
-
-      const userResponse = {
-        content: content,
-        role: "user",
-        timestamp: generateTimeStamp(),
-        chat_id: getChatID(),
-      };
-      setQuestionStage(newQuestionIndex);
-
-      setMessages((prevMessages) => [...prevMessages, userResponse]);
-
-      // Handle insurance flow
-      if (clickedQuestionIndex === 4) {
-        const hasInsurance =
-          Array.isArray(value) && value.some((v) => v === "has_insurance");
-
-        if (hasInsurance) {
-          // Show insurance provider question (question 5)
-          const providerQuestion = questions[5];
-          setMessages((prevMessages) => [
-            ...prevMessages,
-            {
-              ...providerQuestion,
-              content: providerQuestion.content,
-              isTyping: true,
-            },
-          ]);
-        } else {
-          // Skip to chat question (question 6) for "no insurance" or "not sure"
-          setQuestionStage(6); // Important: Set stage to 6 to show chat input
-          const chatQuestion = questions[6];
-          setMessages((prevMessages) => [
-            ...prevMessages,
-            { ...chatQuestion, content: chatQuestion.content, isTyping: true },
-          ]);
-        }
-      } else if (clickedQuestionIndex === 5) {
-        // After insurance provider selection, show chat question
-        setQuestionStage(6); // Important: Set stage to 6 to show chat input
-        const chatQuestion = questions[6];
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          { ...chatQuestion, content: chatQuestion.content, isTyping: true },
-        ]);
-      } else {
-        // Normal question flow
-        const message = questions[newQuestionIndex];
-        if (message) {
-          setMessages((prevMessages) => [
-            ...prevMessages,
-            { ...message, content: message.content, isTyping: true },
-          ]);
-        }
+    switch (clickedQuestionIndex) {
+      case 0: {
+        // For question 0, update the "reason"
+        console.log("Updating reason with", value);
+        updatePreference("reason", value);
+        break;
       }
+      case 1: {
+        // For question 1, update the "frequency"
+        console.log("Updating frequency with", value);
+        updatePreference("frequency", value);
+        break;
+      }
+      case 2: {
+        // For question 2, update "preferred_therapy"
+        console.log("Updating preferred_therapy with", value);
+        updatePreference("preferred_therapy", value);
+        break;
+      }
+      case 3: {
+        // For question 3, update "session_type"
+        console.log("Updating session_type with", value);
+        updatePreference("session_type", value);
+        break;
+      }
+      case 4: {
+        // For question 4, update insurance status.
+        const hasInsurance = value === "has_insurance";
+        console.log("Updating insurance with", hasInsurance);
+        updatePreference("insurance", hasInsurance);
+        // Depending on the answer, you may want to show or skip question 5.
+        break;
+      }
+      case 5: {
+        // For question 5, update "insurance_provider"
+        console.log("Updating insurance_provider with", value);
+        updatePreference("insurance_provider", value);
+        break;
+      }
+      default:
+        console.log(
+          "Unhandled question index in handleButtonClick:",
+          clickedQuestionIndex
+        );
+    }
 
+    // Continue with your existing flow to push a new message,
+    // display the next question, and toggle questionStage if needed.
+    // (Make sure none of this additional logic calls mergePreference("therapyTypes", ...))
+
+    // Example: Append a message to messages and then simulate the AI typing delay.
+    try {
+      setLoadingNewMsg(true);
+      const newQuestionIndex = clickedQuestionIndex + 1;
+      // Add new question message if it exists:
+      if (questions[newQuestionIndex]) {
+        const nextMsg = questions[newQuestionIndex];
+        setMessages((prev) => [
+          ...prev,
+          { ...nextMsg, content: nextMsg.content, isTyping: true },
+        ]);
+        // Update questionStage to trigger the UI to render the next question.
+        console.log("Advancing to question stage:", newQuestionIndex);
+        setQuestionStage(newQuestionIndex);
+      }
       await new Promise((resolve) => setTimeout(resolve, content.length * 10));
-
-      setMessages((prevMessages) =>
-        prevMessages.map((msg, index) =>
-          index === prevMessages.length - 1 ? { ...msg, isTyping: false } : msg
+      setMessages((prev) =>
+        prev.map((msg, index) =>
+          index === prev.length - 1 ? { ...msg, isTyping: false } : msg
         )
       );
-
       setLoadingNewMsg(false);
     } catch (err) {
       console.error(err);
@@ -587,6 +623,21 @@ const useChatbot = (debug = false) => {
       setLoadingNewMsg(false);
     }
   };
+
+  // Add health check function
+  const checkHealth = async () => {
+    try {
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/health`;
+      const response = await fetch(url);
+      const data = await response.json();
+      console.log("Health check response:", url, data);
+      return data;
+    } catch (err) {
+      console.error("Health check failed:", err);
+      return null;
+    }
+  };
+
   return {
     userMessage,
     messages,
@@ -608,6 +659,9 @@ const useChatbot = (debug = false) => {
     fetchInitialChatMessages,
     handleButtonClick,
     questionStage,
+    preferences,
+    updatePreference,
+    checkHealth,
   };
 };
 
