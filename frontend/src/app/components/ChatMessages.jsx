@@ -1,6 +1,7 @@
 "use client";
 import React, { useCallback, memo, useEffect, useRef } from "react";
 import Image from "next/image";
+import ReactMarkdown from "react-markdown";
 import styles from "../styles/spinner.module.css";
 import Loader from "./Loader";
 import useTypingEffect from "./useTypingEffect";
@@ -57,11 +58,14 @@ const MessageItem = memo(
                 message.role === "user" ? "user" : "assistant"
               }`}
             >
-              {message.role === "assistant" ? typedText : message.content}
+              {message.role === "assistant" ? (
+                <ReactMarkdown>{typedText}</ReactMarkdown>
+              ) : (
+                <ReactMarkdown>{message.content}</ReactMarkdown>
+              )}
             </p>
             {/* PHASE 2: Show the audio if it's present */}
             {message.audio_file_url && (
-              // Repositioned the play button to be inline with the message, making it a part of the message flow
               <button
                 onClick={() => {
                   playAudio(message.audio_file_url);
