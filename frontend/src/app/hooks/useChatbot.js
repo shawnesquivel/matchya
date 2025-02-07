@@ -423,7 +423,18 @@ const useChatbot = (debug = false) => {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        try {
+          const errorJson = JSON.parse(errorText);
+          throw new Error(
+            errorJson.error || `HTTP error! status: ${response.status}`
+          );
+        } catch (err) {
+          // If JSON parsing fails, use the plain text error response:
+          throw new Error(
+            errorText || `HTTP error! status: ${response.status}`
+          );
+        }
       }
 
       const resJson = await response.json();
@@ -453,7 +464,7 @@ const useChatbot = (debug = false) => {
     } catch (err) {
       setLoadingNewMsg(false);
       console.error(err);
-      setError("Error fetching messages. Please try again.");
+      setError(err.message || "Error fetching messages. Please try again.");
     }
   };
 
