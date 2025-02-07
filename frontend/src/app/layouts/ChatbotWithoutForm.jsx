@@ -36,7 +36,17 @@ const Chatbot = ({
     chatId,
     handleButtonClick,
     questionStage,
+    preferences,
+    checkHealth,
   } = useChatbot(debug);
+
+  useEffect(() => {
+    async function checkHealthStatus() {
+      const health = await checkHealth();
+      console.log("Health check:", health);
+    }
+    checkHealthStatus();
+  }, []);
 
   useEffect(() => {
     async function initializeChat() {
