@@ -7,7 +7,7 @@ const HomePage = () => {
     <>
       <ChatbotWithoutForm
         description="simply let matchya know what kind of therapist you're looking for."
-        debug={true}
+        debug={false}
         botPngFile="matchya"
       />
     </>

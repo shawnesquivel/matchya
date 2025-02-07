@@ -24,7 +24,7 @@ Our frontend is built with NextJS, a powerful and efficient framework for buildi
 1. Open your terminal.
 2. Navigate to the frontend folder:
    ```bash
-   cd frontend
+   cd  frontend
    ```
 3. Install dependencies:
    ```bash
