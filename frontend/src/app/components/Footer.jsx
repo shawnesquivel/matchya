@@ -16,6 +16,12 @@ const Footer = () => {
         <Link href={`/tos`} className="">
           Terms of Service
         </Link>
+        <Link
+          href={`https://matchya.app/insurance-coverage-calculator/?utm_source=app&utm_medium=internal&utm_campaign=feature_launch&utm_content=general-cta`}
+          className=""
+        >
+          Insurance Coverage Calculator
+        </Link>
       </div>
       <p className={`sm:text-right text-center ${aspekta.className}`}>
         Experiencing a software issue? &nbsp;
