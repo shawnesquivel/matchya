@@ -151,17 +151,27 @@ export async function fetchPineconeProfile(identifier: string): Promise<any> {
   }
 }
 
-export function generateProfileSlug(profile: PineconeTherapistProfile): string {
-  // Remove special characters and convert spaces to dashes
-  const baseSlug = profile.name
+export function generateProfileSlug(name: string): string {
+  return name
     .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, "")
-    .replace(/\s+/g, "-");
+    .replace(/[^a-z0-9\s.-]/g, "") // Keep periods and dashes
+    .replace(/\s+/g, "-") // Convert spaces to dashes
+    .replace(/-+/g, "-") // Clean up multiple dashes
+    .trim();
+}
 
-  // Append clerk_user_id if available for uniqueness
-  return profile.clerk_user_id
-    ? `${baseSlug}-${profile.clerk_user_id.substring(0, 8)}`
-    : baseSlug;
+export function nameFromSlug(slug: string): string {
+  return slug
+    .split("-")
+    .map((word) => {
+      // Special case for "Dr."
+      if (word === "dr") return "Dr.";
+      // Handle middle initials
+      if (word.length === 1) return word.toUpperCase() + ".";
+      // Normal words
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    })
+    .join(" ");
 }
 
 export function mapPineconeToTherapistProfile(profile: any): TherapistProfile {

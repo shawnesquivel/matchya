@@ -6,6 +6,7 @@ import type { TherapistProfile } from "../../utils/pineconeHelpers";
 import {
   fetchPineconeProfile,
   mapPineconeToTherapistProfile,
+  nameFromSlug,
 } from "../../utils/pineconeHelpers";
 import { Suspense } from "react";
 import Loading from "./loading";
@@ -15,28 +16,48 @@ async function getTherapist(slug: string): Promise<TherapistProfile | null> {
   try {
     console.log("Original slug:", { slug });
 
-    // Convert hyphenated-slug to Title Case Name
-    const nameFromSlug = slug
-      .split("-")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(" ");
+    // Convert slug back to name format
+    const nameFromSlugFormat = nameFromSlug(slug);
+    console.log("Name from slug:", { nameFromSlugFormat });
 
-    console.log("Formatted name for search:", { nameFromSlug });
-
-    const profile = await fetchPineconeProfile(nameFromSlug);
-    if (profile) {
-      console.log("Found profile by name:", {
-        profileName: profile.name,
-        matchedSlug: nameFromSlug,
-        availableKeys: Object.keys(profile),
+    // Try exact match first
+    const exactMatchProfile = await fetchPineconeProfile(nameFromSlugFormat);
+    if (exactMatchProfile) {
+      console.log("Found profile by exact name match:", {
+        profileName: exactMatchProfile.name,
+        matchedName: nameFromSlugFormat,
       });
-      return mapPineconeToTherapistProfile(profile);
+      return mapPineconeToTherapistProfile(exactMatchProfile);
+    }
+
+    // If no exact match, try with the original slug converted to spaces
+    const spaceFormattedName = slug.replace(/-/g, " ");
+    console.log("Trying space-formatted name:", { spaceFormattedName });
+
+    const spaceMatchProfile = await fetchPineconeProfile(spaceFormattedName);
+    if (spaceMatchProfile) {
+      console.log("Found profile by space-formatted name:", {
+        profileName: spaceMatchProfile.name,
+        matchedName: spaceFormattedName,
+      });
+      return mapPineconeToTherapistProfile(spaceMatchProfile);
+    }
+
+    // If still no match, try with the original slug
+    const slugMatchProfile = await fetchPineconeProfile(slug);
+    if (slugMatchProfile) {
+      console.log("Found profile by original slug:", {
+        profileName: slugMatchProfile.name,
+        matchedSlug: slug,
+      });
+      return mapPineconeToTherapistProfile(slugMatchProfile);
     }
 
     console.log("No profile found:", {
       slug,
-      nameFromSlug,
-      attempts: ["formatted-name"],
+      nameFromSlugFormat,
+      spaceFormattedName,
+      attempts: ["nameFromSlug", "space-formatted", "original-slug"],
     });
     return null;
   } catch (error) {
