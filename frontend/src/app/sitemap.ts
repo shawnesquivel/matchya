@@ -5,7 +5,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 if (!BASE_URL || !API_URL) {
-  throw new Error("NEXT_PUBLIC_BASE_URL and NEXT_PUBLIC_API_URL must be set");
+  throw new Error("NEXT_PUBLIC_BASE_URL and NEXT_PUBLIC_API_URL must be set.");
 }
 
 interface TherapistNamesResponse {
