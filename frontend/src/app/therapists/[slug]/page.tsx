@@ -332,7 +332,7 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => (
                   </span>
                 ))
               ) : (
-                <span className="text-gray-700">No languages specified</span>
+                <span className="text-gray-700">No languages specified.</span>
               )}
             </div>
           </div>
