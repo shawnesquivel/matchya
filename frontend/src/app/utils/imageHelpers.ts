@@ -1,14 +1,14 @@
 import { ALLOWED_IMAGE_DOMAINS } from "@/config/images";
 
 export const getSafeImageUrl = (url: string | undefined | null): string => {
-  if (!url) return "/default-therapist.jpg";
+  if (!url) return "/assets/images/default-pp.png";
 
   try {
     const urlObj = new URL(url);
     return ALLOWED_IMAGE_DOMAINS.includes(urlObj.hostname as any)
       ? url
-      : "/default-therapist.jpg";
+      : "/assets/images/default-pp.png";
   } catch {
-    return "/default-therapist.jpg";
+    return "/assets/images/default-pp.png";
   }
 };
