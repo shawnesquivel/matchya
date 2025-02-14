@@ -17,8 +17,12 @@ async function getTherapist(slug: string): Promise<TherapistProfile | null> {
   try {
     console.log("Original slug:", { slug });
 
-    // Convert slug back to name format
-    const nameFromSlugFormat = nameFromSlug(slug);
+    // Decode any URL-encoded or Unicode characters in the slug
+    const decodedSlug = decodeURIComponent(slug);
+    console.log("Decoded slug:", { decodedSlug });
+
+    // Convert slug back to name format with decoded characters
+    const nameFromSlugFormat = nameFromSlug(decodedSlug);
     console.log("Name from slug:", { nameFromSlugFormat });
 
     // Try exact match first
@@ -32,7 +36,7 @@ async function getTherapist(slug: string): Promise<TherapistProfile | null> {
     }
 
     // If no exact match, try with the original slug converted to spaces
-    const spaceFormattedName = slug.replace(/-/g, " ");
+    const spaceFormattedName = decodedSlug.replace(/-/g, " ");
     console.log("Trying space-formatted name:", { spaceFormattedName });
 
     const spaceMatchProfile = await fetchPineconeProfile(spaceFormattedName);
@@ -44,18 +48,19 @@ async function getTherapist(slug: string): Promise<TherapistProfile | null> {
       return mapPineconeToTherapistProfile(spaceMatchProfile);
     }
 
-    // If still no match, try with the original slug
-    const slugMatchProfile = await fetchPineconeProfile(slug);
+    // If still no match, try with the original decoded slug
+    const slugMatchProfile = await fetchPineconeProfile(decodedSlug);
     if (slugMatchProfile) {
       console.log("Found profile by original slug:", {
         profileName: slugMatchProfile.name,
-        matchedSlug: slug,
+        matchedSlug: decodedSlug,
       });
       return mapPineconeToTherapistProfile(slugMatchProfile);
     }
 
     console.log("No profile found:", {
       slug,
+      decodedSlug,
       nameFromSlugFormat,
       spaceFormattedName,
       attempts: ["nameFromSlug", "space-formatted", "original-slug"],

@@ -153,7 +153,9 @@ export async function fetchPineconeProfile(identifier: string): Promise<any> {
 
 export function generateProfileSlug(name: string): string {
   return name
+    .normalize("NFKD") // Normalize Unicode characters
     .toLowerCase()
+    .replace(/[\u0300-\u036f]/g, "") // Remove diacritics
     .replace(/[^a-z0-9\s.-]/g, "") // Keep periods and dashes
     .replace(/\s+/g, "-") // Convert spaces to dashes
     .replace(/-+/g, "-") // Clean up multiple dashes
