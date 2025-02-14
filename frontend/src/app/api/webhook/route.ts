@@ -54,8 +54,8 @@ export async function POST(req: NextRequest) {
       case "checkout.session.completed":
         const session = event.data.object as Stripe.Checkout.Session;
         const clerkUserId = session.client_reference_id;
-        const stripeCustomerId = session.customer;
-        const subscriptionId = session.subscription;
+        const stripeCustomerId = session.customer as string;
+        const subscriptionId = session.subscription as string;
 
         const profileUpdateStatus = await updatePineconeProfileSubscription(
           clerkUserId,
@@ -63,7 +63,8 @@ export async function POST(req: NextRequest) {
           subscriptionId
         );
 
-        if (profileUpdateStatus === 200) {
+        const statusCode = profileUpdateStatus.status;
+        if (statusCode === 200) {
           console.log(`Pinecone profile updated for ${clerkUserId}`);
         } else {
           console.log(`Pinecone profile update failed for ${clerkUserId}`);
