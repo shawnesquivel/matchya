@@ -188,8 +188,8 @@ export async function generateMetadata({
   };
 }
 
-// Enable ISR with 5 minute revalidation
-export const revalidate = 300;
+// Enable ISR with 1 hour revalidation
+export const revalidate = 3600;
 
 const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => (
   <>

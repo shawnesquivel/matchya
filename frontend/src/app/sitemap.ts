@@ -33,7 +33,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     let pageCount = 0;
     const startTime = Date.now();
 
-    console.log("[Sitemap] Starting sitemap generation...");
+    console.log("[SITEMAP_NEXT] Starting sitemap generation...");
 
     // Fetch all pages
     do {
@@ -46,12 +46,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }
       url.searchParams.set("pageSize", PAGE_SIZE.toString());
 
-      console.log(`
-[Sitemap] Fetching page ${pageCount}:
+      console.log(`[SITEMAP_NEXT] Fetching page ${pageCount}:
 - URL: ${url.toString()}
 - Page token: ${pageToken || "None (first page)"}
-- Names collected so far: ${allNames.length}
-`);
+- Names collected so far: ${allNames.length}`);
 
       const response = await fetch(url.toString(), {
         next: { revalidate: 3600 }, // Cache for 1 hour
@@ -59,11 +57,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`
-[Sitemap] API Error:
+        console.error(`[SITEMAP_NEXT] API Error:
 - Status: ${response.status}
-- Response: ${errorText}
-`);
+- Response: ${errorText}`);
         return []; // Return empty sitemap on error
       }
 
@@ -74,14 +70,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
       const fetchTime = Date.now() - fetchStartTime;
 
-      console.log(`
-[Sitemap] Page ${pageCount} results:
+      console.log(`[SITEMAP_NEXT] Page ${pageCount} results:
 - Names received: ${therapistNames.length}
 - Query time (backend): ${debug.queryTimeSeconds}s
 - Fetch time (frontend): ${(fetchTime / 1000).toFixed(2)}s
 - Sample names: ${JSON.stringify(therapistNames.slice(0, 3))}...
-- Debug info: ${JSON.stringify(debug, null, 2)}
-`);
+- Debug info: ${JSON.stringify(debug, null, 2)}`);
 
       // Keep the most recent lastModified
       lastModified = newLastModified;
@@ -90,13 +84,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     } while (pageToken);
 
     const totalTime = (Date.now() - startTime) / 1000;
-    console.log(`
-[Sitemap] Fetch phase complete:
+    console.log(`[SITEMAP_NEXT] Fetch phase complete:
 - Total pages: ${pageCount}
 - Total names: ${allNames.length}
 - Total time: ${totalTime.toFixed(2)}s
-- Avg time per page: ${(totalTime / pageCount).toFixed(2)}s
-`);
+- Avg time per page: ${(totalTime / pageCount).toFixed(2)}s`);
 
     const lastModifiedDate = new Date(parseInt(lastModified!) * 1000);
 
@@ -140,33 +132,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       processedCount += chunk.length;
       const chunkTime = Date.now() - chunkStartTime;
 
-      console.log(`
-[Sitemap] Processing chunk ${Math.floor(i / CHUNK_SIZE) + 1}:
+      console.log(`[SITEMAP_NEXT] Processing chunk ${
+        Math.floor(i / CHUNK_SIZE) + 1
+      }:
 - Processed: ${processedCount}/${allNames.length}
 - Chunk time: ${(chunkTime / 1000).toFixed(3)}s
-- Sample URLs: ${JSON.stringify(therapistRoutes.slice(0, 2), null, 2)}...
-`);
+- Sample URLs: ${JSON.stringify(therapistRoutes.slice(0, 2), null, 2)}...`);
 
       routes.push(...therapistRoutes);
     }
 
     const totalProcessTime = (Date.now() - processStartTime) / 1000;
-    console.log(`
-[Sitemap] Generation complete:
+    console.log(`[SITEMAP_NEXT] Generation complete:
 - Total routes: ${routes.length}
 - Processing time: ${totalProcessTime.toFixed(2)}s
 - Total time: ${((Date.now() - startTime) / 1000).toFixed(2)}s
-- Memory usage: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB
-`);
+- Memory usage: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`);
 
     return routes;
   } catch (error) {
-    console.error(
-      `
-[Sitemap] Fatal error:
-`,
-      error
-    );
+    console.error(`[SITEMAP_NEXT] Fatal error:`, error);
     return []; // Return empty sitemap on error
   }
 }
