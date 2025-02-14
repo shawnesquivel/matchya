@@ -7,6 +7,7 @@ import {
   fetchPineconeProfile,
   mapPineconeToTherapistProfile,
   nameFromSlug,
+  generateProfileSlug,
 } from "../../utils/pineconeHelpers";
 import { Suspense } from "react";
 import Loading from "./loading";
@@ -73,8 +74,19 @@ async function getTherapist(slug: string): Promise<TherapistProfile | null> {
 
 // Generate static paths - this will be replaced with actual data fetching
 export async function generateStaticParams() {
-  // TODO: Fetch all therapist profiles and generate slugs
-  return [{ slug: "dr-jane-doe" }];
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  if (!apiUrl) throw new Error("NEXT_PUBLIC_API_URL not set");
+
+  // Fetch all therapist names
+  const res = await fetch(`${apiUrl}/profile/names`);
+  const {
+    data: { names },
+  } = await res.json();
+
+  // Generate slugs for each therapist
+  return names.map((name: string) => ({
+    slug: generateProfileSlug(name),
+  }));
 }
 
 // Generate JSON-LD structured data
