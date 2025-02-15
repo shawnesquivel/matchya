@@ -25,13 +25,13 @@ interface TherapistNamesResponse {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const startTime = Date.now();
   try {
     const allNames: string[] = [];
     let lastModified: string;
     let pageToken: string | undefined;
     const PAGE_SIZE = 60; // Smaller batch size for testing
     let pageCount = 0;
-    const startTime = Date.now();
 
     console.log("[SITEMAP_NEXT] Starting sitemap generation...");
 
