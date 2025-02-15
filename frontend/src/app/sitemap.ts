@@ -57,9 +57,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(`[SITEMAP_NEXT] API Error:
-      - Status: ${response.status}
-      - Response: ${errorText}`);
+        console.error("[SITEMAP_NEXT] API Error:", {
+          status: response.status,
+          statusText: response.statusText,
+          url: url.toString(),
+          pageCount,
+          namesCollected: allNames.length,
+          pageToken,
+          errorText,
+          timeElapsed: `${((Date.now() - startTime) / 1000).toFixed(2)}s`,
+        });
         return []; // Return empty sitemap on error
       }
 
@@ -125,7 +132,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
       const therapistRoutes = chunk.map((name) => {
         const url = `${BASE_URL}/therapists/${generateProfileSlug(name)}`;
-        console.log(`[SITEMAP_NEXT] Adding therapist route: ${url}`);
         return {
           url,
           lastModified: lastModifiedDate,
@@ -160,7 +166,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     return routes;
   } catch (error) {
-    console.error(`[SITEMAP_NEXT] Fatal error:`, error);
+    console.error("[SITEMAP_NEXT] Fatal error:", {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      stage: "sitemap generation",
+      timeElapsed: `${((Date.now() - startTime) / 1000).toFixed(2)}s`,
+      memoryUsage: `${Math.round(
+        process.memoryUsage().heapUsed / 1024 / 1024
+      )}MB`,
+    });
     return []; // Return empty sitemap on error
   }
 }
