@@ -81,7 +81,6 @@ export interface TherapistProfile {
   summary?: string;
 }
 
-// Main function - maintains backward compatibility
 export async function fetchPineconeProfile(identifier: string): Promise<any> {
   try {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
