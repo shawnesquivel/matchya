@@ -50,31 +50,52 @@ export async function generateStaticParams() {
   }
 
   try {
-    // Fetch all therapist names
-    const url = `${apiUrl}/profile/names`;
-    console.log(`[generateStaticParams] Fetching names from: ${url}`);
-    const res = await fetch(url);
-    if (!res.ok) {
-      console.error(
-        `[generateStaticParams] API error: ${res.status} ${res.statusText}`
-      );
-      return [];
-    }
+    const allNames: string[] = [];
+    let pageToken: string | undefined;
+    const PAGE_SIZE = 60;
 
-    const data = await res.json();
-    const names = data?.data?.names || [];
+    // Fetch all pages
+    do {
+      const url = new URL(`${apiUrl}/profile/names-sitemap`);
+      url.searchParams.set("pageSize", PAGE_SIZE.toString());
+      if (pageToken) {
+        url.searchParams.set("pageToken", pageToken);
+      }
+
+      console.log(
+        `[generateStaticParams] Fetching names from: ${url.toString()}`
+      );
+      const res = await fetch(url.toString());
+
+      if (!res.ok) {
+        console.error(
+          `[generateStaticParams] API error: ${res.status} ${res.statusText}`
+        );
+        return [];
+      }
+
+      const data = await res.json();
+      const names = data?.data?.therapistNames || [];
+      const debug = data?.debug;
+
+      allNames.push(...names);
+      pageToken = debug?.nextPageToken;
+
+      console.log(
+        `[generateStaticParams] Fetched ${names.length} names (total: ${allNames.length})`
+      );
+    } while (pageToken);
 
     // Filter out any null/undefined/invalid names
-    const validNames = names.filter(
+    const validNames = allNames.filter(
       (name: any): name is string =>
         typeof name === "string" && name.trim().length > 0
     );
 
     if (validNames.length === 0) {
       console.error("[THERAPIST_PAGE] No valid names found in response:", {
-        totalNames: names.length,
-        sampleNames: names.slice(0, 5),
-        responseData: data,
+        totalNames: allNames.length,
+        sampleNames: allNames.slice(0, 5),
       });
       return [];
     }
@@ -82,7 +103,7 @@ export async function generateStaticParams() {
     console.log(
       `[THERAPIST_PAGE] Found ${
         validNames.length
-      } valid therapist names out of ${names.length} total.
+      } valid therapist names out of ${allNames.length} total.
 Sample names: ${validNames.slice(0, 3).join(", ")}...`
     );
 

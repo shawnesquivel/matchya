@@ -29,7 +29,7 @@ graph TD
 2. **Sitemap Generation**
 
    - Frontend makes paginated requests to `/profile/names-sitemap`
-   - Uses small batch sizes (60 records) for testing
+   - Uses configurable batch sizes (default 60 records)
    - Accumulates all therapist names
    - Generates slugs using `generateProfileSlug`
 
@@ -325,7 +325,7 @@ _Please review and update these clarifications as needed to ensure the final imp
 #### What We Did
 
 - **Names Endpoint**
-  - Added a Lambda route `GET /profile/names` to fetch all therapist names from Pinecone.
+  - Added a Lambda route `GET /profile/names-sitemap` to fetch all therapist names from Pinecone.
   - The frontend consumes this endpoint for dynamic sitemap generation.
 - **Dynamic Sitemap Generation**
 
@@ -375,7 +375,7 @@ _Please review and update these clarifications as needed to ensure the final imp
   - **Lambda Names Endpoint:**
 
     ```bash
-    curl https://api.matchya.ai/profile/names
+    curl https://api.matchya.ai/profile/names-sitemap
     ```
 
     _Expected Result:_ JSON response with a list of therapist names.
