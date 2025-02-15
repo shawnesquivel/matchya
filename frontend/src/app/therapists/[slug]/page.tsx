@@ -42,26 +42,69 @@ async function getTherapist(slug: string): Promise<TherapistProfile | null> {
 
 // Generate static paths - this will be replaced with actual data fetching
 export async function generateStaticParams() {
-  console.log("[THERAPIST_PAGE] Generating static params");
+  console.log("[generateStaticParams] Generating static params");
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-  if (!apiUrl) throw new Error("NEXT_PUBLIC_API_URL not set");
+  if (!apiUrl) {
+    console.error("[generateStaticParams] NEXT_PUBLIC_API_URL not set");
+    return [];
+  }
 
-  // Fetch all therapist names
-  const res = await fetch(`${apiUrl}/profile/names`);
-  const {
-    data: { names },
-  } = await res.json();
+  try {
+    // Fetch all therapist names
+    const url = `${apiUrl}/profile/names`;
+    console.log(`[generateStaticParams] Fetching names from: ${url}`);
+    const res = await fetch(url);
+    if (!res.ok) {
+      console.error(
+        `[generateStaticParams] API error: ${res.status} ${res.statusText}`
+      );
+      return [];
+    }
 
-  console.log(
-    `[THERAPIST_PAGE] generateStaticParams Found ${
-      names.length
-    } therapist names.  [${names[0]}... ${names[names.length - 1]}]`
-  );
+    const data = await res.json();
+    const names = data?.data?.names || [];
 
-  // Generate slugs for each therapist
-  return names.map((name: string) => ({
-    slug: generateProfileSlug(name),
-  }));
+    // Filter out any null/undefined/invalid names
+    const validNames = names.filter(
+      (name: any): name is string =>
+        typeof name === "string" && name.trim().length > 0
+    );
+
+    if (validNames.length === 0) {
+      console.error("[THERAPIST_PAGE] No valid names found in response:", {
+        totalNames: names.length,
+        sampleNames: names.slice(0, 5),
+        responseData: data,
+      });
+      return [];
+    }
+
+    console.log(
+      `[THERAPIST_PAGE] Found ${
+        validNames.length
+      } valid therapist names out of ${names.length} total.
+Sample names: ${validNames.slice(0, 3).join(", ")}...`
+    );
+
+    // Generate slugs for each therapist
+    const params = validNames.map((name) => {
+      const slug = generateProfileSlug(name.trim());
+      if (slug === "unknown-therapist") {
+        console.warn(
+          `[THERAPIST_PAGE] Generated fallback slug for name: "${name}"`
+        );
+      }
+      return { slug };
+    });
+
+    return params;
+  } catch (error) {
+    console.error("[THERAPIST_PAGE] Error generating static params:", {
+      error,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
+    return [];
+  }
 }
 
 // Generate JSON-LD structured data

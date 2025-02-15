@@ -136,15 +136,37 @@ export async function fetchPineconeProfile(identifier: string): Promise<any> {
   }
 }
 
-export function generateProfileSlug(name: string): string {
-  return name
-    .normalize("NFKD") // Normalize Unicode characters
-    .toLowerCase()
-    .replace(/[\u0300-\u036f]/g, "") // Remove diacritics
-    .replace(/[^a-z0-9\s.-]/g, "") // Keep periods and dashes
-    .replace(/\s+/g, "-") // Convert spaces to dashes
-    .replace(/-+/g, "-") // Clean up multiple dashes
-    .trim();
+export function generateProfileSlug(name: string | null | undefined): string {
+  if (!name || typeof name !== "string") {
+    console.warn(`[SLUG_GEN] Invalid name provided: ${name}`);
+    return "unknown-therapist";
+  }
+
+  try {
+    // Normalize the string (remove accents, etc.)
+    const normalized = name
+      .normalize("NFKD")
+      // Remove non-ASCII characters
+      .replace(/[^\x00-\x7F]/g, "")
+      // Convert to lowercase
+      .toLowerCase()
+      // Replace spaces and special chars with hyphens
+      .replace(/[^a-z0-9]+/g, "-")
+      // Remove leading/trailing hyphens
+      .replace(/^-+|-+$/g, "");
+
+    if (!normalized) {
+      console.warn(
+        `[SLUG_GEN] Normalization resulted in empty string for: ${name}`
+      );
+      return "unknown-therapist";
+    }
+
+    return normalized;
+  } catch (error) {
+    console.error(`[SLUG_GEN] Error generating slug for "${name}":`, error);
+    return "unknown-therapist";
+  }
 }
 
 export function nameFromSlug(slug: string): string {
