@@ -1,8 +1,8 @@
 import { MetadataRoute } from "next";
 import { generateProfileSlug } from "./utils/pineconeHelpers";
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL; // localhost or https://www.matchya.app
+const API_URL = process.env.NEXT_PUBLIC_API_URL; // backend api url
 
 if (!BASE_URL || !API_URL) {
   throw new Error("NEXT_PUBLIC_BASE_URL and NEXT_PUBLIC_API_URL must be set.");
@@ -47,9 +47,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url.searchParams.set("pageSize", PAGE_SIZE.toString());
 
       console.log(`[SITEMAP_NEXT] Fetching page ${pageCount}:
-- URL: ${url.toString()}
-- Page token: ${pageToken || "None (first page)"}
-- Names collected so far: ${allNames.length}`);
+      - URL: ${url.toString()}
+      - Page token: ${pageToken || "None (first page)"}
+      - Names collected so far: ${allNames.length}`);
 
       const response = await fetch(url.toString(), {
         next: { revalidate: 3600 }, // Cache for 1 hour
@@ -58,8 +58,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       if (!response.ok) {
         const errorText = await response.text();
         console.error(`[SITEMAP_NEXT] API Error:
-- Status: ${response.status}
-- Response: ${errorText}`);
+      - Status: ${response.status}
+      - Response: ${errorText}`);
         return []; // Return empty sitemap on error
       }
 
@@ -71,11 +71,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       const fetchTime = Date.now() - fetchStartTime;
 
       console.log(`[SITEMAP_NEXT] Page ${pageCount} results:
-- Names received: ${therapistNames.length}
-- Query time (backend): ${debug.queryTimeSeconds}s
-- Fetch time (frontend): ${(fetchTime / 1000).toFixed(2)}s
-- Sample names: ${JSON.stringify(therapistNames.slice(0, 3))}...
-- Debug info: ${JSON.stringify(debug, null, 2)}`);
+      - Names received: ${therapistNames.length}
+      - Query time (backend): ${debug.queryTimeSeconds}s
+      - Fetch time (frontend): ${(fetchTime / 1000).toFixed(2)}s
+      - Sample names: ${JSON.stringify(therapistNames.slice(0, 3))}...
+      - Debug info: ${JSON.stringify(debug, null, 2)}`);
 
       // Keep the most recent lastModified
       lastModified = newLastModified;
@@ -85,10 +85,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
     const totalTime = (Date.now() - startTime) / 1000;
     console.log(`[SITEMAP_NEXT] Fetch phase complete:
-- Total pages: ${pageCount}
-- Total names: ${allNames.length}
-- Total time: ${totalTime.toFixed(2)}s
-- Avg time per page: ${(totalTime / pageCount).toFixed(2)}s`);
+      - Total pages: ${pageCount}
+      - Total names: ${allNames.length}
+      - Total time: ${totalTime.toFixed(2)}s
+      - Avg time per page: ${(totalTime / pageCount).toFixed(2)}s`);
 
     const lastModifiedDate = new Date(parseInt(lastModified!) * 1000);
 
@@ -122,12 +122,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     for (let i = 0; i < allNames.length; i += CHUNK_SIZE) {
       const chunkStartTime = Date.now();
       const chunk = allNames.slice(i, i + CHUNK_SIZE);
-      const therapistRoutes = chunk.map((name) => ({
-        url: `${BASE_URL}/therapists/${generateProfileSlug(name)}`,
-        lastModified: lastModifiedDate,
-        changeFrequency: "weekly" as const,
-        priority: 0.9,
-      }));
+
+      const therapistRoutes = chunk.map((name) => {
+        const url = `${BASE_URL}/therapists/${generateProfileSlug(name)}`;
+        console.log(`[SITEMAP_NEXT] Adding therapist route: ${url}`);
+        return {
+          url,
+          lastModified: lastModifiedDate,
+          changeFrequency: "weekly" as const,
+          priority: 0.9,
+        };
+      });
 
       processedCount += chunk.length;
       const chunkTime = Date.now() - chunkStartTime;
@@ -135,9 +140,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       console.log(`[SITEMAP_NEXT] Processing chunk ${
         Math.floor(i / CHUNK_SIZE) + 1
       }:
-- Processed: ${processedCount}/${allNames.length}
-- Chunk time: ${(chunkTime / 1000).toFixed(3)}s
-- Sample URLs: ${JSON.stringify(therapistRoutes.slice(0, 2), null, 2)}...`);
+      - Processed: ${processedCount}/${allNames.length}
+      - Chunk time: ${(chunkTime / 1000).toFixed(3)}s
+      - Sample URLs: ${JSON.stringify(
+        therapistRoutes.slice(0, 2),
+        null,
+        2
+      )}...`);
 
       routes.push(...therapistRoutes);
     }

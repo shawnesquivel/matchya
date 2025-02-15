@@ -84,9 +84,6 @@ export interface TherapistProfile {
 // Main function - maintains backward compatibility
 export async function fetchPineconeProfile(identifier: string): Promise<any> {
   try {
-    console.log("=== FETCH PINECONE PROFILE START ===");
-    console.log("Input identifier:", identifier);
-
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     if (!apiUrl) {
       console.error("NEXT_PUBLIC_API_URL is not set");
@@ -99,11 +96,7 @@ export async function fetchPineconeProfile(identifier: string): Promise<any> {
         `${apiUrl}/profile?bio_link=${encodeURIComponent(identifier)}`
       );
       const bioLinkData = await bioLinkResponse.json();
-      console.log("Bio link response:", {
-        status: bioLinkResponse.status,
-        ok: bioLinkResponse.ok,
-        data: bioLinkData,
-      });
+
       if (bioLinkResponse.ok && bioLinkData?.data) {
         console.log("Found profile by bio_link");
         return bioLinkData.data;
@@ -111,33 +104,27 @@ export async function fetchPineconeProfile(identifier: string): Promise<any> {
     }
 
     // If not found by bio_link or not a URL, try name search
-    console.log("Attempting name search:", identifier);
     const url = `${apiUrl}/profile/search?name=${encodeURIComponent(
       identifier
     )}`;
-    console.log("URL:", url);
     const nameResponse = await fetch(url);
-    console.log("API URL:", apiUrl);
     const nameData = await nameResponse.json();
-    console.log("Name search response:", {
-      status: nameResponse.status,
-      ok: nameResponse.ok,
-      data: nameData,
-      debug: nameData?.debug,
-    });
 
     if (nameResponse.ok && nameData?.data) {
-      console.log("Found profile by name");
+      // console.log(`✅ Found ${nameData?.data?.name}`, {
+      //   status: nameResponse.status,
+      //   ok: nameResponse.ok,
+      //   data: nameData?.data?.name,
+      //   debug: nameData?.debug,
+      // });
       return nameData.data;
+    } else {
+      console.log(`❌ fetchPineconeProfile error. ${url} not found`, {
+        lastResponseStatus: nameResponse.status,
+        lastResponseData: nameData,
+      });
+      return null;
     }
-
-    console.log("Profile not found:", {
-      identifier,
-      lastAttemptedEndpoint: "profile/search",
-      lastResponseStatus: nameResponse.status,
-      lastResponseData: nameData,
-    });
-    return null;
   } catch (error) {
     console.error("Profile fetch error:", {
       error,
@@ -146,8 +133,6 @@ export async function fetchPineconeProfile(identifier: string): Promise<any> {
       stack: error instanceof Error ? error.stack : undefined,
     });
     return null;
-  } finally {
-    console.log("=== FETCH PINECONE PROFILE END ===");
   }
 }
 
@@ -180,8 +165,6 @@ export function mapPineconeToTherapistProfile(profile: any): TherapistProfile {
   if (!profile) {
     throw new Error("Profile data is required");
   }
-
-  console.log("Raw Pinecone profile:", profile); // Debug log
 
   return {
     name: profile.name || "",

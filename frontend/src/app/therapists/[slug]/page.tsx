@@ -15,70 +15,34 @@ import { getSafeImageUrl } from "@/app/utils/imageHelpers";
 
 async function getTherapist(slug: string): Promise<TherapistProfile | null> {
   try {
-    console.log("Original slug:", { slug });
-
     // Decode any URL-encoded or Unicode characters in the slug
     const decodedSlug = decodeURIComponent(slug);
-    console.log("Decoded slug:", { decodedSlug });
 
     // Convert slug back to name format with decoded characters
     const nameFromSlugFormat = nameFromSlug(decodedSlug);
-    console.log("Name from slug:", { nameFromSlugFormat });
 
     // Try exact match first
     const exactMatchProfile = await fetchPineconeProfile(nameFromSlugFormat);
     if (exactMatchProfile) {
-      console.log("Found profile by exact name match:", {
-        profileName: exactMatchProfile.name,
-        matchedName: nameFromSlugFormat,
-      });
+      // console.log(
+      //   `[getTherapist] ✅ Found profile by exact name match: ${exactMatchProfile.name}`
+      // );
       return mapPineconeToTherapistProfile(exactMatchProfile);
+    } else {
+      console.log(
+        `[getTherapist] ❌ No profile found for slug: ${slug}, decodedSlug: ${decodedSlug}, nameFromSlugFormat: ${nameFromSlugFormat}`
+      );
+      return null;
     }
-
-    // If no exact match, try with the original slug converted to spaces
-    const spaceFormattedName = decodedSlug.replace(/-/g, " ");
-    console.log("Trying space-formatted name:", { spaceFormattedName });
-
-    const spaceMatchProfile = await fetchPineconeProfile(spaceFormattedName);
-    if (spaceMatchProfile) {
-      console.log("Found profile by space-formatted name:", {
-        profileName: spaceMatchProfile.name,
-        matchedName: spaceFormattedName,
-      });
-      return mapPineconeToTherapistProfile(spaceMatchProfile);
-    }
-
-    // If still no match, try with the original decoded slug
-    const slugMatchProfile = await fetchPineconeProfile(decodedSlug);
-    if (slugMatchProfile) {
-      console.log("Found profile by original slug:", {
-        profileName: slugMatchProfile.name,
-        matchedSlug: decodedSlug,
-      });
-      return mapPineconeToTherapistProfile(slugMatchProfile);
-    }
-
-    console.log("No profile found:", {
-      slug,
-      decodedSlug,
-      nameFromSlugFormat,
-      spaceFormattedName,
-      attempts: ["nameFromSlug", "space-formatted", "original-slug"],
-    });
-    return null;
   } catch (error) {
-    console.error("Error in getTherapist:", {
-      error,
-      message: error instanceof Error ? error.message : String(error),
-      slug,
-      stack: error instanceof Error ? error.stack : undefined,
-    });
+    console.error(`[THERAPIST_PAGE] ❌ Error in getTherapist: ${error}`);
     return null;
   }
 }
 
 // Generate static paths - this will be replaced with actual data fetching
 export async function generateStaticParams() {
+  console.log("[THERAPIST_PAGE] Generating static params");
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
   if (!apiUrl) throw new Error("NEXT_PUBLIC_API_URL not set");
 
@@ -87,6 +51,12 @@ export async function generateStaticParams() {
   const {
     data: { names },
   } = await res.json();
+
+  console.log(
+    `[THERAPIST_PAGE] generateStaticParams Found ${
+      names.length
+    } therapist names.  [${names[0]}... ${names[names.length - 1]}]`
+  );
 
   // Generate slugs for each therapist
   return names.map((name: string) => ({
