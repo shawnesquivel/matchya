@@ -2,16 +2,200 @@
 
 ## 1. Overview
 
-This PRD covers the addition of dedicated, SEO-friendly profile pages for therapists. Instead of only relying on modals (e.g., in `EditProfileForm` or `ProfileModal`), each therapist will have its own URL (e.g., `/therapists/sunny-singhawachna`). These pages pull metadata from Pinecone (per the schema in [pinecone_profile.json](./pinecone_profile.json)) and are generated using NextJS.
+This PRD covers the addition of dedicated, SEO-friendly profile pages for therapists. Instead of only relying on modals (e.g., in `EditProfileForm` or `ProfileModal`), each therapist has its own URL (e.g., `/therapists/sunny-singhawachna`). These pages pull metadata from Pinecone (per the schema in [pinecone_profile.json](./pinecone_profile.json)) and are generated using NextJS.
 
-## 2. Objectives & Benefits
+## 2. Implementation Workflow
+
+### High-Level Architecture
+
+```mermaid
+graph TD
+    A[NextJS Build] --> B[sitemap.ts]
+    B --> C[Lambda /profile/names-sitemap]
+    C --> D[Pinecone Query]
+    D --> E[Paginated Results]
+    E --> F[Generate Static Paths]
+    F --> G[Pre-render Pages]
+    G --> H[Deploy to Vercel]
+```
+
+### Build Process Flow
+
+1. **Initial Build Trigger**
+
+   - When `npm run build` is executed
+   - NextJS triggers `sitemap.ts` generation
+
+2. **Sitemap Generation**
+
+   - Frontend makes paginated requests to `/profile/names-sitemap`
+   - Uses small batch sizes (60 records) for testing
+   - Accumulates all therapist names
+   - Generates slugs using `generateProfileSlug`
+
+3. **Lambda Processing**
+
+   - Handles pagination with `page_size` and `page_token`
+   - Returns therapist names and metadata
+   - Includes debug information and timing metrics
+   - Uses prefix `[SITEMAP_LAMBDA]` for easy CloudWatch filtering
+
+4. **Static Path Generation**
+   - `generateStaticParams` uses accumulated names
+   - Creates URL-friendly slugs for each therapist
+   - Pre-renders individual therapist pages
+
+### Repository Structure
+
+```
+matchya-web-scraper-docker/  (Backend)
+├── lambda_function.py       - Lambda handlers
+├── web_scraper.py          - Pinecone interactions
+└── config.py               - Environment config
+
+ai-41-start/                (Frontend)
+├── frontend/
+│   ├── src/
+│   │   ├── app/
+│   │   │   ├── sitemap.ts         - Sitemap generation
+│   │   │   └── therapists/
+│   │   │       └── [slug]/
+│   │   │           └── page.tsx   - Therapist profile page
+│   │   └── utils/
+│   │       └── pineconeHelpers.ts - Slug generation & data mapping
+└── prds/
+    └── prd_profile.md      - This document
+```
+
+## 3. Key Implementation Details
+
+### Pagination & Performance
+
+- **Batch Size:** 60 records per request (configurable)
+- **Memory Usage:** Monitored and logged
+- **Response Time:** Tracked with detailed timing metrics
+- **Caching:** 1-hour revalidation period (ISR)
+
+### Logging & Monitoring
+
+- **Lambda Logs:** Prefixed with `[SITEMAP_LAMBDA]`
+- **Frontend Logs:** Prefixed with `[SITEMAP_NEXT]`
+- **Debug Information:**
+  - Request/response timing
+  - Record counts
+  - Memory usage
+  - Error tracing
+
+### Error Handling
+
+- **Frontend:**
+
+  - Graceful degradation on API failures
+  - Empty sitemap fallback
+  - Detailed error logging
+
+- **Backend:**
+  - Pagination error recovery
+  - Invalid name handling
+  - Pinecone query retries
+
+## 4. Performance Considerations
+
+### Current Metrics
+
+- **Build Time:** ~2-3 minutes for 100 profiles
+- **Memory Usage:** ~100MB for processing
+- **Response Size:** ~10KB per 60 records
+
+### Scalability Thresholds
+
+- **Optimal:** 0-1000 therapists
+- **Manageable:** 1000-5000 therapists
+- **Requires Optimization:** 5000+ therapists
+
+### Future Optimizations
+
+1. **Chunked Processing**
+
+   - Implement parallel processing
+   - Reduce memory footprint
+   - Handle larger datasets
+
+2. **Caching Strategy**
+
+   - Implement Redis/Memcached
+   - Reduce Pinecone queries
+   - Cache common slugs
+
+3. **Build Optimization**
+   - Selective page regeneration
+   - Incremental builds
+   - Parallel pre-rendering
+
+## 5. Assumptions & Decisions
+
+1. **Slug Generation**
+
+   - Based on therapist names
+   - URL-friendly format
+   - Handles duplicates with suffixes
+
+2. **Update Frequency**
+
+   - Profiles update weekly
+   - Sitemap refreshes hourly
+   - Build triggers daily
+
+3. **Data Consistency**
+
+   - Pinecone is source of truth
+   - No real-time updates needed
+   - Acceptable eventual consistency
+
+4. **Resource Limits**
+   - Lambda timeout: 30 seconds
+   - Payload size: < 6MB
+   - Memory: 1024MB
+
+## 6. Monitoring & Maintenance
+
+### CloudWatch Filters
+
+```
+Filter pattern: [SITEMAP_LAMBDA]
+Log group: /aws/lambda/matchya-web-scraper
+```
+
+### Health Checks
+
+1. **Sitemap Validation**
+
+   ```bash
+   curl https://therapy.matchya.app/sitemap.xml
+   ```
+
+2. **Profile Accessibility**
+
+   ```bash
+   curl https://therapy.matchya.app/therapists/[slug]
+   ```
+
+3. **Lambda Performance**
+   ```bash
+   aws cloudwatch get-metric-statistics \
+     --namespace AWS/Lambda \
+     --metric-name Duration \
+     --dimensions Name=FunctionName,Value=matchya-web-scraper
+   ```
+
+## 7. Objectives & Benefits
 
 - **SEO Improvement:** Fully rendered HTML pages will boost search visibility.
 - **User Experience:** Allows deep linking and bookmarking individual therapist profiles.
 - **Seamless Integration:** Leverage our existing NextJS architecture and Lambda endpoints.
 - **Performance:** Optimized static delivery with the option to refresh content automatically.
 
-## 3. Proposed Architecture
+## 8. Proposed Architecture
 
 ### Data Source
 
@@ -41,7 +225,7 @@ This PRD covers the addition of dedicated, SEO-friendly profile pages for therap
 - Perfect for our Vercel deployment since ISR is seamlessly supported.
 - Meets SEO and performance needs without constant full rebuilds.
 
-## 4. Functional Requirements
+## 9. Functional Requirements
 
 - **Dynamic Routing:**
   - Therapist pages will use a route like `/therapists/[slug]`, where `slug` is a URL-friendly version of the therapist's name or unique identifier.
@@ -55,7 +239,7 @@ This PRD covers the addition of dedicated, SEO-friendly profile pages for therap
 - **Error Handling:**
   - If a profile is not found (invalid slug or missing data), the page should render a customized 404.
 
-## 5. Non-Functional Requirements
+## 10. Non-Functional Requirements
 
 - **Performance:**
   - Fast page loads through static HTML delivery.
@@ -66,7 +250,7 @@ This PRD covers the addition of dedicated, SEO-friendly profile pages for therap
 - **Security & Data Integrity:**
   - Data passed is sanitized and only non-sensitive public profile details are exposed.
 
-## 6. Integration with Existing System
+## 11. Integration with Existing System
 
 - **API Interaction:**
   - Leverage the existing Lambda endpoints (GET `/profile`) to obtain therapist data.
@@ -75,7 +259,7 @@ This PRD covers the addition of dedicated, SEO-friendly profile pages for therap
   - Reuse design elements and styles from components like `ProfileModal.jsx` and `EditProfileForm.jsx` for a consistent UI.
   - Implement new NextJS page components under `/pages/therapists/[slug].jsx`.
 
-## 7. Outstanding Clarification Questions and Details
+## 12. Outstanding Clarification Questions and Details
 
 1. **Update Frequency:**
 
@@ -101,11 +285,11 @@ This PRD covers the addition of dedicated, SEO-friendly profile pages for therap
    - **Assumption:** It is critical to handle missing profile data gracefully.
    - **Decision:** Implement a custom 404 page to guide users if profile data is not retrieved.
 
-## 8. Conclusion
+## 13. Conclusion
 
 The addition of dedicated therapist profile pages through ISR will boost SEO performance while maintaining a high-speed, static-like delivery model that integrates directly into our NextJS/Vercel ecosystem. This approach strikes a balance between fresh data and optimal performance.
 
-## 9. Additional Considerations (Based on Recent Research)
+## 14. Additional Considerations (Based on Recent Research)
 
 - **Revalidation Interval Granularity:**  
   The `revalidate` interval applies per page. If only a part of the page is highly dynamic, consider using client-side fetching for that section while keeping the rest static.
@@ -136,7 +320,7 @@ The addition of dedicated therapist profile pages through ISR will boost SEO per
 
 _Please review and update these clarifications as needed to ensure the final implementation meets all stakeholder requirements._
 
-## 10. Implementation Recap, Assumptions & Testing Procedures
+## 15. Implementation Recap, Assumptions & Testing Procedures
 
 #### What We Did
 
