@@ -36,6 +36,9 @@ module.exports = {
           DEFAULT: '#F3843C',
         },       
       },
+      fontFamily: {
+        'tuppence': ['tuppence', 'serif'],
+      },
     },
     screens: {
       sm: '640px',
