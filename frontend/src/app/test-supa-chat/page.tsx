@@ -22,20 +22,21 @@ type TherapistDetails = {
   id: string;
   first_name: string;
   last_name: string;
-  ethnicity: string;
-  gender: string;
-  sexuality: string;
-  faith: string;
-  price: number;
-  availability: string;
-  languages: string[];
-  areas_of_focus: string[];
-  approaches: {
+  ethnicity?: string;
+  gender?: string;
+  sexuality?: string;
+  faith?: string;
+  initial_price?: string;
+  subsequent_price?: string;
+  availability?: string;
+  languages?: string[];
+  areas_of_focus?: string[];
+  approaches?: {
     long_term: string[];
     short_term: string[];
   };
-  similarity: number;
-  ai_summary: string;
+  similarity?: number;
+  ai_summary?: string;
 };
 
 export default function ChatPage() {
@@ -79,48 +80,13 @@ Remember:
 - Maintain professional boundaries while being approachable`);
 
   const { messages, input, handleInputChange, handleSubmit, status } = useChat({
-    api: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/chat-v2`,
+    api: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/chat-v3`,
     onResponse: (response) => {
       console.debug("[Chat] Response received:", response.status);
       console.debug(
         "[Chat] Response headers:",
         Object.fromEntries(response.headers.entries())
       );
-
-      // Don't try to parse response as JSON - it's a stream
-      // Instead, look for therapist data in the response headers or metadata
-      const therapists = response.headers.get("x-therapists");
-      console.debug("[Chat] Raw therapist header:", therapists);
-
-      if (therapists) {
-        try {
-          const therapistData = JSON.parse(therapists);
-          console.debug("[Chat] Parsed therapist data:", therapistData);
-          setCurrentTherapists(
-            therapistData.slice(0, 3).map((t) => ({
-              id: t.id,
-              first_name: t.first_name,
-              last_name: t.last_name,
-              ethnicity: t.ethnicity,
-              gender: t.gender,
-              sexuality: t.sexuality,
-              faith: t.faith,
-              price: t.price,
-              availability: t.availability,
-              languages: t.languages,
-              areas_of_focus: t.areas_of_focus,
-              approaches: t.approaches,
-              similarity: t.similarity,
-              ai_summary: t.ai_summary,
-            }))
-          );
-          console.debug("[Chat] Updated currentTherapists state");
-        } catch (e) {
-          console.error("[Chat] Error parsing therapist data:", e);
-        }
-      } else {
-        console.debug("[Chat] No therapist data found in headers");
-      }
     },
     onFinish: (message) => {
       console.debug("[Chat] Stream finished - Full Response:", {
@@ -132,18 +98,11 @@ Remember:
     onError: (error) => {
       console.error("[Chat] Error:", error, "\nStack:", error.stack);
     },
-    body: {
-      context: {
-        isFirstMessage: displayMessages.length === 0,
-        currentTherapists:
-          currentTherapists.length > 0 ? currentTherapists : undefined,
-      },
-    },
   });
 
   const generateEmbedding = usePipeline(
-    "feature-extraction", // task type
-    "Supabase/gte-small" // model name. ensure this matches the one we used on the server in /functions/embed/index.ts
+    "feature-extraction",
+    "Supabase/gte-small"
   );
 
   // Initialize chatId after mount
@@ -166,11 +125,129 @@ Remember:
     setChatId(newId);
     setDisplayMessages([]);
     messages.length = 0;
+    setCurrentTherapists([]);
     localStorage.setItem("currentChatId", newId);
+  };
+
+  // New function to get therapist matches
+  const getTherapistMatches = async (input: string, embedding: number[]) => {
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/therapist-matches`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            message: input,
+            chatId,
+            messages: messages,
+            embedding,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const therapists = await response.json();
+      console.debug("[Therapist Matches] Response:", therapists);
+      return therapists;
+    } catch (error) {
+      console.error("[Therapist Matches] Error:", error);
+      return [];
+    }
   };
 
   return (
     <div className="flex w-full h-full gap-4">
+      {/* Therapist Details Side Panel */}
+      <div className="w-96 h-full border-l p-4 overflow-y-auto">
+        <h2 className="text-lg font-semibold mb-4">Matched Therapists</h2>
+        {currentTherapists.length > 0 ? (
+          currentTherapists.map((t) => (
+            <div key={t.id} className="mb-6 p-4 border rounded-lg">
+              <h3 className="font-medium text-lg">
+                {t.first_name} {t.last_name}
+              </h3>
+              <div className="mt-2 space-y-1 text-sm">
+                {t.similarity !== undefined && (
+                  <p>
+                    <span className="font-medium">Match:</span>{" "}
+                    {(t.similarity * 100).toFixed(1)}%
+                  </p>
+                )}
+                {t.gender && (
+                  <p>
+                    <span className="font-medium">Gender:</span> {t.gender}
+                  </p>
+                )}
+                {t.ethnicity && (
+                  <p>
+                    <span className="font-medium">Ethnicity:</span>{" "}
+                    {t.ethnicity}
+                  </p>
+                )}
+                {t.faith && (
+                  <p>
+                    <span className="font-medium">Faith:</span> {t.faith}
+                  </p>
+                )}
+                {t.initial_price && (
+                  <p>
+                    <span className="font-medium">Initial Session:</span>{" "}
+                    {t.initial_price}
+                  </p>
+                )}
+                {t.subsequent_price && (
+                  <p>
+                    <span className="font-medium">Ongoing Sessions:</span>{" "}
+                    {t.subsequent_price}
+                  </p>
+                )}
+                {t.availability && (
+                  <p>
+                    <span className="font-medium">Availability:</span>{" "}
+                    {t.availability}
+                  </p>
+                )}
+                {t.languages?.length && (
+                  <p>
+                    <span className="font-medium">Languages:</span>{" "}
+                    {t.languages.join(", ")}
+                  </p>
+                )}
+                {t.areas_of_focus?.length && (
+                  <div className="mt-2">
+                    <p className="font-medium">Focus Areas:</p>
+                    <ul className="list-disc list-inside">
+                      {t.areas_of_focus.slice(0, 3).map((area, i) => (
+                        <li key={i}>{area}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {t.approaches?.long_term?.length && (
+                  <div className="mt-2">
+                    <p className="font-medium">Approaches:</p>
+                    <ul className="list-disc list-inside">
+                      {t.approaches.long_term.slice(0, 3).map((approach, i) => (
+                        <li key={i}>{approach}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {t.ai_summary && <p className="mt-2 italic">{t.ai_summary}</p>}
+              </div>
+            </div>
+          ))
+        ) : (
+          <p className="text-gray-500 italic">No therapists matched yet</p>
+        )}
+      </div>
       <div className="max-w-6xl flex flex-col items-center w-full h-full">
         {/* Chat ID Controls */}
         <div className="w-full mb-4 p-4 border rounded-sm flex gap-2 items-center">
@@ -288,16 +365,28 @@ Remember:
                 "ms"
               );
 
-              const embedding = JSON.stringify(Array.from(output.data));
+              const embedding = Array.from(output.data) as number[];
               console.debug("[Timing] Embedding length:", embedding.length);
 
+              // First get therapist matches and update UI
+              const matchedTherapists = await getTherapistMatches(
+                input,
+                embedding
+              );
+              setCurrentTherapists(matchedTherapists.slice(0, 3));
+
+              // Then send chat request with the same matched therapists
               const responseBody = {
-                embedding,
                 chatId,
                 message: input,
+                messages: messages.map((m) => ({
+                  role: m.role,
+                  content: m.content,
+                })),
+                matchedTherapists,
                 promptTemplate,
               };
-              console.log("sending resonse", responseBody);
+              console.log("sending chat request", responseBody);
 
               handleSubmit(e, {
                 body: responseBody,
@@ -315,69 +404,37 @@ Remember:
               Send
             </button>
           </form>
-          <p contentEditable="true">
-            Looking for a therapist with experience in asian backgrounds
+          <p
+            contentEditable="true"
+            style={{
+              border: "1px dashed #ccc",
+              padding: "8px",
+              cursor: "text",
+            }}
+          >
+            Looking for a therapist with experience in asian backgrounds.{" "}
+          </p>
+          <p
+            contentEditable="true"
+            style={{
+              border: "1px dashed #ccc",
+              padding: "8px",
+              cursor: "text",
+            }}
+          >
+            Looking for a therapist with experience in black backgrounds.{" "}
+          </p>
+          <p
+            contentEditable="true"
+            style={{
+              border: "1px dashed #ccc",
+              padding: "8px",
+              cursor: "text",
+            }}
+          >
+            Looking for a therapist with experience in white backgrounds.{" "}
           </p>
         </div>
-      </div>
-
-      {/* Therapist Details Side Panel */}
-      <div className="w-96 h-full border-l p-4 overflow-y-auto">
-        <h2 className="text-lg font-semibold mb-4">Matched Therapists</h2>
-        {currentTherapists.length > 0 ? (
-          currentTherapists.map((t) => (
-            <div key={t.id} className="mb-6 p-4 border rounded-lg">
-              <h3 className="font-medium text-lg">
-                {t.first_name} {t.last_name}
-              </h3>
-              <div className="mt-2 space-y-1 text-sm">
-                <p>
-                  <span className="font-medium">Match:</span>{" "}
-                  {(t.similarity * 100).toFixed(1)}%
-                </p>
-                <p>
-                  <span className="font-medium">Gender:</span> {t.gender}
-                </p>
-                <p>
-                  <span className="font-medium">Ethnicity:</span> {t.ethnicity}
-                </p>
-                <p>
-                  <span className="font-medium">Faith:</span> {t.faith}
-                </p>
-                <p>
-                  <span className="font-medium">Price:</span> ${t.price}
-                </p>
-                <p>
-                  <span className="font-medium">Availability:</span>{" "}
-                  {t.availability}
-                </p>
-                <p>
-                  <span className="font-medium">Languages:</span>{" "}
-                  {t.languages.join(", ")}
-                </p>
-                <div className="mt-2">
-                  <p className="font-medium">Focus Areas:</p>
-                  <ul className="list-disc list-inside">
-                    {t.areas_of_focus.slice(0, 3).map((area, i) => (
-                      <li key={i}>{area}</li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="mt-2">
-                  <p className="font-medium">Approaches:</p>
-                  <ul className="list-disc list-inside">
-                    {t.approaches.long_term.slice(0, 3).map((approach, i) => (
-                      <li key={i}>{approach}</li>
-                    ))}
-                  </ul>
-                </div>
-                <p className="mt-2 italic">{t.ai_summary}</p>
-              </div>
-            </div>
-          ))
-        ) : (
-          <p className="text-gray-500 italic">No therapists matched yet</p>
-        )}
       </div>
     </div>
   );
