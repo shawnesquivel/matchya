@@ -1,5 +1,3 @@
-import { sourceCodePro } from "../styles/fonts";
-
 const ChatInput = ({
   prompt,
   handlePromptChange,
