@@ -52,6 +52,8 @@ type TherapistFilters = {
   format: string[] | null;
 };
 
+type TriggerSource = "CHAT" | "FORM";
+
 export default function ChatPage() {
   // log the .env.local keys
   if (
@@ -61,6 +63,7 @@ export default function ChatPage() {
     throw new Error("Supabase environment variables not found");
   }
   const [error, setError] = useState<Error | null>(null);
+  const [sendingChat, setSendingChat] = useState<Boolean>(false);
   const supabase = createClientComponentClient();
   const [chatId, setChatId] = useState<string | null>(null);
   const [displayMessages, setDisplayMessages] = useState<ChatMessage[]>([]);
@@ -77,30 +80,6 @@ export default function ChatPage() {
     availability: null,
     format: null,
   });
-  const [promptTemplate, setPromptTemplate] =
-    useState(`You're an AI assistant helping people find the right therapist.
-
-Keep your responses warm and empathetic, but concise:
-
-When suggesting therapists:
-1. Acknowledge the preferences or needs they've shared
-2. Briefly introduce each matching therapist (max 3 details per therapist)
-3. Explain why you think they might be a good fit
-
-If no therapists match their criteria:
-- Acknowledge their preferences
-- Suggest broadening specific criteria
-- Offer to try a different search
-
-If they're asking general questions:
-- Answer directly and briefly
-- Relate it back to finding a therapist if relevant
-- Encourage them to share their preferences
-
-Remember:
-- Focus on making meaningful matches, not just listing all options
-- Be sensitive to cultural, identity, and accessibility needs
-- Maintain professional boundaries while being approachable`);
 
   const { messages, input, handleInputChange, handleSubmit, status } = useChat({
     api: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/chat-v3`,
@@ -165,11 +144,23 @@ Remember:
 
   // Update getTherapistMatches function
   const getTherapistMatches = async (
-    input: string,
-    embedding: number[],
-    history: DisplayMessage[]
+    input: string | null,
+    embedding: number[] | null,
+    currentFormFilters: TherapistFilters,
+    triggerSource: TriggerSource,
+    updatedMessages: any
   ) => {
+    console.debug("[getTherapistMatches] Called with:", {
+      hasInput: !!input,
+      hasEmbedding: !!embedding,
+      currentFormFilters,
+      triggerSource,
+    });
+
     try {
+      console.log(
+        `sending therapist-matches with ${updatedMessages.length} messages`
+      );
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/therapist-matches`,
         {
@@ -179,11 +170,11 @@ Remember:
             Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
           },
           body: JSON.stringify({
-            message: input,
             chatId,
-            messages: history,
+            messages: updatedMessages.map(normalizeMessage),
             embedding,
-            currentFilters, // Send current filters for context
+            currentFormFilters,
+            triggerSource,
           }),
         }
       );
@@ -193,32 +184,14 @@ Remember:
       }
 
       const data = await response.json();
-      console.debug("[Therapist Matches] Response:", data);
-
-      // Update therapists and filters
-      setCurrentTherapists(data.therapists);
-
-      // Only update filters that have changed or are new
-      setCurrentFilters((prevFilters) => {
-        const newFilters = data.filters;
-        const updatedFilters = { ...prevFilters };
-        let hasChanges = false;
-
-        // Check each filter
-        Object.entries(newFilters).forEach(([key, value]) => {
-          if (JSON.stringify(prevFilters[key]) !== JSON.stringify(value)) {
-            updatedFilters[key] = value;
-            hasChanges = true;
-            console.debug(`[Filters] Updated ${key}:`, value);
-          }
-        });
-
-        return hasChanges ? updatedFilters : prevFilters;
+      console.debug("[getTherapistMatches] Response:", {
+        therapistsCount: data.therapists?.length,
+        filters: data.filters,
       });
 
       return data.therapists;
     } catch (error) {
-      console.error("[Therapist Matches] Error:", error);
+      console.error("[getTherapistMatches] Error:", error);
       return [];
     }
   };
@@ -441,15 +414,15 @@ Remember:
         <div className="space-y-2 mb-8">
           <h3>Request Stats</h3>
           <p className="text-sm">
-            Total Requests: {requestCount}, Last Request:{" "}
+            Total Requests: {requestCount}, Last Request:
             {lastRequestTimeStr || "None"}
           </p>
           <h3>State (Debugging)</h3>
           <p className="text-sm">
-            Ethnicity: {formFilters.ethnicity?.join(", ")}, Gender:{" "}
+            Ethnicity: {formFilters.ethnicity?.join(", ")}, Gender:
             {formFilters.gender}, Faith: {formFilters.faith?.join(", ")}, Max
             Initial Price: {formFilters.max_price_initial}, Max Subsequent
-            Price: {formFilters.max_price_subsequent}, Availability:{" "}
+            Price: {formFilters.max_price_subsequent}, Availability:
             {formFilters.availability}, Format: {formFilters.format?.join(", ")}
             , Sexuality: {formFilters.sexuality?.join(", ")}
           </p>
@@ -657,25 +630,25 @@ Remember:
           <div className="space-y-1 text-sm">
             {currentFilters.gender && (
               <p>
-                <span className="font-medium">Gender:</span>{" "}
+                <span className="font-medium">Gender:</span>
                 {currentFilters.gender}
               </p>
             )}
             {currentFilters.ethnicity?.length && (
               <p>
-                <span className="font-medium">Ethnicity:</span>{" "}
+                <span className="font-medium">Ethnicity:</span>
                 {currentFilters.ethnicity.join(", ")}
               </p>
             )}
             {currentFilters.sexuality?.length && (
               <p>
-                <span className="font-medium">Sexuality:</span>{" "}
+                <span className="font-medium">Sexuality:</span>
                 {currentFilters.sexuality.join(", ")}
               </p>
             )}
             {currentFilters.faith?.length && (
               <p>
-                <span className="font-medium">Faith:</span>{" "}
+                <span className="font-medium">Faith:</span>
                 {currentFilters.faith.join(", ")}
               </p>
             )}
@@ -693,7 +666,7 @@ Remember:
             )}
             {currentFilters.availability && (
               <p>
-                <span className="font-medium">Availability:</span>{" "}
+                <span className="font-medium">Availability:</span>
                 {currentFilters.availability}
               </p>
             )}
@@ -710,7 +683,7 @@ Remember:
               <div className="mt-2 space-y-1 text-sm">
                 {t.similarity !== undefined && (
                   <p>
-                    <span className="font-medium">Match:</span>{" "}
+                    <span className="font-medium">Match:</span>
                     {(t.similarity * 100).toFixed(1)}%
                   </p>
                 )}
@@ -721,7 +694,7 @@ Remember:
                 )}
                 {t.ethnicity && (
                   <p>
-                    <span className="font-medium">Ethnicity:</span>{" "}
+                    <span className="font-medium">Ethnicity:</span>
                     {t.ethnicity}
                   </p>
                 )}
@@ -732,25 +705,25 @@ Remember:
                 )}
                 {t.initial_price && (
                   <p>
-                    <span className="font-medium">Initial Session:</span>{" "}
+                    <span className="font-medium">Initial Session:</span>
                     {t.initial_price}
                   </p>
                 )}
                 {t.subsequent_price && (
                   <p>
-                    <span className="font-medium">Ongoing Sessions:</span>{" "}
+                    <span className="font-medium">Ongoing Sessions:</span>
                     {t.subsequent_price}
                   </p>
                 )}
                 {t.availability && (
                   <p>
-                    <span className="font-medium">Availability:</span>{" "}
+                    <span className="font-medium">Availability:</span>
                     {t.availability}
                   </p>
                 )}
                 {t.languages?.length && (
                   <p>
-                    <span className="font-medium">Languages:</span>{" "}
+                    <span className="font-medium">Languages:</span>
                     {t.languages.join(", ")}
                   </p>
                 )}
@@ -791,40 +764,11 @@ Remember:
 
         {/* Debug Info */}
         <div className="w-full mb-4 p-4 border rounded-sm">
-          <details>
-            <summary className="cursor-pointer">Debug Info</summary>
-            <div className="mt-2 text-sm font-mono">
-              <div>First Message: {messages.length === 0 ? "Yes" : "No"}</div>
-              <div className="mt-2">
-                <div>Current Matched Therapists:</div>
-                {currentTherapists.length > 0 ? (
-                  <ul className="list-disc pl-4">
-                    {currentTherapists.map((t) => (
-                      <li key={t.id}>
-                        {t.first_name} {t.last_name} (ID: {t.id})
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div className="text-gray-500 italic">
-                    No therapists matched yet
-                  </div>
-                )}
-              </div>
-            </div>
-          </details>
+          <h1 className="cursor-pointer">Debug Info</h1>
+          <div className="mt-2 text-sm font-mono">
+            <div>Message Length: {messages.length}</div>
+          </div>
         </div>
-
-        {/* System Prompt Editor */}
-        <details className="w-full mb-4 p-4 border rounded-sm">
-          <summary className="cursor-pointer">System Prompt</summary>
-          <textarea
-            className="w-full mt-2 p-2 border rounded-sm font-mono text-sm"
-            rows={8}
-            value={promptTemplate}
-            onChange={(e) => setPromptTemplate(e.target.value)}
-          />
-        </details>
 
         {/* Chat Container */}
         <div className="flex flex-col w-full gap-6 grow my-2 sm:my-10 p-4 sm:p-8 sm:border rounded-sm">
@@ -872,62 +816,54 @@ Remember:
             )}
           </div>
 
-          {/* Input Form */}
+          {/* Chat Input Form */}
           <form
             className="flex items-center space-x-2 gap-2"
             onSubmit={async (e) => {
               e.preventDefault();
-
-              if (!generateEmbedding) {
-                throw new Error("Unable to generate embeddings");
-              }
-
-              const embedStart = performance.now();
-              const output = await generateEmbedding(input, {
-                pooling: "mean",
-                normalize: true,
-              });
-
-              console.debug(
-                "[Timing] Client-side embedding completed in",
-                performance.now() - embedStart,
-                "ms"
-              );
-
-              const embedding = Array.from(output.data) as number[];
-
-              // Create complete message history including current message
-              const completeHistory = [
-                ...messages,
-                {
+              setSendingChat(true);
+              try {
+                if (!generateEmbedding) {
+                  throw new Error("Unable to generate embeddings");
+                }
+                const newMessage = {
                   role: "user" as const,
                   content: input,
                   id: crypto.randomUUID(),
                   createdAt: new Date(),
-                } as VercelMessage,
-              ];
+                };
+                const updatedMessages = [...messages, newMessage];
 
-              // First get therapist matches and update UI
-              const matchedTherapists = await getTherapistMatches(
-                input,
-                embedding,
-                completeHistory // Pass complete history
-              );
-              setCurrentTherapists(matchedTherapists.slice(0, 3));
+                const rawEmbedding = await generateEmbedding(input, {
+                  pooling: "mean",
+                  normalize: true,
+                });
+                const embedding = Array.from(rawEmbedding.data) as number[];
 
-              // Then send chat request with the same matched therapists
-              const responseBody = {
-                chatId,
-                message: input,
-                messages: completeHistory, // Use complete history here too
-                matchedTherapists,
-                promptTemplate,
-              };
-              console.log("sending chat request", responseBody);
+                const matchedTherapists = await getTherapistMatches(
+                  input,
+                  embedding,
+                  formFilters,
+                  "CHAT",
+                  updatedMessages
+                );
 
-              handleSubmit(e, {
-                body: responseBody,
-              });
+                setCurrentTherapists(matchedTherapists.slice(0, 3));
+
+                const responseBody = {
+                  chatId,
+                  messages: updatedMessages.map(normalizeMessage),
+                  matchedTherapists,
+                };
+
+                handleSubmit(e, {
+                  body: responseBody,
+                });
+              } catch (error) {
+                setError(error.toString());
+              } finally {
+                setSendingChat(false);
+              }
             }}
           >
             <input
@@ -936,7 +872,7 @@ Remember:
               placeholder="Send a message"
               value={input}
               onChange={handleInputChange}
-            />{" "}
+            />
             <button type="submit" disabled={!isReady}>
               Send
             </button>
@@ -948,7 +884,7 @@ Remember:
               cursor: "text",
             }}
           >
-            Looking for a therapist with experience in asian backgrounds.{" "}
+            Looking for a therapist with experience in asian backgrounds.
           </p>
           <p
             style={{
@@ -957,7 +893,7 @@ Remember:
               cursor: "text",
             }}
           >
-            Looking for a therapist with experience in black backgrounds.{" "}
+            Looking for a therapist with experience in black backgrounds.
           </p>
           <p
             style={{
@@ -966,10 +902,15 @@ Remember:
               cursor: "text",
             }}
           >
-            Looking for a therapist with experience in white backgrounds.{" "}
+            Looking for a therapist with experience in white backgrounds.
           </p>
         </div>
       </div>
     </div>
   );
 }
+
+const normalizeMessage = (msg: any) => ({
+  role: msg.role,
+  content: msg.content || (msg.parts?.[0]?.text ?? null),
+});

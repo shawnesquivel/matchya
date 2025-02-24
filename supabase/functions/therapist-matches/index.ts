@@ -84,25 +84,23 @@ Deno.serve(async (req) => {
   try {
     const {
       chatId,
-      message,
       messages,
       embedding: providedEmbedding,
       currentFilters,
+      triggerSource,
     } = await req.json();
 
-    console.log("received message", message);
-    console.log("received messages", messages);
-    console.log("current filters", currentFilters);
+    console.log({ triggerSource });
+    console.log(messages.length);
+    console.log(messages);
+    const embedding = providedEmbedding;
 
-    // Default 384-dimension embedding (all 0.1 for simplicity)
-    const defaultEmbedding = Array(384).fill(0.1);
-    const embedding = providedEmbedding || defaultEmbedding;
-
+    const isFirstMessage = messages.length === 1;
+    console.log(`[therapist-matches]: isFirstMessage ${isFirstMessage}`);
     const isUserAskingForTherapist = await determineUserMessageIntent(
       messages,
-      message,
       {
-        isFirstMessage: messages.length === 0,
+        isFirstMessage,
         currentTherapists: messages.map((m) => ({
           id: m.id,
           first_name: m.first_name,
@@ -121,7 +119,6 @@ Deno.serve(async (req) => {
       console.log("running query builder");
       const params = await determineMatchTherapistParameters(
         messages,
-        message,
         currentFilters
       );
 
@@ -222,7 +219,6 @@ Deno.serve(async (req) => {
 
 const determineUserMessageIntent = async (
   messages: Array<OpenAI.Chat.ChatCompletionMessageParam>,
-  message: OpenAI.Chat.ChatCompletionMessageParam,
   context: DetermineUserMessageIntentContext
 ): Promise<DetermineUserMessageIntentResponse> => {
   /**
@@ -265,14 +261,14 @@ const determineUserMessageIntent = async (
       : ""
   }
   
-  Consider a message as a therapist request if it contains ANY of these:
-  - Mentions of demographic preferences (gender, ethnicity, age, etc.)
-  - Mentions of therapy style or approach preferences
-  - Mentions of availability or location preferences
-  - Mentions of price/cost preferences
+  Consider a message as a therapist request if it mentions
+  - demographic preferences (gender, ethnicity, age, etc.)
+  - therapy style or approach preferences
+  - availability or location preferences
+  - price/cost preferences
   - Any indication they're looking for or want to find a therapist
   - Questions about specific types of therapists
-  - Mentions of specific issues they want help with
+  - specific issues they want help with
   
   Even subtle hints about preferences should be treated as therapist requests.
   
@@ -289,12 +285,12 @@ const determineUserMessageIntent = async (
   - Small talk or greetings
   - Direct questions about the platform/service`,
     },
-    {
-      role: "user",
-      content: message,
-    },
     ...messages,
   ];
+
+  console.log(
+    `[determineUserMessageIntent]: ${messages.length} ${messages[0]}`
+  );
 
   const ClassifyUserIntent = z.object({
     isTherapistRequest: z.boolean(),
@@ -313,7 +309,6 @@ const determineUserMessageIntent = async (
 
 const determineMatchTherapistParameters = async (
   messages: Array<OpenAI.Chat.ChatCompletionMessageParam>,
-  message: OpenAI.Chat.ChatCompletionMessageParam,
   currentFilters?: {
     gender: string | null;
     sexuality: string[] | null;
@@ -407,7 +402,6 @@ Keep existing filters unless the user specifically changes them.
 
 Include reasoning for the extracted preferences or any ambiguity in the message`,
     },
-    { role: "user", content: message },
     ...messages,
   ];
 

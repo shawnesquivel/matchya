@@ -79,14 +79,22 @@ Deno.serve(async (req) => {
   });
 
   try {
-    const { chatId, message, messages, matchedTherapists, promptTemplate } =
-      await req.json();
+    const { chatId, messages, matchedTherapists } = await req.json();
+
+    console.log(
+      "[chat-v3]: Received messages:",
+      messages.length,
+      "last message:",
+      messages[messages.length - 1]?.content
+    );
+
+    const validMessages = messages.filter(validateMessage);
 
     // Generate or use provided chat_id
     const finalChatId = chatId || crypto.randomUUID();
 
     // Format therapist information for the AI
-    console.log("received matched therapists", matchedTherapists[0]);
+
     const therapistInfo = matchedTherapists?.length
       ? matchedTherapists
           .map((therapist: TherapistMatch) => {
@@ -127,7 +135,7 @@ ${therapist.ai_summary ? `\nSummary: ${therapist.ai_summary}` : ""}
           .join("\n\n")
       : "No matching therapists available";
 
-    console.log("received matched therapists", matchedTherapists);
+    console.log("received matched therapists", matchedTherapists.length);
 
     const systemContent = codeBlock`
     ${defaultPrompt}
@@ -135,17 +143,12 @@ ${therapist.ai_summary ? `\nSummary: ${therapist.ai_summary}` : ""}
     Here are the current therapist matches:
     ${therapistInfo}
     `;
-    console.log("received messages", messages);
     const completionMessages = [
       {
         role: "system",
         content: systemContent,
       },
-      ...messages,
-      {
-        role: "user",
-        content: message,
-      },
+      ...validMessages,
     ];
 
     // Start performance tracking
@@ -163,22 +166,22 @@ ${therapist.ai_summary ? `\nSummary: ${therapist.ai_summary}` : ""}
     const stream = OpenAIStream(completionStream, {
       experimental_streamData: true,
       onStart: () => {
-        console.log(
-          "[OpenAI] Stream started at",
-          performance.now() - openaiStartTime,
-          "ms"
-        );
+        // console.log(
+        //   "[OpenAI] Stream started at",
+        //   performance.now() - openaiStartTime,
+        //   "ms"
+        // );
       },
       onToken: () => {
         tokenCount++;
       },
       onCompletion: () => {
         const completionTime = performance.now() - openaiStartTime;
-        console.log("[OpenAI] Completion stats:", {
-          totalTokens: tokenCount,
-          timeMs: completionTime,
-          tokensPerSecond: (tokenCount / (completionTime / 1000)).toFixed(2),
-        });
+        // console.log("[OpenAI] Completion stats:", {
+        //   totalTokens: tokenCount,
+        //   timeMs: completionTime,
+        //   tokensPerSecond: (tokenCount / (completionTime / 1000)).toFixed(2),
+        // });
       },
       onFinal: async (completion: string) => {
         // Store in chat history
@@ -216,6 +219,14 @@ ${therapist.ai_summary ? `\nSummary: ${therapist.ai_summary}` : ""}
     );
   }
 });
+
+const validateMessage = (msg: any) => {
+  if (!msg.role || !msg.content) {
+    console.warn("Invalid message format:", msg);
+    return false;
+  }
+  return true;
+};
 
 // curl -i --location --request POST 'http://localhost:54321/functions/v1/chat-v3' \
 // --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' \
