@@ -51,7 +51,7 @@ export function usePipeline(
           break;
         }
         case "ready": {
-          console.log("[Pipeline] Worker ready");
+          // console.log("[Pipeline] Worker ready");
           setWorker(worker);
           break;
         }
@@ -66,7 +66,7 @@ export function usePipeline(
     } satisfies InitEventData);
 
     return () => {
-      console.log("[Pipeline] Cleaning up worker");
+      // console.log("[Pipeline] Cleaning up worker");
       worker.removeEventListener("message", onMessageReceived);
       worker.terminate();
 
@@ -111,7 +111,6 @@ export function usePipeline(
       }
 
       const id = currentId++;
-      console.log("[Pipeline] Running inference:", id);
 
       return new Promise<PipeReturnType>((resolve) => {
         callbacks.set(id, resolve);

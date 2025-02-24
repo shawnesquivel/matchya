@@ -87,10 +87,12 @@ Deno.serve(async (req) => {
       message,
       messages,
       embedding: providedEmbedding,
+      currentFilters,
     } = await req.json();
 
     console.log("received message", message);
     console.log("received messages", messages);
+    console.log("current filters", currentFilters);
 
     // Default 384-dimension embedding (all 0.1 for simplicity)
     const defaultEmbedding = Array(384).fill(0.1);
@@ -115,9 +117,13 @@ Deno.serve(async (req) => {
     );
 
     if (isUserAskingForTherapist.isTherapistRequest) {
-      // C2: Run Query Builder
-      console.log("runnign query builder");
-      const params = await determineMatchTherapistParameters(messages, message);
+      // C2: Run Query Builder with current filters context
+      console.log("running query builder");
+      const params = await determineMatchTherapistParameters(
+        messages,
+        message,
+        currentFilters
+      );
 
       // Pass the queries to DB function
       console.log("params", params);
@@ -154,8 +160,9 @@ Deno.serve(async (req) => {
         );
       }
 
-      return new Response(
-        JSON.stringify(
+      // Create response with therapists and current filters
+      const response = {
+        therapists:
           therapists?.map((t: TherapistMatch) => ({
             id: t.id,
             first_name: t.first_name,
@@ -172,17 +179,38 @@ Deno.serve(async (req) => {
             approaches: t.approaches,
             similarity: t.similarity,
             ai_summary: t.ai_summary,
-          })) || []
-        ),
+          })) || [],
+        filters: {
+          gender: params.gender_filter || null,
+          sexuality: params.sexuality_filter || null,
+          ethnicity: params.ethnicity_filter || null,
+          faith: params.faith_filter || null,
+          max_price_initial: params.max_price_initial || null,
+          availability: params.availability_filter || null,
+        },
+      };
+
+      return new Response(JSON.stringify(response), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    } else {
+      // Not a therapist request, return empty response with empty filters
+      return new Response(
+        JSON.stringify({
+          therapists: [],
+          filters: {
+            gender: null,
+            sexuality: null,
+            ethnicity: null,
+            faith: null,
+            max_price_initial: null,
+            availability: null,
+          },
+        }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );
-    } else {
-      // Not a therapist request, return empty array
-      return new Response(JSON.stringify([]), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
     }
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), {
@@ -285,7 +313,15 @@ const determineUserMessageIntent = async (
 
 const determineMatchTherapistParameters = async (
   messages: Array<OpenAI.Chat.ChatCompletionMessageParam>,
-  message: OpenAI.Chat.ChatCompletionMessageParam
+  message: OpenAI.Chat.ChatCompletionMessageParam,
+  currentFilters?: {
+    gender: string | null;
+    sexuality: string[] | null;
+    ethnicity: string[] | null;
+    faith: string[] | null;
+    max_price_initial: number | null;
+    availability: string | null;
+  }
 ): Promise<z.infer<typeof FilterParams>> => {
   /**
    * Use an LLM to build the function call to Database Function: match_therapists.
@@ -346,11 +382,30 @@ const determineMatchTherapistParameters = async (
     {
       role: "system",
       content: `Extract therapist preferences from the conversation.
-  Consider: gender, sexuality, ethnicity, faith, price limit, and availability.
-  If user doesn't specify a preference, use null.
-  For price, extract a maximum hourly rate number or null.
-  For sexuality, ethnicity, and faith, return an array of values or null.
-  Include reasoning for the extracted preferences or any ambiguity in the message`,
+Consider: gender, sexuality, ethnicity, faith, price limit, and availability.
+If user doesn't specify a preference, use null.
+For price, extract a maximum hourly rate number or null.
+For sexuality, ethnicity, and faith, return an array of values or null.
+
+${
+  currentFilters
+    ? `
+Current active filters:
+${Object.entries(currentFilters)
+  .filter(([_, value]) => value !== null)
+  .map(
+    ([key, value]) =>
+      `- ${key}: ${Array.isArray(value) ? value.join(", ") : value}`
+  )
+  .join("\n")}
+
+Only update filters that are explicitly mentioned in the new message.
+Keep existing filters unless the user specifically changes them.
+`
+    : ""
+}
+
+Include reasoning for the extracted preferences or any ambiguity in the message`,
     },
     { role: "user", content: message },
     ...messages,

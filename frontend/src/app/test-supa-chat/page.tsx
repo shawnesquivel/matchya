@@ -3,9 +3,10 @@
 import { usePipeline } from "@/lib/hooks/use-pipeline";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import { useChat } from "@ai-sdk/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Message as VercelMessage } from "ai";
+import debounce from "lodash/debounce";
 
 interface ChatMessage {
   id: number;
@@ -22,10 +23,11 @@ type TherapistDetails = {
   id: string;
   first_name: string;
   last_name: string;
-  ethnicity?: string;
+  bio?: string;
   gender?: string;
-  sexuality?: string;
-  faith?: string;
+  ethnicity?: string[];
+  sexuality?: string[];
+  faith?: string[];
   initial_price?: string;
   subsequent_price?: string;
   availability?: string;
@@ -39,6 +41,17 @@ type TherapistDetails = {
   ai_summary?: string;
 };
 
+type TherapistFilters = {
+  gender: string | null;
+  sexuality: string[] | null;
+  ethnicity: string[] | null;
+  faith: string[] | null;
+  max_price_initial: number | null;
+  max_price_subsequent: number | null;
+  availability: string | null;
+  format: string[] | null;
+};
+
 export default function ChatPage() {
   // log the .env.local keys
   if (
@@ -47,13 +60,23 @@ export default function ChatPage() {
   ) {
     throw new Error("Supabase environment variables not found");
   }
-
+  const [error, setError] = useState<Error | null>(null);
   const supabase = createClientComponentClient();
   const [chatId, setChatId] = useState<string | null>(null);
   const [displayMessages, setDisplayMessages] = useState<ChatMessage[]>([]);
   const [currentTherapists, setCurrentTherapists] = useState<
     TherapistDetails[]
   >([]);
+  const [currentFilters, setCurrentFilters] = useState<TherapistFilters>({
+    gender: null,
+    sexuality: null,
+    ethnicity: null,
+    faith: null,
+    max_price_initial: null,
+    max_price_subsequent: null,
+    availability: null,
+    format: null,
+  });
   const [promptTemplate, setPromptTemplate] =
     useState(`You're an AI assistant helping people find the right therapist.
 
@@ -126,11 +149,26 @@ Remember:
     setDisplayMessages([]);
     messages.length = 0;
     setCurrentTherapists([]);
+    // Reset filters
+    setCurrentFilters({
+      gender: null,
+      sexuality: null,
+      ethnicity: null,
+      faith: null,
+      max_price_initial: null,
+      max_price_subsequent: null,
+      availability: null,
+      format: null,
+    });
     localStorage.setItem("currentChatId", newId);
   };
 
-  // New function to get therapist matches
-  const getTherapistMatches = async (input: string, embedding: number[]) => {
+  // Update getTherapistMatches function
+  const getTherapistMatches = async (
+    input: string,
+    embedding: number[],
+    history: DisplayMessage[]
+  ) => {
     try {
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/therapist-matches`,
@@ -143,8 +181,9 @@ Remember:
           body: JSON.stringify({
             message: input,
             chatId,
-            messages: messages,
+            messages: history,
             embedding,
+            currentFilters, // Send current filters for context
           }),
         }
       );
@@ -153,20 +192,515 @@ Remember:
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const therapists = await response.json();
-      console.debug("[Therapist Matches] Response:", therapists);
-      return therapists;
+      const data = await response.json();
+      console.debug("[Therapist Matches] Response:", data);
+
+      // Update therapists and filters
+      setCurrentTherapists(data.therapists);
+
+      // Only update filters that have changed or are new
+      setCurrentFilters((prevFilters) => {
+        const newFilters = data.filters;
+        const updatedFilters = { ...prevFilters };
+        let hasChanges = false;
+
+        // Check each filter
+        Object.entries(newFilters).forEach(([key, value]) => {
+          if (JSON.stringify(prevFilters[key]) !== JSON.stringify(value)) {
+            updatedFilters[key] = value;
+            hasChanges = true;
+            console.debug(`[Filters] Updated ${key}:`, value);
+          }
+        });
+
+        return hasChanges ? updatedFilters : prevFilters;
+      });
+
+      return data.therapists;
     } catch (error) {
       console.error("[Therapist Matches] Error:", error);
       return [];
     }
   };
 
+  // Add debug display for filter changes
+  useEffect(() => {
+    console.debug("[Filters] Current filters updated:", currentFilters);
+  }, [currentFilters]);
+
+  // Add form state
+  const [formFilters, setFormFilters] = useState<TherapistFilters>({
+    gender: null,
+    sexuality: null,
+    ethnicity: null,
+    faith: null,
+    max_price_initial: null,
+    max_price_subsequent: null,
+    availability: null,
+    format: null,
+  });
+
+  // Toggle handlers
+  const toggleGender = (value: string) => {
+    setFormFilters((prev) => ({
+      ...prev,
+      gender: prev.gender === value ? null : value,
+    }));
+  };
+
+  // Simplify toggleArrayFilter
+  const toggleArrayFilter = (
+    key: "sexuality" | "ethnicity" | "faith" | "format",
+    value: string
+  ) => {
+    setFormFilters((prev) => {
+      if (!prev[key]) {
+        return { ...prev, [key]: [value] };
+      }
+      if (prev[key]?.includes(value)) {
+        const filtered = prev[key]?.filter((v) => v !== value);
+        return { ...prev, [key]: filtered.length === 0 ? null : filtered };
+      }
+      return { ...prev, [key]: [...prev[key]!, value] };
+    });
+  };
+
+  const handlePriceChange = (
+    key: "max_price_initial" | "max_price_subsequent",
+    value: string
+  ) => {
+    setFormFilters((prev) => ({
+      ...prev,
+      [key]: value ? Number(value) : null,
+    }));
+  };
+
+  const [requestCount, setRequestCount] = useState(0);
+  const lastRequestTime = useRef(Date.now());
+  const [lastRequestTimeStr, setLastRequestTimeStr] = useState<string>("");
+
+  // Update the time string when lastRequestTime changes
+  useEffect(() => {
+    const formatTime = (timestamp: number) => {
+      const date = new Date(timestamp);
+      return `${String(date.getHours()).padStart(2, "0")}:${String(
+        date.getMinutes()
+      ).padStart(2, "0")}:${String(date.getSeconds()).padStart(2, "0")}`;
+    };
+    setLastRequestTimeStr(formatTime(lastRequestTime.current));
+  }, [lastRequestTime.current]);
+
+  // Add fetchTherapists function
+  const fetchFilteredTherapists = async () => {
+    console.log("[Fetch] Starting with filters:", formFilters);
+    const now = Date.now();
+    lastRequestTime.current = now;
+
+    // Update the formatted time string
+    const formatTime = (timestamp: number) => {
+      const date = new Date(timestamp);
+      return `${String(date.getHours()).padStart(2, "0")}:${String(
+        date.getMinutes()
+      ).padStart(2, "0")}:${String(date.getSeconds()).padStart(2, "0")}`;
+    };
+    setLastRequestTimeStr(formatTime(now));
+
+    setRequestCount((prev) => prev + 1);
+
+    const hasActiveFilters = Object.values(formFilters).some((v) => {
+      const hasValue = v !== null && (Array.isArray(v) ? v.length > 0 : true);
+      return hasValue;
+    });
+
+    if (!hasActiveFilters) {
+      console.log("No active filters set, skipping fetch");
+      setCurrentTherapists([]); // Clear results when no filters
+      return;
+    }
+
+    let query = supabase.from("therapists").select(`
+      id,
+      first_name,
+      last_name,
+      bio,
+      gender,
+      ethnicity,
+      sexuality,
+      faith,
+      availability,
+      languages,
+      areas_of_focus,
+      approaches,
+      ai_summary,
+      ${
+        formFilters.max_price_initial
+          ? "therapist_fees!inner(session_category, session_type, price, currency)"
+          : "therapist_fees(session_category, session_type, price, currency)"
+      }
+    `);
+
+    if (formFilters.gender) {
+      query = query.eq("gender", formFilters.gender);
+    }
+
+    if (formFilters.ethnicity?.length) {
+      query = query.overlaps("ethnicity", formFilters.ethnicity);
+    }
+
+    if (formFilters.sexuality?.length) {
+      query = query.overlaps("sexuality", formFilters.sexuality);
+    }
+
+    if (formFilters.faith?.length) {
+      query = query.overlaps("faith", formFilters.faith);
+    }
+
+    if (formFilters.availability) {
+      query = query.eq("availability", formFilters.availability);
+    }
+
+    if (formFilters.max_price_initial) {
+      query = query
+        .lte("therapist_fees.price", formFilters.max_price_initial)
+        .eq("therapist_fees.session_category", "initial");
+    }
+
+    const { data: therapists, error } = await query;
+
+    if (error) {
+      console.error("[Fetch] Error:", error);
+      setError(error);
+      setCurrentTherapists([]);
+    }
+
+    if (!error && therapists) {
+      setCurrentFilters(formFilters);
+
+      const formattedTherapists = therapists.map(
+        ({ therapist_fees, ...t }) => ({
+          ...t,
+          initial_price: therapist_fees?.find(
+            (f) => f.session_category === "initial"
+          )
+            ? `$${
+                therapist_fees.find((f) => f.session_category === "initial")
+                  ?.price
+              } ${
+                therapist_fees.find((f) => f.session_category === "initial")
+                  ?.currency || "USD"
+              }`
+            : undefined,
+          subsequent_price: therapist_fees?.find(
+            (f) => f.session_category === "subsequent"
+          )
+            ? `$${
+                therapist_fees.find((f) => f.session_category === "subsequent")
+                  ?.price
+              } ${
+                therapist_fees.find((f) => f.session_category === "subsequent")
+                  ?.currency || "USD"
+              }`
+            : undefined,
+        })
+      );
+
+      setCurrentTherapists(formattedTherapists);
+    } else {
+      console.error("[Fetch] Error:", error);
+      setError(error);
+      setCurrentTherapists([]);
+    }
+  };
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [isInitialMount, setIsInitialMount] = useState(true);
+
+  // Remove debouncedFetch and replace with direct fetch
+  useEffect(() => {
+    if (isInitialMount) {
+      setIsInitialMount(false);
+      return;
+    }
+
+    console.log("[Filter Change] Update triggered", {
+      filters: formFilters,
+    });
+    fetchFilteredTherapists();
+  }, [formFilters]);
+
   return (
     <div className="flex w-full h-full gap-4">
+      {/* Filter Form Panel */}
+      <div className="w-80 h-full border-r p-4 overflow-y-auto relative">
+        {isLoading && (
+          <div className="absolute inset-0 bg-white/50 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+          </div>
+        )}
+        <h2 className="text-lg font-semibold mb-6">Filter Therapists</h2>
+        <div className="space-y-2 mb-8">
+          <h3>Request Stats</h3>
+          <p className="text-sm">
+            Total Requests: {requestCount}, Last Request:{" "}
+            {lastRequestTimeStr || "None"}
+          </p>
+          <h3>State (Debugging)</h3>
+          <p className="text-sm">
+            Ethnicity: {formFilters.ethnicity?.join(", ")}, Gender:{" "}
+            {formFilters.gender}, Faith: {formFilters.faith?.join(", ")}, Max
+            Initial Price: {formFilters.max_price_initial}, Max Subsequent
+            Price: {formFilters.max_price_subsequent}, Availability:{" "}
+            {formFilters.availability}, Format: {formFilters.format?.join(", ")}
+            , Sexuality: {formFilters.sexuality?.join(", ")}
+          </p>
+        </div>
+
+        {/* Budget Section */}
+        <div className="mb-6">
+          <h3 className="font-medium mb-3">Your Budget</h3>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                placeholder="0"
+                className="w-24 p-2 border rounded-md"
+                value={formFilters.max_price_initial || ""}
+                onChange={(e) =>
+                  handlePriceChange("max_price_initial", e.target.value)
+                }
+              />
+              <span>CAD Initial Visit</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                placeholder="0"
+                className="w-24 p-2 border rounded-md"
+                value={formFilters.max_price_subsequent || ""}
+                onChange={(e) =>
+                  handlePriceChange("max_price_subsequent", e.target.value)
+                }
+              />
+              <span>CAD Subsequent Visit</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Gender Section */}
+        <div className="mb-6">
+          <h3 className="font-medium mb-3">Gender</h3>
+          <div className="flex flex-wrap gap-2">
+            {["male", "female", "non_binary"].map((gender) => (
+              <button
+                key={gender}
+                className={`px-4 py-2 rounded-full border hover:bg-gray-100 focus:ring-2 focus:ring-blue-500 ${
+                  formFilters.gender === gender
+                    ? "bg-blue-100 border-blue-500"
+                    : ""
+                }`}
+                onClick={() => toggleGender(gender)}
+              >
+                {gender === "non_binary"
+                  ? "Non-Binary"
+                  : gender.charAt(0).toUpperCase() + gender.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Delivery Method */}
+        <div className="mb-6">
+          <h3 className="font-medium mb-3">Delivery Method</h3>
+          <div className="flex flex-wrap gap-2">
+            {["in_person", "online"].map((method) => (
+              <button
+                key={method}
+                className={`px-4 py-2 rounded-full border hover:bg-gray-100 focus:ring-2 focus:ring-blue-500 ${
+                  formFilters.availability === method
+                    ? "bg-blue-100 border-blue-500"
+                    : ""
+                }`}
+                onClick={() =>
+                  setFormFilters((prev) => ({
+                    ...prev,
+                    availability: prev.availability === method ? null : method,
+                  }))
+                }
+              >
+                {method === "in_person" ? "In Person" : "Online"}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Therapy Format */}
+        <div className="mb-6">
+          <h3 className="font-medium mb-3">Therapy Format</h3>
+          <div className="flex flex-wrap gap-2">
+            {["individual", "couples", "family"].map((format) => (
+              <button
+                key={format}
+                className={`px-4 py-2 rounded-full border hover:bg-gray-100 focus:ring-2 focus:ring-blue-500 ${
+                  formFilters.format?.includes(format)
+                    ? "bg-blue-100 border-blue-500"
+                    : ""
+                }`}
+                onClick={() => toggleArrayFilter("format", format)}
+              >
+                {format.charAt(0).toUpperCase() + format.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Sexuality */}
+        <div className="mb-6">
+          <h3 className="font-medium mb-3">Sexuality</h3>
+          <div className="flex flex-wrap gap-2">
+            {[
+              "straight",
+              "gay",
+              "lesbian",
+              "bisexual",
+              "queer",
+              "pansexual",
+              "asexual",
+              "questioning",
+            ].map((sexuality) => (
+              <button
+                key={sexuality}
+                className={`px-4 py-2 rounded-full border hover:bg-gray-100 focus:ring-2 focus:ring-blue-500 ${
+                  formFilters.sexuality?.includes(sexuality)
+                    ? "bg-blue-100 border-blue-500"
+                    : ""
+                }`}
+                onClick={() => toggleArrayFilter("sexuality", sexuality)}
+              >
+                {sexuality.charAt(0).toUpperCase() + sexuality.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Ethnicity */}
+        <div className="mb-6">
+          <h3 className="font-medium mb-3">Ethnicity</h3>
+          <div className="flex flex-wrap gap-2">
+            {[
+              "asian",
+              "black",
+              "hispanic",
+              "indigenous",
+              "middle_eastern",
+              "pacific_islander",
+              "white",
+              "multiracial",
+            ].map((ethnicity) => (
+              <button
+                key={ethnicity}
+                className={`px-4 py-2 rounded-full border hover:bg-gray-100 focus:ring-2 focus:ring-blue-500 ${
+                  formFilters.ethnicity?.includes(ethnicity)
+                    ? "bg-blue-100 border-blue-500"
+                    : ""
+                }`}
+                onClick={() => toggleArrayFilter("ethnicity", ethnicity)}
+              >
+                {ethnicity === "pacific_islander"
+                  ? "Pacific Islander"
+                  : ethnicity === "middle_eastern"
+                  ? "Middle Eastern"
+                  : ethnicity.charAt(0).toUpperCase() + ethnicity.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Faith */}
+        <div className="mb-6">
+          <h3 className="font-medium mb-3">Faith</h3>
+          <div className="flex flex-wrap gap-2">
+            {[
+              "christian",
+              "jewish",
+              "muslim",
+              "hindu",
+              "buddhist",
+              "sikh",
+              "atheist",
+              "agnostic",
+              "spiritual",
+              "other",
+            ].map((faith) => (
+              <button
+                key={faith}
+                className={`px-4 py-2 rounded-full border hover:bg-gray-100 focus:ring-2 focus:ring-blue-500 ${
+                  formFilters.faith?.includes(faith)
+                    ? "bg-blue-100 border-blue-500"
+                    : ""
+                }`}
+                onClick={() => toggleArrayFilter("faith", faith)}
+              >
+                {faith.charAt(0).toUpperCase() + faith.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* Therapist Details Side Panel */}
       <div className="w-96 h-full border-l p-4 overflow-y-auto">
         <h2 className="text-lg font-semibold mb-4">Matched Therapists</h2>
+
+        {/* Current Filters */}
+        <div className="mb-4 p-4 border rounded-lg bg-gray-50">
+          <h3 className="font-medium mb-2">Current Filters</h3>
+          <div className="space-y-1 text-sm">
+            {currentFilters.gender && (
+              <p>
+                <span className="font-medium">Gender:</span>{" "}
+                {currentFilters.gender}
+              </p>
+            )}
+            {currentFilters.ethnicity?.length && (
+              <p>
+                <span className="font-medium">Ethnicity:</span>{" "}
+                {currentFilters.ethnicity.join(", ")}
+              </p>
+            )}
+            {currentFilters.sexuality?.length && (
+              <p>
+                <span className="font-medium">Sexuality:</span>{" "}
+                {currentFilters.sexuality.join(", ")}
+              </p>
+            )}
+            {currentFilters.faith?.length && (
+              <p>
+                <span className="font-medium">Faith:</span>{" "}
+                {currentFilters.faith.join(", ")}
+              </p>
+            )}
+            {currentFilters.max_price_initial && (
+              <p>
+                <span className="font-medium">Max Initial Price:</span> $
+                {currentFilters.max_price_initial}
+              </p>
+            )}
+            {currentFilters.max_price_subsequent && (
+              <p>
+                <span className="font-medium">Max Subsequent Price:</span> $
+                {currentFilters.max_price_subsequent}
+              </p>
+            )}
+            {currentFilters.availability && (
+              <p>
+                <span className="font-medium">Availability:</span>{" "}
+                {currentFilters.availability}
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Existing Therapist List */}
         {currentTherapists.length > 0 ? (
           currentTherapists.map((t) => (
             <div key={t.id} className="mb-6 p-4 border rounded-lg">
@@ -349,11 +883,6 @@ Remember:
               }
 
               const embedStart = performance.now();
-              console.debug(
-                "[Timing] Starting client-side embedding generation"
-              );
-
-              //  set to the same embeddings config as the server
               const output = await generateEmbedding(input, {
                 pooling: "mean",
                 normalize: true,
@@ -366,12 +895,23 @@ Remember:
               );
 
               const embedding = Array.from(output.data) as number[];
-              console.debug("[Timing] Embedding length:", embedding.length);
+
+              // Create complete message history including current message
+              const completeHistory = [
+                ...messages,
+                {
+                  role: "user" as const,
+                  content: input,
+                  id: crypto.randomUUID(),
+                  createdAt: new Date(),
+                } as VercelMessage,
+              ];
 
               // First get therapist matches and update UI
               const matchedTherapists = await getTherapistMatches(
                 input,
-                embedding
+                embedding,
+                completeHistory // Pass complete history
               );
               setCurrentTherapists(matchedTherapists.slice(0, 3));
 
@@ -379,10 +919,7 @@ Remember:
               const responseBody = {
                 chatId,
                 message: input,
-                messages: messages.map((m) => ({
-                  role: m.role,
-                  content: m.content,
-                })),
+                messages: completeHistory, // Use complete history here too
                 matchedTherapists,
                 promptTemplate,
               };
@@ -405,7 +942,6 @@ Remember:
             </button>
           </form>
           <p
-            contentEditable="true"
             style={{
               border: "1px dashed #ccc",
               padding: "8px",
@@ -415,7 +951,6 @@ Remember:
             Looking for a therapist with experience in asian backgrounds.{" "}
           </p>
           <p
-            contentEditable="true"
             style={{
               border: "1px dashed #ccc",
               padding: "8px",
@@ -425,7 +960,6 @@ Remember:
             Looking for a therapist with experience in black backgrounds.{" "}
           </p>
           <p
-            contentEditable="true"
             style={{
               border: "1px dashed #ccc",
               padding: "8px",

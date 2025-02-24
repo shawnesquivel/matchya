@@ -178,7 +178,11 @@ Deno.serve(async (req) => {
               );
             }
 
-            console.log("[Debug] Update response:", updateData);
+            console.log(
+              "[Debug] Update response:",
+              updateData?.first_name,
+              updateData.created_at
+            );
 
             // Verification step
             const { data: verifyData, error: verifyError } = await supabase
