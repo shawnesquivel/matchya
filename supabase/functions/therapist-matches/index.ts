@@ -4,6 +4,7 @@ import { codeBlock } from "common-tags";
 import OpenAI from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { z } from "zod";
+import { generateEmbedding } from "../_lib/embeddings.ts";
 
 const openai = new OpenAI({
   apiKey: Deno.env.get("OPENAI_API_KEY"),
@@ -83,22 +84,183 @@ Deno.serve(async (req) => {
   });
   try {
     const {
-      chatId,
-      messages,
-      embedding: providedEmbedding,
       currentFilters,
+      messages = [],
+      lastUserMessage,
+      filterOnly = false,
       triggerSource,
     } = await req.json();
 
-    console.log({ triggerSource });
-    console.log(messages.length);
-    console.log(messages);
-    const embedding = providedEmbedding;
+    console.log("[therapist-matches] Request received. Source:", triggerSource);
+    console.log("[therapist-matches] Filter only mode:", filterOnly);
+    console.log("[therapist-matches] Current filters:", currentFilters);
+    console.log(
+      "[therapist-matches] Last user message:",
+      lastUserMessage || "none"
+    );
 
-    const isFirstMessage = messages.length === 1;
+    // -------------------------
+    // HANDLE FILTER-ONLY REQUESTS
+    // -------------------------
+    if (filterOnly === true) {
+      console.log(
+        "[therapist-matches] Processing explicit filter-only request"
+      );
+
+      // Check if we have any active filters
+      const hasActiveFilters = Object.values(currentFilters || {}).some(
+        (v) => v !== null && (Array.isArray(v) ? v.length > 0 : true)
+      );
+
+      if (!hasActiveFilters) {
+        console.log(
+          "[therapist-matches] No active filters, returning empty result"
+        );
+        return new Response(
+          JSON.stringify({
+            therapists: [],
+            extractedFilters: currentFilters,
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      // Build the query with proper joins for price filters
+      const hasPriceFilter =
+        currentFilters?.max_price_initial ||
+        currentFilters?.max_price_subsequent;
+
+      let query = supabase.from("therapists").select(`
+        id,
+        first_name,
+        last_name,
+        bio,
+        gender,
+        ethnicity,
+        sexuality,
+        faith,
+        availability,
+        languages,
+        areas_of_focus,
+        approaches,
+        ai_summary,
+        ${
+          hasPriceFilter
+            ? "therapist_fees!inner(session_category, session_type, price, currency)"
+            : "therapist_fees(session_category, session_type, price, currency)"
+        }
+      `);
+
+      // Apply all filters from the currentFilters object
+      if (currentFilters?.gender) {
+        query = query.eq("gender", currentFilters.gender);
+      }
+
+      if (currentFilters?.ethnicity && currentFilters.ethnicity.length > 0) {
+        query = query.overlaps("ethnicity", currentFilters.ethnicity);
+      }
+
+      if (currentFilters?.sexuality && currentFilters.sexuality.length > 0) {
+        query = query.overlaps("sexuality", currentFilters.sexuality);
+      }
+
+      if (currentFilters?.faith && currentFilters.faith.length > 0) {
+        query = query.overlaps("faith", currentFilters.faith);
+      }
+
+      if (currentFilters?.availability) {
+        query = query.eq("availability", currentFilters.availability);
+      }
+
+      // Handle price filters with proper session category filtering
+      if (currentFilters?.max_price_initial) {
+        query = query
+          .lte("therapist_fees.price", currentFilters.max_price_initial)
+          .eq("therapist_fees.session_category", "initial");
+      }
+
+      if (currentFilters?.max_price_subsequent) {
+        query = query
+          .lte("therapist_fees.price", currentFilters.max_price_subsequent)
+          .eq("therapist_fees.session_category", "subsequent");
+      }
+
+      // Execute the query
+      const { data: therapists, error } = await query.limit(10);
+
+      if (error) {
+        console.error("[therapist-matches] Database query error:", error);
+        throw new Error(`Database query error: ${error.message}`);
+      }
+
+      console.log(
+        `[therapist-matches] Found ${therapists.length} therapists by filters`
+      );
+
+      // Format the therapists to include price information
+      const formattedTherapists = therapists.map(
+        ({ therapist_fees, ...t }) => ({
+          ...t,
+          initial_price: therapist_fees?.find(
+            (f) => f.session_category === "initial"
+          )?.price,
+          subsequent_price: therapist_fees?.find(
+            (f) => f.session_category === "subsequent"
+          )?.price,
+        })
+      );
+
+      return new Response(
+        JSON.stringify({
+          therapists: formattedTherapists || [],
+          extractedFilters: currentFilters,
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // -------------------------
+    // CHAT-BASED MATCHING WITH EMBEDDINGS
+    // -------------------------
+    console.log(
+      "[therapist-matches] Processing chat-based request with embeddings"
+    );
+
+    // Check if we have a message to process
+    const userMessage = lastUserMessage || "";
+
+    if (!userMessage) {
+      console.log(
+        "[therapist-matches] No user message found for embedding generation"
+      );
+      return new Response(
+        JSON.stringify({
+          therapists: [],
+          error: "No user message provided for matching",
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Process with embeddings
+    console.log("[therapist-matches] Creating embedding for:", userMessage);
+
+    const embeddingResult = await generateEmbedding(userMessage);
+    const embedding = embeddingResult.pgVector;
+    console.log("[therapist-matches] Successfully generated embedding");
+
+    // Define isFirstMessage more reliably - if there are therapists shown, it's not first message
+    const isFirstMessage = messages.length === 0;
     console.log(`[therapist-matches]: isFirstMessage ${isFirstMessage}`);
+
     const isUserAskingForTherapist = await determineUserMessageIntent(
-      messages,
+      userMessage,
       {
         isFirstMessage,
         currentTherapists: messages.map((m) => ({
@@ -115,17 +277,19 @@ Deno.serve(async (req) => {
     );
 
     if (isUserAskingForTherapist.isTherapistRequest) {
-      // C2: Run Query Builder with current filters context
+      // Run Query Builder with current filters context
       console.log("running query builder");
+
       const params = await determineMatchTherapistParameters(
-        messages,
-        currentFilters
+        userMessage,
+        currentFilters,
+        triggerSource
       );
 
-      // Pass the queries to DB function
+      // Pass the queries to DB function, now with embedding
       console.log("params", params);
 
-      // DB: Get Therapists
+      // DB: Get Therapists - now with embedding parameter
       const { data: therapists, error: matchError } = await supabase
         .rpc("match_therapists", {
           query_embedding: embedding,
@@ -158,6 +322,15 @@ Deno.serve(async (req) => {
       }
 
       // Create response with therapists and current filters
+      const extractedFilters = {
+        gender: params.gender_filter,
+        sexuality: params.sexuality_filter,
+        ethnicity: params.ethnicity_filter,
+        faith: params.faith_filter,
+        max_price_initial: params.max_price_initial,
+        availability: params.availability_filter,
+      };
+
       const response = {
         therapists:
           therapists?.map((t: TherapistMatch) => ({
@@ -185,6 +358,13 @@ Deno.serve(async (req) => {
           max_price_initial: params.max_price_initial || null,
           availability: params.availability_filter || null,
         },
+        context: {
+          triggerSource,
+          filterReasoning: params.reasoning,
+          isFirstMessage,
+          userIntent: isUserAskingForTherapist.explanation,
+        },
+        extractedFilters: extractedFilters,
       };
 
       return new Response(JSON.stringify(response), {
@@ -210,42 +390,40 @@ Deno.serve(async (req) => {
       );
     }
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    console.error(`[therapist-matches] Error: ${error.message}`);
+    return new Response(
+      JSON.stringify({
+        error: error.message,
+        therapists: [],
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      }
+    );
   }
 });
 
 const determineUserMessageIntent = async (
-  messages: Array<OpenAI.Chat.ChatCompletionMessageParam>,
+  userMessage: string,
   context: DetermineUserMessageIntentContext
 ): Promise<DetermineUserMessageIntentResponse> => {
   /**
-     * Use an LLM with 'Structured Outputs' to determine if the user is asking a 
-     question, or is requesting therapist.
-     *
-     * Example { "answer": "DBT stands for Dialectic ...", "isTherapistRequest": 
-     false}
-     */
+   * Use an LLM to determine if the user is asking a question or requesting a therapist.
+   */
 
-  const formattedMessageHistory = [
+  const formattedMessage = [
     {
       role: "system",
       content: `You are analyzing user messages in a therapy matching platform. Your goal is to identify when users are expressing preferences for therapists.
   
   ${
-    context.currentTherapists
+    context.currentTherapists && context.currentTherapists.length > 0
       ? `
   The user is currently viewing these therapists:
   ${context.currentTherapists
     .map((t) => `- ${t.first_name} ${t.last_name}`)
     .join("\n")}
-  
-  Consider it a therapist request if they:
-  - Ask about specific details (price, availability, etc.) of these therapists
-  - Want to compare these therapists
-  - Ask for more therapists with similar qualities
   `
       : ""
   }
@@ -261,16 +439,15 @@ const determineUserMessageIntent = async (
       : ""
   }
   
-  Consider a message as a therapist request if it mentions
+  Consider a message as a therapist request if it mentions any subtle hints about the following:
   - demographic preferences (gender, ethnicity, age, etc.)
   - therapy style or approach preferences
   - availability or location preferences
   - price/cost preferences
-  - Any indication they're looking for or want to find a therapist
   - Questions about specific types of therapists
+  - Any indication they're looking for or want to find a therapist
   - specific issues they want help with
   
-  Even subtle hints about preferences should be treated as therapist requests.
   
   Example therapist requests:
   - "prefer pacific islanders"
@@ -285,11 +462,14 @@ const determineUserMessageIntent = async (
   - Small talk or greetings
   - Direct questions about the platform/service`,
     },
-    ...messages,
+    {
+      role: "user",
+      content: userMessage,
+    },
   ];
 
   console.log(
-    `[determineUserMessageIntent]: ${messages.length} ${messages[0]}`
+    `[determineUserMessageIntent]: Analyzing message: "${userMessage}"`
   );
 
   const ClassifyUserIntent = z.object({
@@ -299,7 +479,7 @@ const determineUserMessageIntent = async (
 
   const completion = await openai.beta.chat.completions.parse({
     model: "gpt-4o-mini",
-    messages: formattedMessageHistory,
+    messages: formattedMessage,
     response_format: zodResponseFormat(ClassifyUserIntent, "answer"),
   });
 
@@ -308,7 +488,7 @@ const determineUserMessageIntent = async (
 };
 
 const determineMatchTherapistParameters = async (
-  messages: Array<OpenAI.Chat.ChatCompletionMessageParam>,
+  userMessage: string,
   currentFilters?: {
     gender: string | null;
     sexuality: string[] | null;
@@ -316,12 +496,9 @@ const determineMatchTherapistParameters = async (
     faith: string[] | null;
     max_price_initial: number | null;
     availability: string | null;
-  }
+  },
+  triggerSource: "CHAT" | "FORM" = "CHAT"
 ): Promise<z.infer<typeof FilterParams>> => {
-  /**
-   * Use an LLM to build the function call to Database Function: match_therapists.
-   */
-
   // Define enums for better type safety
   const Gender = z.enum(["female", "male", "non_binary"]);
   const Sexuality = z.enum([
@@ -373,19 +550,42 @@ const determineMatchTherapistParameters = async (
     reasoning: z.string(),
   });
 
-  const formattedMessages = [
-    {
-      role: "system",
-      content: `Extract therapist preferences from the conversation.
-Consider: gender, sexuality, ethnicity, faith, price limit, and availability.
-If user doesn't specify a preference, use null.
-For price, extract a maximum hourly rate number or null.
-For sexuality, ethnicity, and faith, return an array of values or null.
+  // Log the user message for debugging
+  console.log(
+    `[determineMatchTherapistParameters] User message: "${userMessage}"`
+  );
+
+  const systemContent = `You are an expert at extracting therapist preferences from user messages.
+Your task is to carefully analyze the message and identify ANY mentions of therapist preferences.
+
+Please extract the following if mentioned:
+- gender (female, male, non_binary)
+- sexuality (straight, gay, lesbian, bisexual, queer, pansexual, asexual, questioning, prefer_not_to_say)
+- ethnicity (asian, black, hispanic, indigenous, middle_eastern, pacific_islander, white, multiracial, prefer_not_to_say)
+- faith (christian, jewish, muslim, hindu, buddhist, sikh, atheist, agnostic, spiritual, other, prefer_not_to_say)
+- price limit as a maximum hourly rate number
+- availability (online, in_person, both)
+
+Be attentive to both explicit and implicit preferences. For example:
+- "looking for a female therapist" → gender_filter: "female"
+- "I'd prefer someone who is LGBT friendly" → Consider sexuality filters
+- "Need someone who understands Asian culture" → ethnicity_filter: ["asian"]
 
 ${
-  currentFilters
+  currentFilters && triggerSource === "FORM"
     ? `
-Current active filters:
+Current active filters (HIGH PRIORITY - keep these unless explicitly changed):
+${Object.entries(currentFilters)
+  .filter(([_, value]) => value !== null)
+  .map(
+    ([key, value]) =>
+      `- ${key}: ${Array.isArray(value) ? value.join(", ") : value}`
+  )
+  .join("\n")}
+`
+    : currentFilters && triggerSource === "CHAT"
+    ? `
+Current form filters (LOW PRIORITY - only use if chat doesn't specify preferences):
 ${Object.entries(currentFilters)
   .filter(([_, value]) => value !== null)
   .map(
@@ -394,15 +594,22 @@ ${Object.entries(currentFilters)
   )
   .join("\n")}
 
-Only update filters that are explicitly mentioned in the new message.
-Keep existing filters unless the user specifically changes them.
+Prioritize any preferences mentioned in the chat over these form filters.
 `
     : ""
 }
 
-Include reasoning for the extracted preferences or any ambiguity in the message`,
+Include reasoning for the extracted preferences and explain any ambiguity in the message.`;
+
+  const formattedMessages = [
+    {
+      role: "system",
+      content: systemContent,
     },
-    ...messages,
+    {
+      role: "user",
+      content: userMessage,
+    },
   ];
 
   const completion = await openai.beta.chat.completions.parse({
@@ -416,6 +623,22 @@ Include reasoning for the extracted preferences or any ambiguity in the message`
       completion.choices[0].message.parsed
     )}`
   );
+
+  // If FORM trigger, merge the AI results with current filters, prioritizing current filters
+  if (triggerSource === "FORM" && currentFilters) {
+    const aiResult = completion.choices[0].message.parsed;
+    return {
+      ...aiResult,
+      gender_filter: (currentFilters.gender as any) ?? aiResult.gender_filter,
+      sexuality_filter: currentFilters.sexuality ?? aiResult.sexuality_filter,
+      ethnicity_filter: currentFilters.ethnicity ?? aiResult.ethnicity_filter,
+      faith_filter: currentFilters.faith ?? aiResult.faith_filter,
+      max_price_initial:
+        currentFilters.max_price_initial ?? aiResult.max_price_initial,
+      availability_filter:
+        (currentFilters.availability as any) ?? aiResult.availability_filter,
+    };
+  }
 
   return completion.choices[0].message.parsed;
 };

@@ -4,13 +4,9 @@ console.log("[Timing] Starting function initialization");
 import { createClient } from "@supabase/supabase-js";
 import { env } from "@xenova/transformers";
 import { pipeline } from "@xenova/transformers";
-import { OpenAIStream, StreamingTextResponse } from "ai";
-import { codeBlock } from "common-tags";
-import OpenAI from "openai";
 
 // Track if this is first initialization
 let isFirstInit = true;
-let requestCount = 0;
 
 // so it doesn't look for the model in the browser cache
 env.useBrowserCache = false;
