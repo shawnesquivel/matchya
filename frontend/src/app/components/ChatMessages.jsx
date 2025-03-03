@@ -52,10 +52,14 @@ const MessageItem = memo(
                 message.role === 'user' ? 'user' : 'assistant'
               }`}
             >
-              {message.role === 'assistant' ? (
-                <ReactMarkdown>{typedText}</ReactMarkdown>
+              {message.role === "assistant" ? (
+                <div className="assistant">
+                  <ReactMarkdown>{typedText}</ReactMarkdown>
+                </div>
               ) : (
-                <ReactMarkdown>{message.content}</ReactMarkdown>
+                <div className="assistant">
+                  <ReactMarkdown>{message.content}</ReactMarkdown>
+                </div>
               )}
             </p>
             {/* PHASE 2: Show the audio if it's present */}

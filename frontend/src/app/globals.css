@@ -138,3 +138,13 @@ html {
   width: 3rem;
   height: 3rem;
 }
+
+
+/* Add spacing in "assistant" messages in ChatMessages */
+.assistant p {
+  margin-bottom: 15px;
+}
+
+.assistant p:last-child {
+  margin-bottom: 0;
+}
