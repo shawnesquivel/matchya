@@ -91,15 +91,15 @@ Deno.serve(async (req) => {
     for (let i = 0; i < ids.length; i += BATCH_SIZE) {
       batches.push(ids.slice(i, i + BATCH_SIZE));
     }
-    console.log("[Debug] Created", batches.length, "batches");
+    // console.log("[Debug] Created", batches.length, "batches");
 
     for (const [batchIndex, batchIds] of batches.entries()) {
-      console.log(
-        "[Debug] Processing batch",
-        batchIndex + 1,
-        "of",
-        batches.length
-      );
+      // console.log(
+      //   "[Debug] Processing batch",
+      //   batchIndex + 1,
+      //   "of",
+      //   batches.length
+      // );
       console.log("[Debug] CPU time before batch:", performance.now(), "ms");
 
       try {

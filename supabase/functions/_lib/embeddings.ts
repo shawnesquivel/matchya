@@ -1,5 +1,6 @@
 import { env } from "@xenova/transformers";
 import { pipeline } from "@xenova/transformers";
+import { createPerformanceTracker } from "./performance.ts";
 
 // Configuration for transformers
 env.useBrowserCache = false;
@@ -15,6 +16,8 @@ let embeddingGenerator: any = null;
  */
 export async function initEmbeddingModel() {
   if (!isModelInitialized) {
+    const perf = createPerformanceTracker("embeddings");
+    perf.startEvent("model:initialization");
     console.log("[Embeddings] Initializing embedding model");
     const modelStartTime = performance.now();
 
@@ -26,13 +29,22 @@ export async function initEmbeddingModel() {
 
       isModelInitialized = true;
 
+      const initTime = performance.now() - modelStartTime;
       console.log(
         "[Embeddings] Model initialization completed in",
-        performance.now() - modelStartTime,
+        initTime,
         "ms"
       );
+
+      perf.endEvent("model:initialization", {
+        model: "Supabase/gte-small",
+        initTimeMs: initTime,
+      });
+      perf.complete();
     } catch (error) {
       console.error("[Embeddings] Failed to initialize pipeline:", error);
+      perf.endEvent("model:initialization", { error: error.message });
+      perf.complete();
       throw error;
     }
   }
@@ -46,6 +58,10 @@ export async function initEmbeddingModel() {
  * @returns The embedding as both array and Postgres-compatible string
  */
 export async function generateEmbedding(text: string) {
+  const perf = createPerformanceTracker("embeddings");
+
+  // Track model init if needed
+  perf.startEvent("embedding:generate");
   const generator = await initEmbeddingModel();
 
   try {
@@ -68,12 +84,20 @@ export async function generateEmbedding(text: string) {
     // Convert array to Postgres vector format
     const vectorString = `[${embedding.join(",")}]`;
 
+    perf.endEvent("embedding:generate", {
+      textLength: text.length,
+      dimensions: embedding.length,
+    });
+    perf.complete();
+
     return {
       array: embedding,
       pgVector: vectorString,
     };
   } catch (error) {
     console.error("[Embeddings] Error generating embedding:", error);
+    perf.endEvent("embedding:generate", { error: error.message });
+    perf.complete();
     throw error;
   }
 }

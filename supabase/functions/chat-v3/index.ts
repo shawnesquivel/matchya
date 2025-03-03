@@ -1,8 +1,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "@supabase/supabase-js";
-import { OpenAIStream, StreamingTextResponse } from "ai";
 import { codeBlock } from "common-tags";
 import OpenAI from "openai";
+import { createPerformanceTracker } from "../_lib/performance.ts";
 
 const openai = new OpenAI({
   apiKey: Deno.env.get("OPENAI_API_KEY"),
@@ -41,6 +41,8 @@ function handleCors(req) {
 }
 
 Deno.serve(async (req) => {
+  const perf = createPerformanceTracker("chat-v3");
+
   try {
     // Handle CORS
     const corsResponse = handleCors(req);
@@ -101,6 +103,7 @@ Deno.serve(async (req) => {
     }
 
     // Prepare the chat completion request
+    perf.startEvent("llm:openai");
     const openaiKey = Deno.env.get("OPENAI_API_KEY");
     const apiUrl = "https://api.openai.com/v1/chat/completions";
 
@@ -123,14 +126,20 @@ Deno.serve(async (req) => {
 
     if (!response.ok) {
       const error = await response.text();
+      perf.endEvent("llm:openai", { error, status: response.status });
       throw new Error(`OpenAI API error: ${error}`);
     }
 
     const result = await response.json();
+    perf.endEvent("llm:openai", {
+      model: CHAT_V3_LLM_PROVIDER,
+      tokensUsed: result.usage?.total_tokens,
+    });
     const assistantMessage = result.choices[0].message.content;
 
     // Save the conversation to the database if chatId is provided
     if (chatId) {
+      perf.startEvent("database:saveMessage");
       const { error } = await supabase.from("chat_messages").insert({
         chat_id: chatId,
         role: "assistant",
@@ -139,8 +148,14 @@ Deno.serve(async (req) => {
 
       if (error) {
         console.error("[chat-v3]: Error saving message to database:", error);
+        perf.endEvent("database:saveMessage", { error: error.message });
+      } else {
+        perf.endEvent("database:saveMessage");
       }
     }
+
+    // Complete performance tracking
+    perf.complete();
 
     // Return the response
     return new Response(
@@ -153,6 +168,8 @@ Deno.serve(async (req) => {
     );
   } catch (error) {
     console.error("[chat-v3]: Error:", error);
+    perf.endEvent("llm:openai", { error: error.message }, true);
+    perf.complete();
     return new Response(
       JSON.stringify({
         error: error.message,
