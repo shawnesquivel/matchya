@@ -1,20 +1,20 @@
-'use client';
-import React from 'react';
-import { useTherapist } from '../contexts/TherapistContext';
-import CalendarIcon from '../../components/icons/CalendarIcon';
-import GlobeIcon from '../../components/icons/GlobeIcon';
-import Image from 'next/image';
-import Link from 'next/link';
+"use client";
+import React, { useEffect } from "react";
+import { useTherapist } from "../contexts/TherapistContext";
+import CalendarIcon from "../../components/icons/CalendarIcon";
+import GlobeIcon from "../../components/icons/GlobeIcon";
+import Image from "next/image";
+import Link from "next/link";
 
 export default function TherapistResultsPanel() {
   const { therapists, isLoading, isSendingChat } = useTherapist();
 
   console.log(
-    '[TherapistResultsPanel] Rendering with therapists:',
+    "[TherapistResultsPanel] Rendering with therapists:",
     therapists?.length || 0,
-    'isLoading:',
+    "isLoading:",
     isLoading,
-    'isSendingChat:',
+    "isSendingChat:",
     isSendingChat
   );
 
@@ -25,6 +25,15 @@ export default function TherapistResultsPanel() {
   const showTherapists = therapists?.length > 0;
   console.log(therapists);
   console.log(therapists[0]?.profile_img_url);
+
+  // Add this useEffect for logging license data
+  useEffect(() => {
+    if (therapists.length > 0) {
+      console.log("Therapist Results Panel - First therapist:", therapists[0]);
+      console.log("License Data:", therapists[0].licenses);
+      console.log("Verification Status:", therapists[0].is_verified);
+    }
+  }, [therapists]);
 
   return (
     <div className="w-full h-full overflow-y-auto bg-white">
@@ -70,16 +79,19 @@ export default function TherapistResultsPanel() {
                     </h3>
                     <div className="flex items-center text-grey-medium mt-1">
                       <span className=" text-mblack text-xs">
-                        {therapist.pronouns || 'Pronouns Unavailable'}
+                        {therapist.pronouns || "Pronouns Unavailable"}
                       </span>
                       <span className="mx-2 text-beige-dark text-xs">|</span>
                       <span className="text-mblack text-xs">
-                        {therapist.location || 'Location Unavailable'}
+                        {therapist.clinic_city && therapist.clinic_province
+                          ? `${therapist.clinic_city}, ${therapist.clinic_province}`
+                          : "Location Unavailable"}
                       </span>
                     </div>
                   </div>
                   <div className="ml-auto flex gap-2">
-                    {therapist.availability === 'online' || therapist.availability === 'both' ? (
+                    {therapist.availability === "online" ||
+                    therapist.availability === "both" ? (
                       therapist.clinic_profile_url ? (
                         <a
                           href={therapist.clinic_profile_url}
@@ -102,7 +114,8 @@ export default function TherapistResultsPanel() {
                       )
                     ) : null}
 
-                    {therapist.availability === 'in_person' || therapist.availability === 'both' ? (
+                    {therapist.availability === "in_person" ||
+                    therapist.availability === "both" ? (
                       therapist.clinic_booking_url ? (
                         <a
                           href={therapist.clinic_booking_url}
@@ -129,10 +142,12 @@ export default function TherapistResultsPanel() {
                 <p className="text-mblack text-base">
                   {therapist.ai_summary ||
                     therapist.bio ||
-                    `Therapist with ${
-                      therapist.years_of_experience || '10+'
-                    } years of experience working with ${
-                      therapist.specialties?.join(', ') || 'various mental health issues'
+                    `Therapist based in ${
+                      therapist.clinic_city || "various locations"
+                    } working with ${
+                      therapist.areas_of_focus?.length > 0
+                        ? therapist.areas_of_focus.join(", ")
+                        : "various mental health issues"
                     }.`}
                 </p>
 
@@ -178,9 +193,12 @@ export default function TherapistResultsPanel() {
           </div>
         ) : (
           <div className="text-center text-grey-medium py-16 bg-white rounded-xl border border-grey-light p-8">
-            <p className="text-lg font-medium mb-2">No therapists match your current criteria</p>
+            <p className="text-lg font-medium mb-2">
+              No therapists match your current criteria
+            </p>
             <p className="text-base">
-              Try adjusting your filters or describe what you're looking for in the chat.
+              Try adjusting your filters or describe what you're looking for in
+              the chat.
             </p>
           </div>
         )}
