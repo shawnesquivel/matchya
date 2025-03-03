@@ -354,7 +354,8 @@ Deno.serve(async (req) => {
           sexuality_filter: params.sexuality_filter,
           ethnicity_filter: params.ethnicity_filter,
           faith_filter: params.faith_filter,
-          max_price_initial: params.max_price_initial,
+          max_price_initial:
+            params.max_price_initial > 0 ? params.max_price_initial : null,
           availability_filter: params.availability_filter,
         })
         .limit(10);
@@ -659,10 +660,14 @@ Please extract the following if mentioned:
 - price limit as a maximum hourly rate number
 - availability (online, in_person, both)
 
+IMPORTANT: For price limits, set max_price_initial to NULL when no price preference is mentioned.
+DO NOT set price to 0 as this will exclude all therapists. Only set a numeric price when the user specifically mentions a price limit.
+
 Be attentive to both explicit and implicit preferences. For example:
 - "looking for a female therapist" → gender_filter: "female"
 - "I'd prefer someone who is LGBT friendly" → Consider sexuality filters
 - "Need someone who understands Asian culture" → ethnicity_filter: ["asian"]
+- "I can only afford $100 per hour" → max_price_initial: 100
 
 ${
   currentFilters && triggerSource === "FORM"
