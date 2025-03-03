@@ -5,6 +5,7 @@ import OpenAI from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { z } from "zod";
 import { generateEmbedding } from "../_lib/embeddings.ts";
+import { createPerformanceTracker } from "../_lib/performance.ts";
 
 const openai = new OpenAI({
   apiKey: Deno.env.get("OPENAI_API_KEY"),
@@ -84,32 +85,32 @@ export const corsHeaders = {
 };
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    console.log("CORS preflight request");
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const perf = createPerformanceTracker("therapist-matches");
 
-  if (!supabaseUrl || !supabaseAnonKey) {
-    console.error("Missing environment variables");
-    return new Response(
-      JSON.stringify({
-        error: "Missing environment variables.",
-      }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
-  }
-
-  const authorization = req.headers.get("Authorization");
-
-  // Create a Supabase client - auth header is optional
-  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-    global: authorization ? { headers: { authorization } } : {},
-    auth: { persistSession: false },
-  });
   try {
+    if (req.method === "OPTIONS") {
+      return new Response("ok", { headers: corsHeaders });
+    }
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error("Missing environment variables");
+      return new Response(
+        JSON.stringify({
+          error: "Missing environment variables.",
+        }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    const authorization = req.headers.get("Authorization");
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: authorization ? { headers: { authorization } } : {},
+      auth: { persistSession: false },
+    });
+
     const {
       currentFilters,
       messages = [],
@@ -118,21 +119,16 @@ Deno.serve(async (req) => {
       triggerSource,
     } = await req.json();
 
-    console.log("[therapist-matches] Request received. Source:", triggerSource);
-    console.log("[therapist-matches] Filter only mode:", filterOnly);
-    console.log("[therapist-matches] Current filters:", currentFilters);
-    console.log(
-      "[therapist-matches] Last user message:",
-      lastUserMessage || "none"
-    );
+    console.log("[therapist-matches] Request received from", { triggerSource });
+    console.log("[therapist-matches]", { currentFilters });
 
     // -------------------------
     // HANDLE FILTER-ONLY REQUESTS
     // -------------------------
     if (filterOnly === true) {
-      console.log(
-        "[therapist-matches] Processing explicit filter-only request"
-      );
+      console.log("[therapist-matches] User requested filters only", {
+        filterOnly,
+      });
 
       // Check if we have any active filters
       const hasActiveFilters = Object.values(currentFilters || {}).some(
@@ -228,17 +224,29 @@ Deno.serve(async (req) => {
           .eq("therapist_fees.session_category", "subsequent");
       }
 
-      // Execute the query
+      // Execute the query with performance tracking
+      perf.startEvent("database:filterQuery");
       const { data: therapists, error } = await query.limit(10);
 
       if (error) {
+        perf.endEvent("database:filterQuery", {
+          error: error.message,
+        });
         console.error("[therapist-matches] Database query error:", error);
         throw new Error(`Database query error: ${error.message}`);
       }
 
-      console.log(
-        `[therapist-matches] Found ${therapists.length} therapists by filters`
-      );
+      perf.endEvent("database:filterQuery", {
+        resultCount: therapists.length,
+      });
+
+      if (therapists.length === 0) {
+        console.log("[therapist-matches] No therapists found by filters");
+        return new Response(
+          JSON.stringify({ therapists: [], extractedFilters: currentFilters }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
 
       // Format the therapists to include price information
       const formattedTherapists = therapists.map(
@@ -255,16 +263,6 @@ Deno.serve(async (req) => {
             // Transform therapist_licenses to match the expected format in the frontend
             licenses: therapist_licenses || [],
           };
-        }
-      );
-
-      console.log(
-        "[therapist-matches] First formatted therapist sample data:",
-        {
-          id: formattedTherapists?.[0]?.id,
-          name: `${formattedTherapists?.[0]?.first_name} ${formattedTherapists?.[0]?.last_name}`,
-          profile_img_url: formattedTherapists?.[0]?.profile_img_url,
-          video_intro_link: formattedTherapists?.[0]?.video_intro_link,
         }
       );
 
@@ -346,6 +344,7 @@ Deno.serve(async (req) => {
       console.log("params", params);
 
       // DB: Get Therapists - now with embedding parameter
+      perf.startEvent("database:semanticSearch");
       const { data: therapists, error: matchError } = await supabase
         .rpc("match_therapists", {
           query_embedding: embedding,
@@ -365,6 +364,7 @@ Deno.serve(async (req) => {
       console.log(`Found ${therapists?.length} therapists`);
 
       if (matchError) {
+        perf.endEvent("database:semanticSearch", { error: matchError.message });
         console.error("Error fetching therapists:", matchError);
         return new Response(
           JSON.stringify({
@@ -377,6 +377,9 @@ Deno.serve(async (req) => {
           }
         );
       }
+      perf.endEvent("database:semanticSearch", {
+        resultCount: therapists?.length,
+      });
 
       console.log("[therapist-matches] First therapist sample data:", {
         id: therapists?.[0]?.id,
@@ -461,10 +464,12 @@ Deno.serve(async (req) => {
         );
       }
 
+      perf.complete();
       return new Response(JSON.stringify(response), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     } else {
+      perf.complete();
       // Not a therapist request, return empty response with empty filters
       return new Response(
         JSON.stringify({
@@ -485,6 +490,7 @@ Deno.serve(async (req) => {
     }
   } catch (error) {
     console.error(`[therapist-matches] Error: ${error.message}`);
+    perf.complete();
     return new Response(
       JSON.stringify({
         error: error.message,
@@ -497,11 +503,12 @@ Deno.serve(async (req) => {
     );
   }
 });
-
 const determineUserMessageIntent = async (
   userMessage: string,
   context: DetermineUserMessageIntentContext
 ): Promise<DetermineUserMessageIntentResponse> => {
+  const perf = createPerformanceTracker("intent-detection");
+
   /**
    * Use an LLM to determine if the user is asking a question or requesting a therapist.
    */
@@ -571,14 +578,47 @@ const determineUserMessageIntent = async (
     explanation: z.string(),
   });
 
-  const completion = await openai.beta.chat.completions.parse({
-    model: "gpt-4o-mini",
-    messages: formattedMessage,
-    response_format: zodResponseFormat(ClassifyUserIntent, "answer"),
-  });
+  perf.startEvent("llm:intentAnalysis");
+  try {
+    console.log("[determineUserMessageIntent]: Calling OpenAI API");
+    const completion = await openai.beta.chat.completions.parse({
+      model: "gpt-4o-mini",
+      messages: formattedMessage,
+      response_format: zodResponseFormat(ClassifyUserIntent, "answer"),
+    });
 
-  console.log(completion.choices[0]);
-  return completion.choices[0].message.parsed;
+    console.log("[determineUserMessageIntent]: Received response from OpenAI");
+    console.log(
+      "[determineUserMessageIntent]: Parsed response:",
+      JSON.stringify(completion.choices[0].message.parsed)
+    );
+
+    perf.endEvent("llm:intentAnalysis", {
+      model: "gpt-4o-mini",
+      messageLength: userMessage.length,
+      isFirstMessage: context.isFirstMessage,
+      isTherapistRequest:
+        completion.choices[0].message.parsed.isTherapistRequest,
+    });
+    perf.complete();
+
+    return completion.choices[0].message.parsed;
+  } catch (error) {
+    console.error("[determineUserMessageIntent] Error:", error);
+    console.error(
+      "[determineUserMessageIntent] Error details:",
+      error.response?.data || error.message
+    );
+    perf.endEvent("llm:intentAnalysis", { error: error.message });
+    perf.complete();
+
+    // Provide a fallback response instead of throwing
+    return {
+      isTherapistRequest: true, // Default to true for user messages that look like therapist requests
+      explanation:
+        "Error in analysis, defaulting to therapist request based on message content",
+    };
+  }
 };
 
 const determineMatchTherapistParameters = async (
@@ -593,6 +633,8 @@ const determineMatchTherapistParameters = async (
   },
   triggerSource: "CHAT" | "FORM" = "CHAT"
 ): Promise<z.infer<typeof FilterParams>> => {
+  const perf = createPerformanceTracker("parameter-detection");
+
   // Define enums for better type safety
   const Gender = z.enum(["female", "male", "non_binary"]);
   const Sexuality = z.enum([
@@ -682,8 +724,7 @@ ${Object.entries(currentFilters)
   .join("\n")}
 `
     : currentFilters && triggerSource === "CHAT"
-    ? `
-Current form filters (LOW PRIORITY - only use if chat doesn't specify preferences):
+    ? `Current form filters (LOW PRIORITY - only use if chat doesn't specify preferences):
 ${Object.entries(currentFilters)
   .filter(([_, value]) => value !== null)
   .map(
@@ -710,33 +751,52 @@ Include reasoning for the extracted preferences and explain any ambiguity in the
     },
   ];
 
-  const completion = await openai.beta.chat.completions.parse({
-    model: "gpt-4o-mini",
-    messages: formattedMessages,
-    response_format: zodResponseFormat(FilterParams, "filters"),
-  });
+  perf.startEvent("llm:parameterExtraction");
+  try {
+    const completion = await openai.beta.chat.completions.parse({
+      model: "gpt-4o-mini",
+      messages: formattedMessages,
+      response_format: zodResponseFormat(FilterParams, "filters"),
+    });
 
-  console.log(
-    `[determineMatchTherapistParameters] Completion: ${JSON.stringify(
-      completion.choices[0].message.parsed
-    )}`
-  );
+    const result = completion.choices[0].message.parsed;
 
-  // If FORM trigger, merge the AI results with current filters, prioritizing current filters
-  if (triggerSource === "FORM" && currentFilters) {
-    const aiResult = completion.choices[0].message.parsed;
-    return {
-      ...aiResult,
-      gender_filter: (currentFilters.gender as any) ?? aiResult.gender_filter,
-      sexuality_filter: currentFilters.sexuality ?? aiResult.sexuality_filter,
-      ethnicity_filter: currentFilters.ethnicity ?? aiResult.ethnicity_filter,
-      faith_filter: currentFilters.faith ?? aiResult.faith_filter,
-      max_price_initial:
-        currentFilters.max_price_initial ?? aiResult.max_price_initial,
-      availability_filter:
-        (currentFilters.availability as any) ?? aiResult.availability_filter,
-    };
+    perf.endEvent("llm:parameterExtraction", {
+      model: "gpt-4o-mini",
+      messageLength: userMessage.length,
+      filterCount:
+        Object.values(result).filter(
+          (v) => v !== null && (Array.isArray(v) ? v.length > 0 : true)
+        ).length - 1, // Subtract one to exclude reasoning which isn't a filter
+    });
+    perf.complete();
+
+    console.log(
+      `[determineMatchTherapistParameters] Completion: ${JSON.stringify(
+        result
+      )}`
+    );
+
+    // If FORM trigger, merge the AI results with current filters, prioritizing current filters
+    if (triggerSource === "FORM" && currentFilters) {
+      return {
+        ...result,
+        gender_filter: (currentFilters.gender as any) ?? result.gender_filter,
+        sexuality_filter: currentFilters.sexuality ?? result.sexuality_filter,
+        ethnicity_filter: currentFilters.ethnicity ?? result.ethnicity_filter,
+        faith_filter: currentFilters.faith ?? result.faith_filter,
+        max_price_initial:
+          currentFilters.max_price_initial ?? result.max_price_initial,
+        availability_filter:
+          (currentFilters.availability as any) ?? result.availability_filter,
+      };
+    }
+
+    return result;
+  } catch (error) {
+    console.error("[determineMatchTherapistParameters] Error:", error);
+    perf.endEvent("llm:parameterExtraction", { error: error.message });
+    perf.complete();
+    throw error;
   }
-
-  return completion.choices[0].message.parsed;
 };
