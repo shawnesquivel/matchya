@@ -3,14 +3,13 @@
 import { createClient } from "@supabase/supabase-js";
 import { useState } from "react";
 
-// load env
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+// Ensure we handle environment switching for Supabase
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error("Missing environment variables");
-}
+console.log("Using Supabase URL:", supabaseUrl);
 
+// Create a single supabase client for the entire session
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 type Therapist = {
@@ -27,6 +26,30 @@ type Therapist = {
     | "pacific_islander"
     | "white"
     | "multiracial"
+    | "prefer_not_to_say"
+  )[];
+  sexuality: (
+    | "straight"
+    | "gay"
+    | "lesbian"
+    | "bisexual"
+    | "queer"
+    | "pansexual"
+    | "asexual"
+    | "questioning"
+    | "prefer_not_to_say"
+  )[];
+  faith: (
+    | "agnostic"
+    | "atheist"
+    | "buddhist"
+    | "christian"
+    | "hindu"
+    | "jewish"
+    | "muslim"
+    | "sikh"
+    | "spiritual"
+    | "other"
     | "prefer_not_to_say"
   )[];
   profile_img_url: string;
@@ -77,187 +100,278 @@ type JurisdictionType =
   | "PA";
 
 export default function TestPage() {
-  const [formData, setFormData] = useState({
-    first_name: "Shiho",
-    last_name: "Hayashi",
-    ethnicity: ["asian"] as Therapist["ethnicity"],
-  });
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState("");
 
-  const insertTherapist = async () => {
-    const therapistData: Therapist = {
-      ...formData,
+  // Shared clinic and professional data
+  const sharedData = {
+    clinic_name: "Peak Resilience",
+    clinic_street: "1111 Melville St #589",
+    clinic_city: "Vancouver",
+    clinic_province: "BC",
+    clinic_postal_code: "V6E 3V6",
+    clinic_country: "CA",
+    clinic_profile_url: "https://www.peak-resilience.com/",
+    video_intro_link: "https://www.youtube.com/watch?v=3fxY_qyl1Oo",
+    availability: "both" as const,
+    certifications: ["Crime Victim Assistance Program (CVAP) Approved"],
+    is_verified: false,
+  };
+
+  // Three diverse therapists with different identities
+  const therapists: Therapist[] = [
+    {
+      ...sharedData,
+      first_name: "Shiho",
+      last_name: "Hayashi",
       gender: "female",
       pronouns: "she/her",
+      ethnicity: ["asian"],
+      sexuality: ["straight"],
+      faith: ["buddhist"],
       profile_img_url:
         "https://www.peak-resilience.com/wp-content/uploads/2024/02/IMG_2916-1024x678.jpg",
-      video_intro_link: "https://www.youtube.com/watch?v=3fxY_qyl1Oo",
-      ai_summary:
-        "A compassionate therapist specializing in trauma-informed care, dedicated to helping clients navigate their emotional challenges and achieve personal growth.",
-      clinic_profile_url: "https://www.peak-resilience.com/",
-      therapist_email: "hello@elementaltherapy.ca",
-      clinic_name: "Peak Resilience",
-      clinic_street: "1111 Melville St #589",
-      clinic_city: "Vancouver",
-      clinic_province: "BC",
-      clinic_postal_code: "V6E 3V6",
-      clinic_country: "CA",
-      availability: "both",
-      education: ["Business Degree"],
-      certifications: ["Crime Victim Assistance Program (CVAP) Approved"],
+      therapist_email: "shiho@peakresilience.ca",
+      education: ["Business Degree", "MA in Counselling Psychology"],
       approaches: {
         long_term: [
           "Acceptance and Commitment Therapy (ACT)",
           "Trauma Informed Therapy",
-          "Somatic Experiencing + Sensorimotor Therapy",
-          "Intersectional Feminist Therapy",
+          "Somatic Experiencing",
+          "Sensorimotor Therapy",
         ],
       },
       areas_of_focus: ["Anxiety", "Boundary Setting", "Break-Ups", "Trauma"],
-      languages: ["English"],
-      is_verified: false,
-      bio: `Hi! I'm an RCC at Peak. I grew up in Saskatoon and earned a business degree, which helped me in leadership roles with value-aligned companies. My personal mental health journey and the need for quality care inspired me to shift my career focus to mental health. I've faced my own challenges and understand the darkness that can feel overwhelming. But I assure you, things can improve, and life can be beautiful.
+      languages: ["English", "Japanese"],
+      ai_summary:
+        "A compassionate therapist specializing in trauma-informed care, dedicated to helping clients navigate emotional challenges through somatic and ACT approaches.",
+      bio: `Hi! I'm an RCC at Peak Resilience. I grew up in Japan before moving to Canada, which gives me a unique perspective on cultural challenges. My personal mental health journey inspired me to shift from business to mental health counselling. I've faced challenges navigating cultural expectations and understand the darkness that can feel overwhelming.
 
-If you're seeking a therapist who provides insight and supports positive change, I might be a great fit. My approach integrates mind and body through a client-centered, trauma-informed, and anti-oppressive lens. I offer individual and relationship therapy, both virtually and in person, including nature-based sessions. I often use Acceptance and Commitment Therapy (ACT) to work with emotions rather than against them. Somatic, body-based methods are also central to my practice, as I believe our bodies hold wisdom that cognitive approaches may overlook. As a relationship therapist, I primarily use the Gottman Method to foster shared meaning and understanding while navigating emotions and conflict.
+My approach integrates mind and body through a client-centered, trauma-informed lens. I often use Acceptance and Commitment Therapy (ACT) to work with emotions rather than against them. Somatic, body-based methods are also central to my practice. I believe therapy should balance the difficult times with light, integrating compassion, values-based work, and cultural sensitivity throughout our journey.`,
+    },
+    {
+      ...sharedData,
+      first_name: "Tyra",
+      last_name: "Banks",
+      gender: "female",
+      pronouns: "she/her",
+      ethnicity: ["black"],
+      sexuality: ["straight"],
+      faith: ["christian"],
+      profile_img_url:
+        "https://www.peak-resilience.com/wp-content/uploads/2022/10/Sydney_2022.jpg",
+      therapist_email: "tyra@peakresilience.ca",
+      education: ["MSW", "PhD in Clinical Psychology"],
+      approaches: {
+        long_term: [
+          "Cognitive Behavioral Therapy (CBT)",
+          "Trauma Informed Therapy",
+          "Intersectional Feminist Therapy",
+        ],
+        short_term: ["Solution-Focused Therapy"],
+      },
+      areas_of_focus: ["Depression", "Anxiety", "Racial Trauma", "Identity"],
+      languages: ["English", "French"],
+      ai_summary:
+        "A skilled therapist with expertise in CBT and trauma-informed care, bringing an intersectional perspective to support clients through racial trauma and identity exploration.",
+      bio: `I'm a clinical psychologist with experience supporting clients through racial trauma and identity challenges. My approach combines evidence-based practices with cultural sensitivity and an awareness of systemic factors affecting mental health.
 
-I understand that seeking support can evoke many emotions, and I prioritize building an authentic, trusting, and safe relationship. Recognizing that no two individuals are alike, we will customize your therapy together. I believe therapy should balance the dark times with light, integrating compassion, values-based work, and humor throughout our journey. You're not alone in this, and I look forward to meeting you and walking alongside you during this chapter of your life.`,
-    };
+I believe in creating a safe space where all parts of your identity are honored and understood. Having navigated my own journey with racial identity and mental health, I'm passionate about supporting others on similar paths. My therapeutic relationship is built on authenticity, trust, and a commitment to seeing you as a whole person - not just your challenges.
 
-    const { data: therapist, error } = await supabase
-      .from("therapists")
-      .insert(therapistData)
-      .select()
-      .single();
+I use CBT techniques while recognizing the importance of social context and cultural factors. Together, we'll work toward healing that acknowledges both your internal world and external realities.`,
+    },
+    {
+      ...sharedData,
+      first_name: "Alex",
+      last_name: "Rivera",
+      gender: "non_binary",
+      pronouns: "they/them",
+      ethnicity: ["hispanic", "indigenous"],
+      sexuality: ["queer", "pansexual"],
+      faith: ["spiritual"],
+      profile_img_url:
+        "https://www.peak-resilience.com/wp-content/uploads/2023/01/Suki_2022-683x1024.jpg",
+      therapist_email: "alex@peakresilience.ca",
+      education: ["MA in Clinical Mental Health Counseling"],
+      approaches: {
+        long_term: [
+          "Narrative Therapy",
+          "Queer Theory Informed Practice",
+          "Mindfulness-Based Therapy",
+        ],
+        short_term: ["Crisis Intervention"],
+      },
+      areas_of_focus: [
+        "LGBTQ+ Issues",
+        "Gender Identity",
+        "Cultural Displacement",
+        "Spirituality",
+      ],
+      languages: ["English", "Spanish"],
+      ai_summary:
+        "A compassionate non-binary therapist specializing in identity-affirming care, supporting clients through gender exploration, cultural displacement, and spiritual journeys.",
+      bio: `As a non-binary therapist with multicultural roots, I bring both professional training and lived experience to my practice. I specialize in working with LGBTQ+ clients, particularly those exploring gender identity or navigating the intersection of queerness with cultural and spiritual identities.
 
-    if (error) {
-      console.error("Error inserting therapist:", error);
-      return;
+My approach centers on narrative therapy, helping clients reclaim their stories and envision new possibilities. I believe in honoring both ancestral wisdom and queer futurism in my practice. Having navigated my own journey with gender, cultural displacement, and spirituality, I create a space where all facets of identity are welcomed and affirmed.
+
+I'm passionate about supporting clients through life transitions, identity exploration, and healing from marginalization-based trauma. Our work together will acknowledge both individual healing and the reality of systemic factors, balancing personal growth with community connection.`,
+    },
+  ];
+
+  const insertTherapists = async () => {
+    setLoading(true);
+    setResult("");
+    let successCount = 0;
+
+    try {
+      for (const therapistData of therapists) {
+        // Insert therapist
+        const { data: therapist, error } = await supabase
+          .from("therapists")
+          .insert(therapistData)
+          .select()
+          .single();
+
+        if (error) {
+          console.error("Error inserting therapist:", error);
+          setResult(
+            (prev) =>
+              prev +
+              `\nError inserting ${therapistData.first_name}: ${error.message}`
+          );
+          continue;
+        }
+
+        // Insert license
+        const { error: licenseError } = await supabase
+          .from("therapist_licenses")
+          .insert({
+            therapist_id: therapist.id,
+            license_number: "20480",
+            state: "BC" as JurisdictionType,
+            title: "RCC" as LicenseTitle,
+            issuing_body: "BCACC",
+            is_verified: false,
+          });
+
+        if (licenseError) {
+          console.error("Error inserting license:", licenseError);
+          setResult(
+            (prev) =>
+              prev +
+              `\nError inserting license for ${therapistData.first_name}: ${licenseError.message}`
+          );
+          continue;
+        }
+
+        // Insert fees
+        const { error: feeError } = await supabase
+          .from("therapist_fees")
+          .insert([
+            {
+              therapist_id: therapist.id,
+              session_category: "initial",
+              session_type: "individual",
+              delivery_method: "in_person",
+              duration_minutes: 50,
+              price: 150.0,
+              currency: "CAD",
+            },
+            {
+              therapist_id: therapist.id,
+              session_category: "subsequent",
+              session_type: "individual",
+              delivery_method: "in_person",
+              duration_minutes: 50,
+              price: 130.0,
+              currency: "CAD",
+            },
+            {
+              therapist_id: therapist.id,
+              session_category: "initial",
+              session_type: "couples",
+              delivery_method: "in_person",
+              duration_minutes: 80,
+              price: 180.0,
+              currency: "CAD",
+            },
+            {
+              therapist_id: therapist.id,
+              session_category: "subsequent",
+              session_type: "couples",
+              delivery_method: "in_person",
+              duration_minutes: 80,
+              price: 160.0,
+              currency: "CAD",
+            },
+          ]);
+
+        if (feeError) {
+          console.error("Error inserting fees:", feeError);
+          setResult(
+            (prev) =>
+              prev +
+              `\nError inserting fees for ${therapistData.first_name}: ${feeError.message}`
+          );
+          continue;
+        }
+
+        successCount++;
+        setResult(
+          (prev) =>
+            prev +
+            `\nSuccessfully inserted ${therapistData.first_name} ${therapistData.last_name}`
+        );
+      }
+
+      setResult(
+        (prev) =>
+          `${successCount} of ${therapists.length} therapists inserted successfully.` +
+          prev
+      );
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      setResult((prev) => prev + `\nUnexpected error: ${err}`);
+    } finally {
+      setLoading(false);
     }
-
-    // Insert license in the dedicated table using the proper ENUM values
-    const { error: licenseError } = await supabase
-      .from("therapist_licenses")
-      .insert({
-        therapist_id: therapist.id,
-        license_number: "20480",
-        state: "BC" as JurisdictionType, // Using the ENUM value
-        title: "RCC" as LicenseTitle, // Using the ENUM value
-        issuing_body: "BCACC",
-        is_verified: false,
-      });
-
-    if (licenseError) {
-      console.error("Error inserting license:", licenseError);
-      return;
-    }
-
-    // Then insert fees
-    const { error: feeError } = await supabase.from("therapist_fees").insert([
-      {
-        therapist_id: therapist.id,
-        session_category: "initial",
-        session_type: "individual",
-        delivery_method: "in_person",
-        duration_minutes: 50,
-        price: 150.0,
-        currency: "CAD",
-      },
-      {
-        therapist_id: therapist.id,
-        session_category: "subsequent",
-        session_type: "individual",
-        delivery_method: "in_person",
-        duration_minutes: 50,
-        price: 130.0,
-        currency: "CAD",
-      },
-      {
-        therapist_id: therapist.id,
-        session_category: "initial",
-        session_type: "couples",
-        delivery_method: "in_person",
-        duration_minutes: 80,
-        price: 180.0,
-        currency: "CAD",
-      },
-      {
-        therapist_id: therapist.id,
-        session_category: "subsequent",
-        session_type: "couples",
-        delivery_method: "in_person",
-        duration_minutes: 80,
-        price: 160.0,
-        currency: "CAD",
-      },
-    ]);
-
-    if (feeError) {
-      console.error("Error inserting fees:", feeError);
-      return;
-    }
-
-    console.log("Successfully inserted therapist, license, and fees!");
   };
 
   return (
     <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Test Supabase Insert</h1>
+      <h1 className="text-2xl font-bold mb-4">Test Therapist Upload</h1>
 
-      <form className="space-y-4 mb-4">
-        <div>
-          <label className="block mb-1">First Name</label>
-          <input
-            type="text"
-            value={formData.first_name}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, first_name: e.target.value }))
-            }
-            className="border p-2 rounded"
-          />
-        </div>
-
-        <div>
-          <label className="block mb-1">Last Name</label>
-          <input
-            type="text"
-            value={formData.last_name}
-            onChange={(e) =>
-              setFormData((prev) => ({ ...prev, last_name: e.target.value }))
-            }
-            className="border p-2 rounded"
-          />
-        </div>
-
-        <div>
-          <label className="block mb-1">Ethnicity</label>
-          <select
-            value={formData.ethnicity[0]}
-            onChange={(e) =>
-              setFormData((prev) => ({
-                ...prev,
-                ethnicity: [e.target.value as Therapist["ethnicity"][0]],
-              }))
-            }
-            className="border p-2 rounded"
-          >
-            <option value="asian">Asian</option>
-            <option value="black">Black</option>
-            <option value="hispanic">Hispanic</option>
-            <option value="indigenous">Indigenous</option>
-            <option value="middle_eastern">Middle Eastern</option>
-            <option value="pacific_islander">Pacific Islander</option>
-            <option value="white">White</option>
-            <option value="multiracial">Multiracial</option>
-            <option value="prefer_not_to_say">Prefer not to say</option>
-          </select>
-        </div>
-      </form>
+      <div className="mb-4">
+        <p className="text-sm text-gray-700 mb-2">
+          This will upload 3 test therapists with different identities to your
+          database.
+        </p>
+        <ul className="list-disc pl-5 text-sm text-gray-700">
+          {therapists.map((t, index) => (
+            <li key={index}>
+              {t.first_name} {t.last_name} ({t.pronouns}):{" "}
+              {t.ethnicity.join(", ")} | Faith: {t.faith.join(", ")} |
+              Sexuality: {t.sexuality.join(", ")}
+            </li>
+          ))}
+        </ul>
+      </div>
 
       <button
-        onClick={insertTherapist}
-        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+        onClick={insertTherapists}
+        disabled={loading}
+        className={`bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 ${
+          loading ? "opacity-50 cursor-not-allowed" : ""
+        }`}
       >
-        Insert Test Therapist
+        {loading ? "Uploading..." : "Upload All Therapists"}
       </button>
+
+      {result && (
+        <div className="mt-4 p-3 bg-gray-100 rounded max-h-60 overflow-auto">
+          <pre className="whitespace-pre-wrap text-sm">{result}</pre>
+        </div>
+      )}
     </div>
   );
 }
