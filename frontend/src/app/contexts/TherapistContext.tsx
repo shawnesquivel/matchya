@@ -20,6 +20,59 @@ interface TherapistFilters {
   format: string[] | null;
 }
 
+// Add license interface
+interface TherapistLicense {
+  id: string;
+  license_number: string;
+  state: string; // From jurisdiction_type enum
+  title: string; // From license_title_type enum
+  issuing_body: string;
+  expiry_date: string | null;
+  is_verified: boolean;
+}
+
+// Update therapist interface to include licenses
+export interface Therapist {
+  id: string;
+  first_name: string;
+  middle_name?: string;
+  last_name: string;
+  pronouns?: string;
+  gender: "female" | "male" | "non_binary";
+  ethnicity: string[];
+  sexuality: string[];
+  faith: string[];
+  bio?: string;
+  ai_summary?: string;
+  areas_of_focus: string[];
+  approaches: {
+    long_term: string[];
+    short_term?: string[];
+  };
+  profile_img_url?: string;
+  video_intro_link?: string;
+  clinic_profile_url?: string;
+  clinic_booking_url?: string;
+  therapist_email?: string;
+  therapist_phone?: string;
+  clinic_name: string;
+  clinic_street: string;
+  clinic_city: string;
+  clinic_province: string;
+  clinic_postal_code: string;
+  clinic_country: string;
+  clinic_phone?: string;
+  availability: "online" | "in_person" | "both";
+  languages: string[];
+  education: string[];
+  certifications: string[];
+  initial_price?: string;
+  subsequent_price?: string;
+  similarity?: number;
+  licenses: TherapistLicense[];
+  is_verified: boolean;
+}
+
 // Initial state
 const initialState = {
   // Chat state
@@ -46,7 +99,7 @@ const initialState = {
   requestCount: 0,
 
   // Results
-  therapists: [],
+  therapists: [] as Therapist[],
 
   // New flags
   skipFilterEffect: false,
