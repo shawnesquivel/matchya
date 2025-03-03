@@ -1,43 +1,24 @@
+// @deno-types="npm:@types/node"
 const initStartTime = performance.now();
 console.log("[Timing] Starting function initialization");
 
 import { createClient } from "@supabase/supabase-js";
-import { env } from "@xenova/transformers";
-import { pipeline } from "@xenova/transformers";
+import OpenAI from "openai";
 
 // Track if this is first initialization
 let isFirstInit = true;
 
-// so it doesn't look for the model in the browser cache
-env.useBrowserCache = false;
-//  so it doesn't look for the model in the local folder
-env.allowLocalModels = false;
-
 console.log("[Debug] Starting edge function: embed");
-
-let generateEmbedding;
-try {
-  const modelStartTime = performance.now();
-  console.log("[Timing] Starting model initialization");
-
-  generateEmbedding = await pipeline(
-    "feature-extraction",
-    "Supabase/gte-small" // this is the model name. ensure this matches the one we used in /app/chat/page.tsx
-  );
-
-  console.log(
-    "[Timing] Model initialization completed in",
-    performance.now() - modelStartTime,
-    "ms"
-  );
-} catch (error) {
-  console.error("[Error] Failed to initialize pipeline:", error);
-  throw error;
-}
 
 // These are automatically injected
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+const openaiApiKey = Deno.env.get("OPENAI_API_KEY");
+
+// Initialize OpenAI client
+const openai = new OpenAI({
+  apiKey: openaiApiKey,
+});
 
 console.log(
   "[Timing] Total function initialization completed in",
@@ -68,7 +49,7 @@ Deno.serve(async (req) => {
       throw new Error(`Invalid JSON: ${e.message}`);
     }
 
-    if (!supabaseUrl || !supabaseAnonKey) {
+    if (!supabaseUrl || !supabaseAnonKey || !openaiApiKey) {
       throw new Error("Missing environment variables");
     }
 
@@ -89,7 +70,7 @@ Deno.serve(async (req) => {
       BATCH_SIZE
     );
     for (let i = 0; i < ids.length; i += BATCH_SIZE) {
-      batches.push(ids.slice(i, i + BATCH_SIZE));
+      batches.push(ids.slice(i, i + BATCH_SIZE) as never);
     }
     // console.log("[Debug] Created", batches.length, "batches");
 
@@ -138,12 +119,14 @@ Deno.serve(async (req) => {
               continue;
             }
 
-            const output = await generateEmbedding(content, {
-              pooling: "mean",
-              normalize: true,
+            // Generate embedding using OpenAI API
+            const embeddingResponse = await openai.embeddings.create({
+              model: "text-embedding-3-small",
+              input: content,
+              encoding_format: "float",
             });
 
-            const embedding = Array.from(output.data);
+            const embedding = embeddingResponse.data[0].embedding;
             console.log(
               "[Debug] Generated embedding for id:",
               id,

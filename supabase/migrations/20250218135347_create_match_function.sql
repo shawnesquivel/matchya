@@ -1,5 +1,5 @@
 create or replace function match_therapists(
-  query_embedding vector(384),
+  query_embedding vector(1536),
   match_threshold float,
   gender_filter text default null,
   sexuality_filter sexuality_type[] default null,

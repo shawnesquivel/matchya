@@ -107,7 +107,7 @@ create table therapists (
   bio text,
   
   -- Vector Embedding
-  embedding vector(384),  -- GTE-Small
+  embedding vector(1536),  -- OpenAI text-embedding-3-small
   
   -- Verification Status
   is_verified boolean not null default false

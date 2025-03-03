@@ -1,68 +1,68 @@
-import { env } from "@xenova/transformers";
-import { pipeline } from "@xenova/transformers";
+import OpenAI from "openai";
 import { createPerformanceTracker } from "./performance.ts";
 
-// Configuration for transformers
-env.useBrowserCache = false;
-env.allowLocalModels = false;
-
-// Track initialization
-let isModelInitialized = false;
-let embeddingGenerator: any = null;
+// Track initialization and OpenAI client
+let isClientInitialized = false;
+let openaiClient: OpenAI | null = null;
 
 /**
- * Initializes the embedding model if not already initialized
- * @returns The embedding generator pipeline
+ * Initializes the OpenAI client if not already initialized
+ * @returns The OpenAI client instance
  */
 export async function initEmbeddingModel() {
-  if (!isModelInitialized) {
+  if (!isClientInitialized) {
     const perf = createPerformanceTracker("embeddings");
-    perf.startEvent("model:initialization");
-    console.log("[Embeddings] Initializing embedding model");
-    const modelStartTime = performance.now();
+    perf.startEvent("client:initialization");
+    console.log("[Embeddings] Initializing OpenAI client");
+    const clientStartTime = performance.now();
 
     try {
-      embeddingGenerator = await pipeline(
-        "feature-extraction",
-        "Supabase/gte-small"
-      );
+      const openaiApiKey = Deno.env.get("OPENAI_API_KEY");
 
-      isModelInitialized = true;
+      if (!openaiApiKey) {
+        throw new Error("OPENAI_API_KEY environment variable not set");
+      }
 
-      const initTime = performance.now() - modelStartTime;
+      openaiClient = new OpenAI({
+        apiKey: openaiApiKey,
+      });
+
+      isClientInitialized = true;
+
+      const initTime = performance.now() - clientStartTime;
       console.log(
-        "[Embeddings] Model initialization completed in",
+        "[Embeddings] OpenAI client initialization completed in",
         initTime,
         "ms"
       );
 
-      perf.endEvent("model:initialization", {
-        model: "Supabase/gte-small",
+      perf.endEvent("client:initialization", {
+        model: "text-embedding-3-small",
         initTimeMs: initTime,
       });
       perf.complete();
     } catch (error) {
-      console.error("[Embeddings] Failed to initialize pipeline:", error);
-      perf.endEvent("model:initialization", { error: error.message });
+      console.error("[Embeddings] Failed to initialize OpenAI client:", error);
+      perf.endEvent("client:initialization", { error: error.message });
       perf.complete();
       throw error;
     }
   }
 
-  return embeddingGenerator;
+  return openaiClient;
 }
 
 /**
- * Generates an embedding vector for the provided text
+ * Generates an embedding vector for the provided text using OpenAI
  * @param text The text to generate embeddings for
  * @returns The embedding as both array and Postgres-compatible string
  */
 export async function generateEmbedding(text: string) {
   const perf = createPerformanceTracker("embeddings");
 
-  // Track model init if needed
+  // Track client init if needed
   perf.startEvent("embedding:generate");
-  const generator = await initEmbeddingModel();
+  const client = await initEmbeddingModel();
 
   try {
     console.log(
@@ -70,12 +70,13 @@ export async function generateEmbedding(text: string) {
       text.substring(0, 50) + "..."
     );
 
-    const output = await generator(text, {
-      pooling: "mean",
-      normalize: true,
+    const embeddingResponse = await client.embeddings.create({
+      model: "text-embedding-3-small",
+      input: text,
+      encoding_format: "float",
     });
 
-    const embedding = Array.from(output.data);
+    const embedding = embeddingResponse.data[0].embedding;
     console.log(
       "[Embeddings] Generated embedding dimensions:",
       embedding.length
