@@ -48,15 +48,33 @@ type Therapist = {
   };
   areas_of_focus: string[];
   languages: string[];
-  licenses: Array<{
-    license_number: string;
-    state: string;
-    type: string;
-    organization: string;
-  }>;
   bio: string;
   ai_summary: string;
+  is_verified: boolean;
 };
+
+// Define license type enum to match database
+type LicenseTitle = "RCC" | "RSW" | "RP" | "CPsych" | "MFT" | "RPN" | "MD";
+type JurisdictionType =
+  | "BC"
+  | "ON"
+  | "AB"
+  | "MB"
+  | "NB"
+  | "NL"
+  | "NS"
+  | "NT"
+  | "NU"
+  | "PE"
+  | "QC"
+  | "SK"
+  | "YT"
+  | "NY"
+  | "CA"
+  | "IL"
+  | "TX"
+  | "AZ"
+  | "PA";
 
 export default function TestPage() {
   const [formData, setFormData] = useState({
@@ -96,14 +114,7 @@ export default function TestPage() {
       },
       areas_of_focus: ["Anxiety", "Boundary Setting", "Break-Ups", "Trauma"],
       languages: ["English"],
-      licenses: [
-        {
-          license_number: "20480",
-          state: "BC",
-          type: "Registered Clinical Counsellor",
-          organization: "BCACC",
-        },
-      ],
+      is_verified: false,
       bio: `Hi! I'm an RCC at Peak. I grew up in Saskatoon and earned a business degree, which helped me in leadership roles with value-aligned companies. My personal mental health journey and the need for quality care inspired me to shift my career focus to mental health. I've faced my own challenges and understand the darkness that can feel overwhelming. But I assure you, things can improve, and life can be beautiful.
 
 If you're seeking a therapist who provides insight and supports positive change, I might be a great fit. My approach integrates mind and body through a client-centered, trauma-informed, and anti-oppressive lens. I offer individual and relationship therapy, both virtually and in person, including nature-based sessions. I often use Acceptance and Commitment Therapy (ACT) to work with emotions rather than against them. Somatic, body-based methods are also central to my practice, as I believe our bodies hold wisdom that cognitive approaches may overlook. As a relationship therapist, I primarily use the Gottman Method to foster shared meaning and understanding while navigating emotions and conflict.
@@ -119,6 +130,23 @@ I understand that seeking support can evoke many emotions, and I prioritize buil
 
     if (error) {
       console.error("Error inserting therapist:", error);
+      return;
+    }
+
+    // Insert license in the dedicated table using the proper ENUM values
+    const { error: licenseError } = await supabase
+      .from("therapist_licenses")
+      .insert({
+        therapist_id: therapist.id,
+        license_number: "20480",
+        state: "BC" as JurisdictionType, // Using the ENUM value
+        title: "RCC" as LicenseTitle, // Using the ENUM value
+        issuing_body: "BCACC",
+        is_verified: false,
+      });
+
+    if (licenseError) {
+      console.error("Error inserting license:", licenseError);
       return;
     }
 
@@ -167,7 +195,7 @@ I understand that seeking support can evoke many emotions, and I prioritize buil
       return;
     }
 
-    console.log("Successfully inserted therapist and fees!");
+    console.log("Successfully inserted therapist, license, and fees!");
   };
 
   return (

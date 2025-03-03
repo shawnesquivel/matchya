@@ -31,23 +31,50 @@ type DetermineUserMessageIntentContext = {
 type TherapistMatch = {
   id: string;
   first_name: string;
+  middle_name: string | null;
   last_name: string;
-  bio: string;
+  pronouns: string | null;
+  bio: string | null;
   gender: "female" | "male" | "non_binary";
-  ai_summary: string;
+  ai_summary: string | null;
   areas_of_focus: string[];
   approaches: {
     long_term: string[];
     short_term: string[];
   };
   similarity: number;
-  ethnicity: string;
-  sexuality: string;
-  faith: string;
+  ethnicity: string[];
+  sexuality: string[];
+  faith: string[];
   initial_price: string;
   subsequent_price: string;
   availability: string;
   languages: string[];
+  profile_img_url: string | null;
+  video_intro_link: string | null;
+  clinic_profile_url: string | null;
+  clinic_booking_url: string | null;
+  therapist_email: string | null;
+  therapist_phone: string | null;
+  clinic_name: string;
+  clinic_street: string;
+  clinic_city: string;
+  clinic_province: string;
+  clinic_postal_code: string;
+  clinic_country: string;
+  clinic_phone: string | null;
+  education: string[];
+  certifications: string[];
+  licenses: {
+    id: string;
+    license_number: string;
+    state: string;
+    title: string;
+    issuing_body: string | null;
+    expiry_date: string | null;
+    is_verified: boolean;
+  }[];
+  therapist_licenses?: any[];
 };
 
 export const corsHeaders = {
@@ -135,7 +162,9 @@ Deno.serve(async (req) => {
       let query = supabase.from("therapists").select(`
         id,
         first_name,
+        middle_name,
         last_name,
+        pronouns,
         bio,
         gender,
         ethnicity,
@@ -146,11 +175,23 @@ Deno.serve(async (req) => {
         areas_of_focus,
         approaches,
         ai_summary,
-        ${
-          hasPriceFilter
-            ? "therapist_fees!inner(session_category, session_type, price, currency)"
-            : "therapist_fees(session_category, session_type, price, currency)"
-        }
+        profile_img_url,
+        video_intro_link,
+        clinic_profile_url,
+        clinic_booking_url,
+        therapist_email,
+        therapist_phone,
+        clinic_name,
+        clinic_street,
+        clinic_city,
+        clinic_province,
+        clinic_postal_code,
+        clinic_country,
+        clinic_phone,
+        education,
+        certifications,
+        therapist_fees!inner(session_category, session_type, price, currency),
+        therapist_licenses(*)
       `);
 
       // Apply all filters from the currentFilters object
@@ -201,15 +242,30 @@ Deno.serve(async (req) => {
 
       // Format the therapists to include price information
       const formattedTherapists = therapists.map(
-        ({ therapist_fees, ...t }) => ({
-          ...t,
-          initial_price: therapist_fees?.find(
-            (f) => f.session_category === "initial"
-          )?.price,
-          subsequent_price: therapist_fees?.find(
-            (f) => f.session_category === "subsequent"
-          )?.price,
-        })
+        ({ therapist_fees, therapist_licenses, ...t }: any) => {
+          // Create a complete therapist object with all fields
+          return {
+            ...t,
+            initial_price: therapist_fees?.find(
+              (f) => f.session_category === "initial"
+            )?.price,
+            subsequent_price: therapist_fees?.find(
+              (f) => f.session_category === "subsequent"
+            )?.price,
+            // Transform therapist_licenses to match the expected format in the frontend
+            licenses: therapist_licenses || [],
+          };
+        }
+      );
+
+      console.log(
+        "[therapist-matches] First formatted therapist sample data:",
+        {
+          id: formattedTherapists?.[0]?.id,
+          name: `${formattedTherapists?.[0]?.first_name} ${formattedTherapists?.[0]?.last_name}`,
+          profile_img_url: formattedTherapists?.[0]?.profile_img_url,
+          video_intro_link: formattedTherapists?.[0]?.video_intro_link,
+        }
       );
 
       return new Response(
@@ -321,6 +377,13 @@ Deno.serve(async (req) => {
         );
       }
 
+      console.log("[therapist-matches] First therapist sample data:", {
+        id: therapists?.[0]?.id,
+        name: `${therapists?.[0]?.first_name} ${therapists?.[0]?.last_name}`,
+        profile_img_url: therapists?.[0]?.profile_img_url,
+        video_intro_link: therapists?.[0]?.video_intro_link,
+      });
+
       // Create response with therapists and current filters
       const extractedFilters = {
         gender: params.gender_filter,
@@ -336,7 +399,9 @@ Deno.serve(async (req) => {
           therapists?.map((t: TherapistMatch) => ({
             id: t.id,
             first_name: t.first_name,
+            middle_name: t.middle_name,
             last_name: t.last_name,
+            pronouns: t.pronouns,
             ethnicity: t.ethnicity,
             gender: t.gender,
             sexuality: t.sexuality,
@@ -349,6 +414,23 @@ Deno.serve(async (req) => {
             approaches: t.approaches,
             similarity: t.similarity,
             ai_summary: t.ai_summary,
+            bio: t.bio,
+            profile_img_url: t.profile_img_url,
+            video_intro_link: t.video_intro_link,
+            clinic_profile_url: t.clinic_profile_url,
+            clinic_booking_url: t.clinic_booking_url,
+            therapist_email: t.therapist_email,
+            therapist_phone: t.therapist_phone,
+            clinic_name: t.clinic_name,
+            clinic_street: t.clinic_street,
+            clinic_city: t.clinic_city,
+            clinic_province: t.clinic_province,
+            clinic_postal_code: t.clinic_postal_code,
+            clinic_country: t.clinic_country,
+            clinic_phone: t.clinic_phone,
+            education: t.education,
+            certifications: t.certifications,
+            licenses: t.therapist_licenses || [],
           })) || [],
         filters: {
           gender: params.gender_filter || null,
@@ -366,6 +448,17 @@ Deno.serve(async (req) => {
         },
         extractedFilters: extractedFilters,
       };
+
+      if (therapists && therapists.length > 0) {
+        console.log(
+          "[therapist-matches] Response sample - first therapist fields:",
+          Object.keys(therapists[0])
+        );
+        console.log(
+          "[therapist-matches] First therapist profile_img_url:",
+          therapists[0].profile_img_url
+        );
+      }
 
       return new Response(JSON.stringify(response), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
