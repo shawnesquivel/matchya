@@ -117,7 +117,7 @@ export default function FilterPanel() {
   ) : null;
 
   return (
-    <div className="bg-white-dark w-full h-full border rounded-lg p-4 overflow-y-auto relative">
+    <div className="bg-white-dark w-full h-full border p-4 overflow-y-auto relative">
       {formOverlay}
       {isLoading && (
         <div className="absolute inset-0 bg-white/50 flex items-center justify-center">
