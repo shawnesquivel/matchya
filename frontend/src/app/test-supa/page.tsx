@@ -102,6 +102,15 @@ type JurisdictionType =
 export default function TestPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState("");
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const [bulkCount, setBulkCount] = useState(10);
+  const [therapistQueryLoading, setTherapistQueryLoading] = useState(false);
+  const [therapistQueryResult, setTherapistQueryResult] = useState<
+    any[] | null
+  >(null);
+  const [therapistQueryError, setTherapistQueryError] = useState<string | null>(
+    null
+  );
 
   // Shared clinic and professional data
   const sharedData = {
@@ -337,9 +346,693 @@ I'm passionate about supporting clients through life transitions, identity explo
     }
   };
 
+  const queryAllTherapists = async () => {
+    setTherapistQueryLoading(true);
+    setTherapistQueryResult(null);
+    setTherapistQueryError(null);
+
+    try {
+      // Query all therapists
+      const { data, error } = await supabase
+        .from("therapists")
+        .select(
+          `
+          *,
+          therapist_licenses(*),
+          therapist_fees(*)
+        `
+        )
+        .order("first_name", { ascending: true });
+
+      if (error) {
+        throw error;
+      }
+
+      setTherapistQueryResult(data);
+      console.log("Retrieved therapists:", data);
+    } catch (err) {
+      console.error("Error querying therapists:", err);
+      setTherapistQueryError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setTherapistQueryLoading(false);
+    }
+  };
+
+  const generateRandomTherapist = () => {
+    // Random data generators
+    const getRandomElement = (arr: any[]) =>
+      arr[Math.floor(Math.random() * arr.length)];
+    const getRandomElements = (arr: any[], count: number) => {
+      const shuffled = [...arr].sort(() => 0.5 - Math.random());
+      return shuffled.slice(0, count);
+    };
+
+    // Name data
+    const firstNames = [
+      "Emma",
+      "Olivia",
+      "Ava",
+      "Sophia",
+      "Isabella",
+      "Charlotte",
+      "Amelia",
+      "Mia",
+      "Harper",
+      "Evelyn",
+      "Liam",
+      "Noah",
+      "William",
+      "James",
+      "Oliver",
+      "Benjamin",
+      "Elijah",
+      "Lucas",
+      "Mason",
+      "Logan",
+      "Aiden",
+      "Jackson",
+      "Raj",
+      "Priya",
+      "Mohammed",
+      "Fatima",
+      "Chen",
+      "Mei",
+      "Hiroshi",
+      "Yuki",
+      "Jamal",
+      "Aisha",
+      "Diego",
+      "Sofia",
+      "Arjun",
+      "Zara",
+    ];
+
+    const lastNames = [
+      "Smith",
+      "Johnson",
+      "Williams",
+      "Brown",
+      "Jones",
+      "Garcia",
+      "Miller",
+      "Davis",
+      "Rodriguez",
+      "Martinez",
+      "Hernandez",
+      "Lopez",
+      "Gonzalez",
+      "Wilson",
+      "Anderson",
+      "Thomas",
+      "Taylor",
+      "Moore",
+      "Jackson",
+      "Martin",
+      "Lee",
+      "Perez",
+      "Thompson",
+      "White",
+      "Harris",
+      "Sanchez",
+      "Clark",
+      "Ramirez",
+      "Lewis",
+      "Robinson",
+      "Patel",
+      "Khan",
+      "Wong",
+      "Kim",
+      "Singh",
+      "Gupta",
+      "Chen",
+      "Shah",
+      "Ahmed",
+      "Nguyen",
+    ];
+
+    // Identity data
+    const genders = ["female", "male", "non_binary"];
+    const pronounsList = [
+      "she/her",
+      "he/him",
+      "they/them",
+      "she/they",
+      "he/they",
+    ];
+
+    // Location data
+    const cities = [
+      "Toronto",
+      "Vancouver",
+      "Montreal",
+      "Calgary",
+      "Ottawa",
+      "Edmonton",
+      "Winnipeg",
+      "Quebec City",
+      "Hamilton",
+      "Kitchener",
+      "London",
+      "Victoria",
+      "Halifax",
+    ];
+
+    const provinces = ["ON", "BC", "QC", "AB", "NS", "MB", "SK", "NB"];
+
+    // Professional data
+    const educationOptions = [
+      "M.A. in Counselling Psychology",
+      "Master of Social Work",
+      "Ph.D. in Clinical Psychology",
+      "M.A. in Marriage and Family Therapy",
+      "Master of Counselling",
+      "Doctor of Psychology",
+      "Bachelor of Social Work",
+      "M.Sc. in Mental Health",
+      "Master of Arts in Psychology",
+    ];
+
+    const certificationOptions = [
+      "Certified in Cognitive Behavioral Therapy",
+      "EMDR Certified",
+      "Gottman Method Certified",
+      "Certified Trauma Specialist",
+      "Emotionally Focused Therapy Certified",
+      "Mindfulness-Based Stress Reduction Certified",
+      "Dialectical Behavior Therapy Certified",
+      "Certified Addiction Counselor",
+      "Solution-Focused Brief Therapy Certified",
+    ];
+
+    const approachOptions = [
+      "Cognitive Behavioral Therapy (CBT)",
+      "Psychodynamic Therapy",
+      "Person-Centered Therapy",
+      "Dialectical Behavior Therapy (DBT)",
+      "Mindfulness-Based Therapy",
+      "Solution-Focused Brief Therapy",
+      "Narrative Therapy",
+      "Emotionally Focused Therapy",
+      "Acceptance and Commitment Therapy",
+      "Interpersonal Therapy",
+      "Gestalt Therapy",
+      "Psychoanalytic Therapy",
+      "Existential Therapy",
+      "Trauma-Focused Therapy",
+      "Motivational Interviewing",
+    ];
+
+    const areasFocusOptions = [
+      "Anxiety",
+      "Depression",
+      "Trauma",
+      "PTSD",
+      "Grief",
+      "Relationships",
+      "Family Issues",
+      "Parenting",
+      "Stress Management",
+      "Life Transitions",
+      "Career Counseling",
+      "Self-Esteem",
+      "Identity",
+      "Sexuality",
+      "LGBTQ+ Issues",
+      "Addiction",
+      "Substance Abuse",
+      "Eating Disorders",
+      "Bipolar Disorder",
+      "Personality Disorders",
+      "OCD",
+      "ADHD",
+      "Autism",
+      "Emotional Regulation",
+    ];
+
+    const languageOptions = [
+      "English",
+      "French",
+      "Spanish",
+      "Mandarin",
+      "Cantonese",
+      "Punjabi",
+      "Hindi",
+      "Urdu",
+      "Arabic",
+      "Portuguese",
+      "Italian",
+      "German",
+      "Korean",
+      "Tagalog",
+      "Vietnamese",
+      "Russian",
+      "Ukrainian",
+      "Polish",
+      "ASL",
+    ];
+
+    // License data
+    const licenseTypes = ["RCC", "RSW", "RP", "CPsych", "MFT", "RPN", "MD"];
+    const jurisdictions = ["ON", "BC", "AB", "MB", "QC", "NS", "SK"];
+
+    // Build the random therapist object
+    const firstName = getRandomElement(firstNames);
+    const lastName = getRandomElement(lastNames);
+    const gender = getRandomElement(genders);
+    const province = getRandomElement(provinces);
+
+    // Generate a random 5-digit number for license
+    const licenseNumber = Math.floor(10000 + Math.random() * 90000).toString();
+
+    return {
+      // Core info
+      first_name: firstName,
+      last_name: lastName,
+      pronouns:
+        gender === "non_binary"
+          ? getRandomElement(["they/them", "ze/hir", "ze/zir", "xe/xem"])
+          : gender === "female"
+          ? getRandomElement(["she/her", "she/they"])
+          : getRandomElement(["he/him", "he/they"]),
+      gender: gender,
+
+      // Identity
+      ethnicity: getRandomElements(
+        [
+          "asian",
+          "black",
+          "hispanic",
+          "indigenous",
+          "middle_eastern",
+          "pacific_islander",
+          "white",
+          "multiracial",
+          "prefer_not_to_say",
+        ],
+        Math.floor(Math.random() * 2) + 1
+      ),
+      sexuality: getRandomElements(
+        [
+          "straight",
+          "gay",
+          "lesbian",
+          "bisexual",
+          "queer",
+          "pansexual",
+          "asexual",
+          "questioning",
+          "prefer_not_to_say",
+        ],
+        1
+      ),
+      faith: getRandomElements(
+        [
+          "agnostic",
+          "atheist",
+          "buddhist",
+          "christian",
+          "hindu",
+          "jewish",
+          "muslim",
+          "sikh",
+          "spiritual",
+          "other",
+          "prefer_not_to_say",
+        ],
+        Math.floor(Math.random() * 2) + 1
+      ),
+
+      // Profile
+      profile_img_url: `https://randomuser.me/api/portraits/${
+        gender === "female"
+          ? "women"
+          : gender === "male"
+          ? "men"
+          : Math.random() > 0.5
+          ? "women"
+          : "men"
+      }/${Math.floor(Math.random() * 70) + 1}.jpg`,
+      video_intro_link:
+        Math.random() > 0.7
+          ? `https://www.youtube.com/watch?v=example${Math.floor(
+              Math.random() * 1000
+            )}`
+          : null,
+      ai_summary: `${firstName} is a compassionate ${
+        gender === "female"
+          ? "woman"
+          : gender === "male"
+          ? "man"
+          : "non-binary person"
+      } who specializes in ${getRandomElement(
+        areasFocusOptions
+      )} and ${getRandomElement(areasFocusOptions)}.`,
+
+      // Contact info
+      therapist_email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@therapist-example.com`,
+      therapist_phone: `+1${Math.floor(Math.random() * 900 + 100)}${Math.floor(
+        Math.random() * 900 + 100
+      )}${Math.floor(Math.random() * 9000 + 1000)}`,
+
+      // Location
+      clinic_name: `${lastName} Counselling Services`,
+      clinic_street: `${
+        Math.floor(Math.random() * 999) + 100
+      } ${getRandomElement([
+        "Maple",
+        "Oak",
+        "Pine",
+        "Cedar",
+        "Elm",
+      ])} ${getRandomElement([
+        "Street",
+        "Avenue",
+        "Boulevard",
+        "Road",
+        "Drive",
+      ])}`,
+      clinic_city: getRandomElement(cities),
+      clinic_postal_code: `${getRandomElement([
+        "A",
+        "B",
+        "C",
+        "E",
+        "G",
+        "H",
+        "J",
+        "K",
+        "L",
+        "M",
+        "N",
+        "P",
+        "R",
+        "S",
+        "T",
+        "V",
+        "X",
+        "Y",
+      ])}${Math.floor(Math.random() * 10)}${getRandomElement([
+        "A",
+        "B",
+        "C",
+        "E",
+        "G",
+        "H",
+        "J",
+        "K",
+        "L",
+        "M",
+        "N",
+        "P",
+        "R",
+        "S",
+        "T",
+        "V",
+        "W",
+        "X",
+        "Y",
+        "Z",
+      ])} ${Math.floor(Math.random() * 10)}${getRandomElement([
+        "A",
+        "B",
+        "C",
+        "E",
+        "G",
+        "H",
+        "J",
+        "K",
+        "L",
+        "M",
+        "N",
+        "P",
+        "R",
+        "S",
+        "T",
+        "V",
+        "W",
+        "X",
+        "Y",
+        "Z",
+      ])}${Math.floor(Math.random() * 10)}`,
+      clinic_province: province,
+      clinic_country: "CA",
+      clinic_phone: `+1${Math.floor(Math.random() * 900 + 100)}${Math.floor(
+        Math.random() * 900 + 100
+      )}${Math.floor(Math.random() * 9000 + 1000)}`,
+
+      // Availability
+      availability: getRandomElement(["online", "in_person", "both"]),
+
+      // Professional details
+      education: getRandomElements(
+        educationOptions,
+        Math.floor(Math.random() * 3) + 1
+      ),
+      certifications: getRandomElements(
+        certificationOptions,
+        Math.floor(Math.random() * 3) + 1
+      ),
+      approaches: {
+        long_term: getRandomElements(
+          approachOptions,
+          Math.floor(Math.random() * 5) + 1
+        ),
+        short_term: getRandomElements(
+          approachOptions,
+          Math.floor(Math.random() * 3) + 1
+        ),
+      },
+      areas_of_focus: getRandomElements(
+        areasFocusOptions,
+        Math.floor(Math.random() * 8) + 3
+      ),
+      languages: getRandomElements(
+        languageOptions,
+        Math.floor(Math.random() * 2) + 1
+      ),
+
+      // Bio
+      bio: `${firstName} ${lastName} is a ${getRandomElement([
+        "compassionate",
+        "dedicated",
+        "experienced",
+        "empathetic",
+        "skilled",
+      ])} therapist with a passion for helping clients overcome ${getRandomElement(
+        [
+          "life challenges",
+          "mental health issues",
+          "relationship problems",
+          "past trauma",
+          "personal growth obstacles",
+        ]
+      )}. With ${Math.floor(Math.random() * 15) + 2} years of experience, ${
+        gender === "female" ? "she" : gender === "male" ? "he" : "they"
+      } create${
+        gender === "non_binary" ? "" : "s"
+      } a safe and supportive environment for clients to explore their feelings and develop effective coping strategies.`,
+
+      // Verification
+      is_verified: false,
+
+      // License details for the related table
+      license: {
+        license_number: licenseNumber,
+        state: province,
+        title: getRandomElement(licenseTypes),
+        issuing_body: `${province} Association of ${getRandomElement([
+          "Clinical Counsellors",
+          "Social Workers",
+          "Psychotherapists",
+          "Psychologists",
+        ])}`,
+        expiry_date: new Date(
+          new Date().setFullYear(
+            new Date().getFullYear() + Math.floor(Math.random() * 3) + 1
+          )
+        )
+          .toISOString()
+          .split("T")[0],
+        is_verified: Math.random() > 0.3,
+      },
+
+      // Fees - array of fee objects
+      fees: [
+        {
+          session_category: "initial",
+          session_type: "individual",
+          delivery_method: "in_person",
+          duration_minutes: 50,
+          price: Math.floor(Math.random() * 50 + 120),
+          currency: "CAD",
+        },
+        {
+          session_category: "subsequent",
+          session_type: "individual",
+          delivery_method: "in_person",
+          duration_minutes: 50,
+          price: Math.floor(Math.random() * 40 + 100),
+          currency: "CAD",
+        },
+        {
+          session_category: "initial",
+          session_type: "couples",
+          delivery_method: "in_person",
+          duration_minutes: 80,
+          price: Math.floor(Math.random() * 60 + 160),
+          currency: "CAD",
+        },
+        {
+          session_category: "subsequent",
+          session_type: "couples",
+          delivery_method: "in_person",
+          duration_minutes: 80,
+          price: Math.floor(Math.random() * 50 + 140),
+          currency: "CAD",
+        },
+      ],
+    };
+  };
+
+  const insertManyRandomTherapists = async () => {
+    setBulkLoading(true);
+    setResult("");
+    let successCount = 0;
+
+    try {
+      setResult("Starting bulk upload...\n");
+
+      // Generate random therapists
+      const randomTherapists = Array.from({ length: bulkCount }, () =>
+        generateRandomTherapist()
+      );
+
+      // Insert each therapist and related records
+      for (let i = 0; i < randomTherapists.length; i++) {
+        const therapistData = randomTherapists[i];
+        setResult(
+          (prev) =>
+            prev +
+            `\nProcessing therapist ${i + 1}/${randomTherapists.length}: ${
+              therapistData.first_name
+            } ${therapistData.last_name}...`
+        );
+
+        // Extract license and fees for related tables
+        const { license, fees, ...therapistOnly } = therapistData;
+
+        // Insert therapist
+        const { data: therapist, error: therapistError } = await supabase
+          .from("therapists")
+          .insert([therapistOnly])
+          .select("id")
+          .single();
+
+        if (therapistError) {
+          console.error("Error inserting therapist:", therapistError);
+          setResult(
+            (prev) =>
+              prev +
+              `\nError inserting therapist ${therapistData.first_name}: ${therapistError.message}`
+          );
+          continue;
+        }
+
+        // Insert license
+        const { error: licenseError } = await supabase
+          .from("therapist_licenses")
+          .insert([
+            {
+              therapist_id: therapist.id,
+              ...license,
+            },
+          ]);
+
+        if (licenseError) {
+          console.error("Error inserting license:", licenseError);
+          setResult(
+            (prev) =>
+              prev +
+              `\nError inserting license for ${therapistData.first_name}: ${licenseError.message}`
+          );
+          // Continue with fees even if license insert fails
+        }
+
+        // Insert fees
+        const feesWithTherapistId = fees.map((fee) => ({
+          ...fee,
+          therapist_id: therapist.id,
+        }));
+
+        const { error: feesError } = await supabase
+          .from("therapist_fees")
+          .insert(feesWithTherapistId);
+
+        if (feesError) {
+          console.error("Error inserting fees:", feesError);
+          setResult(
+            (prev) =>
+              prev +
+              `\nError inserting fees for ${therapistData.first_name}: ${feesError.message}`
+          );
+          continue;
+        }
+
+        successCount++;
+        setResult(
+          (prev) =>
+            prev +
+            `\nSuccessfully inserted ${therapistData.first_name} ${therapistData.last_name}`
+        );
+      }
+
+      setResult(
+        (prev) =>
+          `${successCount} of ${randomTherapists.length} therapists inserted successfully.\n` +
+          prev
+      );
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      setResult((prev) => prev + `\nUnexpected error: ${err}`);
+    } finally {
+      setBulkLoading(false);
+    }
+  };
+
   return (
     <div className="p-4">
       <h1 className="text-2xl font-bold mb-4">Test Therapist Upload</h1>
+
+      <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+        <h2 className="text-lg font-semibold mb-2">Supabase Connection Info</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <p className="text-sm font-medium text-gray-700">Supabase URL:</p>
+            <code className="block p-2 mt-1 text-xs bg-gray-100 rounded overflow-auto">
+              {supabaseUrl}
+            </code>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-700">
+              Anon Key (first 12 chars):
+            </p>
+            <code className="block p-2 mt-1 text-xs bg-gray-100 rounded">
+              {supabaseAnonKey.substring(0, 12)}...
+            </code>
+          </div>
+          <div className="md:col-span-2">
+            <p className="text-sm font-medium text-gray-700">
+              Connection Status:
+            </p>
+            <div className="flex items-center mt-1">
+              <div className="h-3 w-3 rounded-full bg-green-500 mr-2"></div>
+              <span className="text-sm text-gray-600">
+                Connected to Supabase instance
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
 
       <div className="mb-4">
         <p className="text-sm text-gray-700 mb-2">
@@ -372,6 +1065,157 @@ I'm passionate about supporting clients through life transitions, identity explo
           <pre className="whitespace-pre-wrap text-sm">{result}</pre>
         </div>
       )}
+
+      <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+        <h3 className="text-md font-semibold mb-2">Database Tables Used</h3>
+        <ul className="list-disc pl-5 text-sm text-gray-700">
+          <li>
+            <code>therapists</code> - Main therapist profile information
+          </li>
+          <li>
+            <code>therapist_licenses</code> - Professional license information
+          </li>
+          <li>
+            <code>therapist_fees</code> - Session pricing information
+          </li>
+        </ul>
+      </div>
+
+      <div className="mt-8 border-t pt-6">
+        <h2 className="text-xl font-bold mb-4">View Therapists in Database</h2>
+
+        <button
+          onClick={queryAllTherapists}
+          disabled={therapistQueryLoading}
+          className={`bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 ${
+            therapistQueryLoading ? "opacity-50 cursor-not-allowed" : ""
+          }`}
+        >
+          {therapistQueryLoading ? "Loading..." : "Query All Therapists"}
+        </button>
+
+        {therapistQueryError && (
+          <div className="mt-4 p-3 bg-red-100 text-red-800 rounded">
+            <p className="font-medium">Error:</p>
+            <p>{therapistQueryError}</p>
+          </div>
+        )}
+
+        {therapistQueryResult && (
+          <div className="mt-4">
+            <p className="text-sm text-gray-700 mb-2">
+              Found {therapistQueryResult.length} therapists in database:
+            </p>
+
+            <div className="bg-white shadow-md rounded-lg overflow-hidden border border-gray-200">
+              {therapistQueryResult.map((therapist) => (
+                <div
+                  key={therapist.id}
+                  className="p-4 border-b border-gray-200 last:border-b-0"
+                >
+                  <div className="flex items-center gap-3">
+                    {therapist.profile_img_url && (
+                      <img
+                        src={therapist.profile_img_url}
+                        alt={`${therapist.first_name} ${therapist.last_name}`}
+                        className="h-10 w-10 rounded-full object-cover"
+                      />
+                    )}
+                    <div>
+                      <h3 className="font-medium">
+                        {therapist.first_name} {therapist.last_name}
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        {therapist.pronouns} • {therapist.clinic_city},{" "}
+                        {therapist.clinic_province}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                    <div>
+                      <span className="font-medium">Languages:</span>{" "}
+                      {therapist.languages.join(", ")}
+                    </div>
+                    <div>
+                      <span className="font-medium">Availability:</span>{" "}
+                      {therapist.availability === "both"
+                        ? "In-person & Online"
+                        : therapist.availability === "online"
+                        ? "Online Only"
+                        : "In-person Only"}
+                    </div>
+                    <div>
+                      <span className="font-medium">Areas of Focus:</span>{" "}
+                      {therapist.areas_of_focus.join(", ")}
+                    </div>
+                    <div>
+                      <span className="font-medium">Approaches:</span>{" "}
+                      {therapist.approaches?.long_term?.join(", ")}
+                    </div>
+                  </div>
+
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {therapist.therapist_licenses &&
+                      therapist.therapist_licenses.map(
+                        (license: any, idx: number) => (
+                          <span
+                            key={idx}
+                            className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                          >
+                            {license.title} #{license.license_number}
+                          </span>
+                        )
+                      )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="mb-8 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+        <h2 className="text-lg font-semibold mb-2">
+          Bulk Upload Random Therapists
+        </h2>
+        <p className="text-sm text-gray-700 mb-4">
+          Generate and upload random therapist profiles with related data.
+        </p>
+
+        <div className="flex items-center gap-4 mb-4">
+          <label className="text-sm font-medium text-gray-700">
+            Number of therapists:
+          </label>
+          <input
+            type="number"
+            min="1"
+            max="50"
+            value={bulkCount}
+            onChange={(e) => setBulkCount(parseInt(e.target.value) || 10)}
+            className="w-24 px-3 py-2 border border-gray-300 rounded-md text-sm"
+          />
+        </div>
+
+        <button
+          onClick={insertManyRandomTherapists}
+          disabled={bulkLoading}
+          className={`bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 ${
+            bulkLoading ? "opacity-50 cursor-not-allowed" : ""
+          }`}
+        >
+          {bulkLoading
+            ? "Uploading..."
+            : `Upload ${bulkCount} Random Therapists`}
+        </button>
+      </div>
+
+      <a
+        href="supa-chat-context"
+        className="mt-4 inline-block text-blue-500 hover:underline"
+      >
+        Back to Chat: supa-chat-context
+      </a>
     </div>
   );
 }
