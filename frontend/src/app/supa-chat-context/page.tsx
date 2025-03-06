@@ -1,9 +1,9 @@
-'use client';
-import React, { useState } from 'react';
-import { TherapistProvider } from '../contexts/TherapistContext';
-import FilterPanel from '../components/FilterPanel';
-import ChatPanel from '../components/ChatPanel';
-import TherapistResultsPanel from '../components/TherapistResultsPanel';
+"use client";
+import React, { useState } from "react";
+import { TherapistProvider } from "../contexts/TherapistContext";
+import FilterPanel from "../components/FilterPanel";
+import ChatPanel from "../components/ChatPanel";
+import TherapistResultsPanel from "../components/TherapistResultsPanel";
 
 // Add custom scrollbar styles
 const scrollbarStyles = `
@@ -43,10 +43,11 @@ export default function SupaChatContextPage() {
       </style>
 
       <div className="flex w-full h-full gap-4 overflow-hidden">
+        <a href="test-supa-chat">test-supa-chat</a>
         {/* Filters - Collapsible */}
         <div
           className={`flex-none transition-all duration-300 ease-in-out ${
-            isFilterExpanded ? 'w-1/4 max-w-[300px]' : 'w-[50px]'
+            isFilterExpanded ? "w-1/4 max-w-[300px]" : "w-[50px]"
           }`}
         >
           <div className="relative h-full">
@@ -57,7 +58,7 @@ export default function SupaChatContextPage() {
             >
               <svg
                 className={`w-4 h-4 transform transition-transform ${
-                  isFilterExpanded ? 'rotate-0' : 'rotate-180'
+                  isFilterExpanded ? "rotate-0" : "rotate-180"
                 }`}
                 fill="none"
                 stroke="currentColor"
@@ -76,7 +77,7 @@ export default function SupaChatContextPage() {
             {/* Filter Panel with overflow handling */}
             <div
               className={`h-full overflow-hidden transition-all duration-300 ${
-                isFilterExpanded ? 'opacity-100' : 'opacity-0'
+                isFilterExpanded ? "opacity-100" : "opacity-0"
               }`}
             >
               <FilterPanel />
@@ -92,7 +93,7 @@ export default function SupaChatContextPage() {
         {/* Chat - Collapsible */}
         <div
           className={`flex-none transition-all duration-300 ease-in-out ${
-            isChatExpanded ? 'w-1/3 max-w-[500px]' : 'w-[50px]'
+            isChatExpanded ? "w-1/3 max-w-[500px]" : "w-[50px]"
           }`}
         >
           <div className="relative h-full">
@@ -103,7 +104,7 @@ export default function SupaChatContextPage() {
             >
               <svg
                 className={`w-4 h-4 transform transition-transform ${
-                  isChatExpanded ? 'rotate-180' : 'rotate-0'
+                  isChatExpanded ? "rotate-180" : "rotate-0"
                 }`}
                 fill="none"
                 stroke="currentColor"
@@ -122,7 +123,7 @@ export default function SupaChatContextPage() {
             {/* Chat Panel with overflow handling */}
             <div
               className={`h-full  overflow-hidden transition-all duration-300 ${
-                isChatExpanded ? 'opacity-100' : 'opacity-0'
+                isChatExpanded ? "opacity-100" : "opacity-0"
               }`}
             >
               <ChatPanel />
