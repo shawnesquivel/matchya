@@ -1,21 +1,17 @@
 "use client";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useTherapist } from "../contexts/TherapistContext";
 import CalendarIcon from "../../components/icons/CalendarIcon";
 import GlobeIcon from "../../components/icons/GlobeIcon";
 import Image from "next/image";
-import Link from "next/link";
+import TherapistProfileModal from "./TherapistProfileModal";
 
 export default function TherapistResultsPanel() {
-  const { therapists, isLoading, isSendingChat } = useTherapist();
-
-  console.log(
-    "[TherapistResultsPanel] Rendering with therapists:",
-    therapists?.length || 0,
-    "isLoading:",
-    isLoading,
-    "isSendingChat:",
-    isSendingChat
+  const { therapists, isLoading, isSendingChat, filters } = useTherapist();
+  // Add state for the modal
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedTherapistId, setSelectedTherapistId] = useState<string | null>(
+    null
   );
 
   // Show loading only when we're loading therapists, not when just sending chat
@@ -23,8 +19,6 @@ export default function TherapistResultsPanel() {
 
   // Show therapists if we have them, even if chat is still sending
   const showTherapists = therapists?.length > 0;
-  console.log(therapists);
-  console.log(therapists[0]?.profile_img_url);
 
   // Add this useEffect for logging license data
   useEffect(() => {
@@ -34,6 +28,39 @@ export default function TherapistResultsPanel() {
       console.log("Verification Status:", therapists[0].is_verified);
     }
   }, [therapists]);
+
+  // Helper to format active filters for display
+  const getActiveFiltersText = () => {
+    const activeFilters = [];
+
+    if (filters.gender) activeFilters.push(`Gender: ${filters.gender}`);
+    if (filters.ethnicity?.length)
+      activeFilters.push(`Ethnicity: ${filters.ethnicity.join(", ")}`);
+    if (filters.sexuality?.length)
+      activeFilters.push(`Sexuality: ${filters.sexuality.join(", ")}`);
+    if (filters.faith?.length)
+      activeFilters.push(`Faith: ${filters.faith.join(", ")}`);
+    if (filters.max_price_initial)
+      activeFilters.push(`Max price: $${filters.max_price_initial}`);
+    if (filters.availability)
+      activeFilters.push(`Availability: ${filters.availability}`);
+
+    return activeFilters.length > 0
+      ? `Current filters: ${activeFilters.join(" • ")}`
+      : "No filters are currently active.";
+  };
+
+  // Handle opening the modal with a specific therapist
+  const openTherapistModal = (therapistId: string) => {
+    console.log("Opening modal for therapist:", therapistId);
+
+    // Format name in a way that the API can find it
+    const formattedName = therapistId.trim();
+    console.log("Formatted name for search:", formattedName);
+
+    setSelectedTherapistId(formattedName);
+    setIsModalOpen(true);
+  };
 
   return (
     <div className="w-full h-full overflow-y-auto bg-white">
@@ -52,10 +79,14 @@ export default function TherapistResultsPanel() {
         ) : showTherapists ? (
           <div className="space-y-6">
             {therapists.map((therapist) => (
-              <Link
+              <div
                 key={therapist.id}
-                href={`/therapists/${therapist.id}`}
-                className="block bg-beige-extralight border border-grey-light rounded-xl p-6 hover:shadow-sm relative transition-all duration-200 hover:border-beige-dark hover:bg-beige-xxl"
+                className="block bg-beige-extralight border border-grey-light rounded-xl p-6 hover:shadow-sm relative transition-all duration-200 hover:border-beige-dark hover:bg-beige-xxl cursor-pointer"
+                onClick={() =>
+                  openTherapistModal(
+                    `${therapist.first_name} ${therapist.last_name}`
+                  )
+                }
               >
                 <div className="flex items-center mb-4">
                   <div className="relative w-24 h-24 rounded-full overflow-hidden mr-4 flex-shrink-0">
@@ -188,7 +219,7 @@ export default function TherapistResultsPanel() {
                     Contact
                   </button>
                 </div> */}
-              </Link>
+              </div>
             ))}
           </div>
         ) : (
@@ -200,9 +231,20 @@ export default function TherapistResultsPanel() {
               Try adjusting your filters or describe what you're looking for in
               the chat.
             </p>
+            <div className="text-sm text-left bg-beige-extralight p-4 rounded-lg max-w-md mx-auto">
+              <p className="font-medium mb-2">Current Filter Settings:</p>
+              <p>{getActiveFiltersText()}</p>
+            </div>
           </div>
         )}
       </div>
+
+      {/* Therapist Profile Modal */}
+      <TherapistProfileModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        therapistId={selectedTherapistId}
+      />
     </div>
   );
 }
