@@ -22,7 +22,9 @@ export default function RootLayout({ children }) {
             src="https://js.stripe.com/v3/pricing-table.js"
           ></script>
         </head>
-        <body className={`max-h-screen h-screen flex flex-col ${aspekta.className}`}>
+        <body
+          className={`max-h-screen h-screen flex flex-col ${aspekta.className}`}
+        >
           <main className="h-full flex flex-col">{children}</main>
           <Analytics />
         </body>

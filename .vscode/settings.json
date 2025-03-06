@@ -1,0 +1,10 @@
+{
+    "deno.enable": false,  // make the TS deno errors go away :) 
+    "deno.enablePaths": ["supabase/functions"],
+    "deno.lint": true,
+    "deno.unstable": ["kv", "fs", "net"],
+    "editor.formatOnSave": true,
+    "[typescript]": {
+    "editor.defaultFormatter": "denoland.vscode-deno"
+  }
+}

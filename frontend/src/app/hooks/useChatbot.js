@@ -8,7 +8,7 @@ import {
   setCookiesChatId,
 } from "../utils/chatHelpers";
 
-const useChatbot = (debug = false) => {
+const useChatbot = () => {
   const [chatId, setChatId] = useState(() => {
     const newChatId = generateUniqueID();
     setCookiesChatId(newChatId);
@@ -19,10 +19,6 @@ const useChatbot = (debug = false) => {
 
   useEffect(() => {
     setMessages([]);
-
-    if (debug) {
-      console.log({ chatId });
-    }
   }, []);
 
   // ChatMessages
@@ -322,48 +318,6 @@ const useChatbot = (debug = false) => {
     questions[0],
   ];
 
-  const fetchInitialChatMessages = async () => {
-    try {
-      setLoadingNewMsg(true);
-      setMessages([]);
-      setError("");
-
-      for (let i = 0; i < initialChatMessages.length; i++) {
-        const message = initialChatMessages[i];
-
-        // Add the full message immediately, but with a flag to indicate it's not fully typed
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          { ...message, content: message.content, isTyping: true },
-        ]);
-
-        // Simulate typing delay
-        await new Promise((resolve) =>
-          setTimeout(resolve, message.content.length * 10)
-        );
-
-        // Update the message to indicate typing is complete
-        setMessages((prevMessages) =>
-          prevMessages.map((msg, index) =>
-            index === prevMessages.length - 1
-              ? { ...msg, isTyping: false }
-              : msg
-          )
-        );
-
-        if (i < initialChatMessages.length - 1) {
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-        }
-      }
-
-      setLoadingNewMsg(false);
-    } catch (err) {
-      setLoadingNewMsg(false);
-      console.error(err);
-      setError("Error fetching messages. Please try again.");
-    }
-  };
-
   const handleSubmit = async () => {
     /**
      * Run the chat function
@@ -510,51 +464,6 @@ const useChatbot = (debug = false) => {
     });
   };
 
-  const fetchPreviousMessages = async () => {
-    /** Phase 1: No need to use. */
-    return;
-  };
-  // const fetchPreviousMessages = async () => {
-  //   /**
-  //    * Get old messages based on the current ChatID, then update the `messages` state.
-  //    *
-  //    *  Note: This will not work unless the endpoint is created and running.
-  //    */
-  //   try {
-  //     // Get the messages using the ChatID
-  //     setIsLoadingMessages(true);
-  //     const chatId = getChatID();
-  //     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat/messages/${chatId}`, {
-  //       method: "GET",
-  //     });
-  //     if (!response.ok) {
-  //       throw new Error(`HTTP error! status: ${response.status}`);
-  //     }
-  //     const resJson = await response.json();
-
-  //     if (debug) {
-  //       console.log("useChatbot, fetchPreviousMessages");
-  //       console.log({ response });
-  //       console.log("chat/messages response", { resJson });
-  //       console.log(`Retrieved messages: ${resJson.data}`);
-  //     }
-
-  //     // Update messages array, and turn off loading state.
-  //     setMessages(resJson.data);
-  //     setError("");
-  //     setIsLoadingMessages(false);
-  //   } catch (err) {
-  //     console.error(err);
-  //     setError("Error fetching messages.");
-  //   }
-  // };
-
-  useEffect(() => {
-    /** Helper function to check a ChatID is set. */
-    if (debug) {
-      console.log(`Found messages for ${chatId}`, { messages });
-    }
-  }, [chatId, messages]);
   const handleButtonClick = async (value, content, clickedQuestionIndex) => {
     switch (clickedQuestionIndex) {
       case 0: {
@@ -664,10 +573,8 @@ const useChatbot = (debug = false) => {
     setPromptTemplate,
     temperature,
     setTemperature,
-    fetchPreviousMessages,
     chatId,
     newChat,
-    fetchInitialChatMessages,
     handleButtonClick,
     questionStage,
     preferences,
