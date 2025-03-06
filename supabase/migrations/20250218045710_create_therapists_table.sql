@@ -84,11 +84,11 @@ create table therapists (
   -- Contact & Location (Flat Structure)
   therapist_email text,
   therapist_phone text check (therapist_phone ~ '^\+?[1-9]\d{1,14}$'),
-  clinic_name text not null,
-  clinic_street text not null,
-  clinic_city text not null,
+  clinic_name text not null default '',
+  clinic_street text not null default '',
+  clinic_city text not null default '',
+  clinic_postal_code text not null default '',
   clinic_province text not null,
-  clinic_postal_code text not null,
   clinic_country char(2) not null,  -- ISO 3166-1 alpha-2
   clinic_phone text check (clinic_phone ~ '^\+?[1-9]\d{1,14}$'),
   
