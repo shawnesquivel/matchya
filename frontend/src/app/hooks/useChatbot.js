@@ -9,23 +9,10 @@ import {
 } from "../utils/chatHelpers";
 
 const useChatbot = () => {
-  const [chatId, setChatId] = useState(() => {
-    const newChatId = generateUniqueID();
-    setCookiesChatId(newChatId);
-    return newChatId;
-  });
-
   const [messages, setMessages] = useState([]);
-
-  useEffect(() => {
-    setMessages([]);
-  }, []);
-
-  // ChatMessages
   const [userMessage, setUserMessage] = useState("");
   const [error, setError] = useState(null);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
-  // Chatbot Form
   const [model, setModel] = useState("gpt-4o");
   const [promptTemplate, setPromptTemplate] = useState("girlfriend");
   const [temperature, setTemperature] = useState(0.5);
@@ -34,37 +21,33 @@ const useChatbot = () => {
   const [finishedQuestions, setFinishedQuestions] = useState([]);
   const [initialChatMsg, setInitialChatMsg] = useState(true);
 
-  // New: Structured preferences state with explicit keys (no therapyTypes field)
-  const [preferences, setPreferences] = useState({
-    reason: "", // question
-    frequency: "", // e.g., "one_time"
-    preferred_therapy: "", // e.g., "structured"
-    session_type: "", // e.g., "group"
-    insurance: null, // e.g., true/false
-    insurance_provider: "", // e.g., "sunlife"
-    gender: null, // e.g., "male" or "female"
-    location: "Vancouver, BC", // default location
-    additional_preferences: "", // any extra notes (freeform final user input)
+  useEffect(() => {
+    setMessages([]);
+  }, []);
+
+  const [chatId, setChatId] = useState(() => {
+    const newChatId = generateUniqueID();
+    setCookiesChatId(newChatId);
+    return newChatId;
   });
 
-  // Update a specific preference field.
+  const [preferences, setPreferences] = useState({
+    reason: "",
+    frequency: "",
+    preferred_therapy: "",
+    session_type: "",
+    insurance: null,
+    insurance_provider: "",
+    gender: null,
+    location: "Vancouver, BC",
+    additional_preferences: "",
+  });
+
   const updatePreference = (key, value) => {
     console.log("updatePreference called", { key, value });
     setPreferences((prev) => ({
       ...prev,
       [key]: value,
-    }));
-  };
-
-  // (Optional) A merge function if a field should aggregate multiple values,
-  // but for the keys above, we expect a single value.
-  const mergePreference = (key, valueArray) => {
-    console.warn("mergePreference should not be used for key:", key);
-    setPreferences((prev) => ({
-      ...prev,
-      [key]: Array.isArray(prev[key])
-        ? [...new Set([...prev[key], ...valueArray])]
-        : valueArray,
     }));
   };
 
@@ -510,16 +493,9 @@ const useChatbot = () => {
           clickedQuestionIndex
         );
     }
-
-    // Continue with your existing flow to push a new message,
-    // display the next question, and toggle questionStage if needed.
-    // (Make sure none of this additional logic calls mergePreference("therapyTypes", ...))
-
-    // Example: Append a message to messages and then simulate the AI typing delay.
     try {
       setLoadingNewMsg(true);
       const newQuestionIndex = clickedQuestionIndex + 1;
-      // Add new question message if it exists:
       if (questions[newQuestionIndex]) {
         const nextMsg = questions[newQuestionIndex];
         setMessages((prev) => [
