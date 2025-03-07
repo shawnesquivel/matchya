@@ -19,6 +19,13 @@ const nextConfig = {
       "assets-jane-cac1-22.janeapp.net",
       "assets-jane-cac1-23.janeapp.net",
       "assets-jane-cac1-24.janeapp.net",
+      "randomuser.me",
+    ],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "randomuser.me",
+      },
     ],
   },
   env: {

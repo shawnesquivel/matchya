@@ -7,3 +7,11 @@ __pycache__
 env/
 demos/
 .env
+.env.development
+.env.production
+docs/
+demos/
+frontend/src/app/_disabled/
+tests/
+prds/
+prompts/

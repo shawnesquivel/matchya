@@ -33,7 +33,7 @@ $$;
 
 -- Update therapists table to use correct vector dimensions
 ALTER TABLE therapists 
-  ALTER COLUMN embedding TYPE vector(384); -- GTE-small outputs 384 dimensions
+  ALTER COLUMN embedding TYPE vector(1536); -- OpenAI text-embedding-3-small outputs 1536 dimensions
 
 -- Trigger only for inserts
 create trigger embed_therapist_profiles

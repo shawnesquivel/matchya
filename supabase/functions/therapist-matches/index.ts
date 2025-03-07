@@ -1,10 +1,10 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "@supabase/supabase-js";
-import { codeBlock } from "common-tags";
 import OpenAI from "openai";
 import { zodResponseFormat } from "openai/helpers/zod";
 import { z } from "zod";
 import { generateEmbedding } from "../_lib/embeddings.ts";
+import { createPerformanceTracker } from "../_lib/performance.ts";
 
 const openai = new OpenAI({
   apiKey: Deno.env.get("OPENAI_API_KEY"),
@@ -31,23 +31,50 @@ type DetermineUserMessageIntentContext = {
 type TherapistMatch = {
   id: string;
   first_name: string;
+  middle_name: string | null;
   last_name: string;
-  bio: string;
+  pronouns: string | null;
+  bio: string | null;
   gender: "female" | "male" | "non_binary";
-  ai_summary: string;
+  ai_summary: string | null;
   areas_of_focus: string[];
   approaches: {
     long_term: string[];
     short_term: string[];
   };
   similarity: number;
-  ethnicity: string;
-  sexuality: string;
-  faith: string;
+  ethnicity: string[];
+  sexuality: string[];
+  faith: string[];
   initial_price: string;
   subsequent_price: string;
   availability: string;
   languages: string[];
+  profile_img_url: string | null;
+  video_intro_link: string | null;
+  clinic_profile_url: string | null;
+  clinic_booking_url: string | null;
+  therapist_email: string | null;
+  therapist_phone: string | null;
+  clinic_name: string;
+  clinic_street: string;
+  clinic_city: string;
+  clinic_province: string;
+  clinic_postal_code: string;
+  clinic_country: string;
+  clinic_phone: string | null;
+  education: string[];
+  certifications: string[];
+  licenses: {
+    id: string;
+    license_number: string;
+    state: string;
+    title: string;
+    issuing_body: string | null;
+    expiry_date: string | null;
+    is_verified: boolean;
+  }[];
+  therapist_licenses?: any[];
 };
 
 export const corsHeaders = {
@@ -57,32 +84,32 @@ export const corsHeaders = {
 };
 
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    console.log("CORS preflight request");
-    return new Response("ok", { headers: corsHeaders });
-  }
+  const perf = createPerformanceTracker("therapist-matches");
 
-  if (!supabaseUrl || !supabaseAnonKey) {
-    console.error("Missing environment variables");
-    return new Response(
-      JSON.stringify({
-        error: "Missing environment variables.",
-      }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      }
-    );
-  }
-
-  const authorization = req.headers.get("Authorization");
-
-  // Create a Supabase client - auth header is optional
-  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-    global: authorization ? { headers: { authorization } } : {},
-    auth: { persistSession: false },
-  });
   try {
+    if (req.method === "OPTIONS") {
+      return new Response("ok", { headers: corsHeaders });
+    }
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error("Missing environment variables");
+      return new Response(
+        JSON.stringify({
+          error: "Missing environment variables.",
+        }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    const authorization = req.headers.get("Authorization");
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: authorization ? { headers: { authorization } } : {},
+      auth: { persistSession: false },
+    });
+
     const {
       currentFilters,
       messages = [],
@@ -91,21 +118,16 @@ Deno.serve(async (req) => {
       triggerSource,
     } = await req.json();
 
-    console.log("[therapist-matches] Request received. Source:", triggerSource);
-    console.log("[therapist-matches] Filter only mode:", filterOnly);
-    console.log("[therapist-matches] Current filters:", currentFilters);
-    console.log(
-      "[therapist-matches] Last user message:",
-      lastUserMessage || "none"
-    );
+    console.log("[therapist-matches] Request received from", { triggerSource });
+    console.log("[therapist-matches]", { currentFilters });
 
     // -------------------------
     // HANDLE FILTER-ONLY REQUESTS
     // -------------------------
     if (filterOnly === true) {
-      console.log(
-        "[therapist-matches] Processing explicit filter-only request"
-      );
+      console.log("[therapist-matches] User requested filters only", {
+        filterOnly,
+      });
 
       // Check if we have any active filters
       const hasActiveFilters = Object.values(currentFilters || {}).some(
@@ -135,7 +157,9 @@ Deno.serve(async (req) => {
       let query = supabase.from("therapists").select(`
         id,
         first_name,
+        middle_name,
         last_name,
+        pronouns,
         bio,
         gender,
         ethnicity,
@@ -146,11 +170,23 @@ Deno.serve(async (req) => {
         areas_of_focus,
         approaches,
         ai_summary,
-        ${
-          hasPriceFilter
-            ? "therapist_fees!inner(session_category, session_type, price, currency)"
-            : "therapist_fees(session_category, session_type, price, currency)"
-        }
+        profile_img_url,
+        video_intro_link,
+        clinic_profile_url,
+        clinic_booking_url,
+        therapist_email,
+        therapist_phone,
+        clinic_name,
+        clinic_street,
+        clinic_city,
+        clinic_province,
+        clinic_postal_code,
+        clinic_country,
+        clinic_phone,
+        education,
+        certifications,
+        therapist_fees!inner(session_category, session_type, price, currency),
+        therapist_licenses(*)
       `);
 
       // Apply all filters from the currentFilters object
@@ -187,29 +223,46 @@ Deno.serve(async (req) => {
           .eq("therapist_fees.session_category", "subsequent");
       }
 
-      // Execute the query
+      // Execute the query with performance tracking
+      perf.startEvent("database:filterQuery");
       const { data: therapists, error } = await query.limit(10);
 
       if (error) {
+        perf.endEvent("database:filterQuery", {
+          error: error.message,
+        });
         console.error("[therapist-matches] Database query error:", error);
         throw new Error(`Database query error: ${error.message}`);
       }
 
-      console.log(
-        `[therapist-matches] Found ${therapists.length} therapists by filters`
-      );
+      perf.endEvent("database:filterQuery", {
+        resultCount: therapists.length,
+      });
+
+      if (therapists.length === 0) {
+        console.log("[therapist-matches] No therapists found by filters");
+        return new Response(
+          JSON.stringify({ therapists: [], extractedFilters: currentFilters }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
 
       // Format the therapists to include price information
       const formattedTherapists = therapists.map(
-        ({ therapist_fees, ...t }) => ({
-          ...t,
-          initial_price: therapist_fees?.find(
-            (f) => f.session_category === "initial"
-          )?.price,
-          subsequent_price: therapist_fees?.find(
-            (f) => f.session_category === "subsequent"
-          )?.price,
-        })
+        ({ therapist_fees, therapist_licenses, ...t }: any) => {
+          // Create a complete therapist object with all fields
+          return {
+            ...t,
+            initial_price: therapist_fees?.find(
+              (f) => f.session_category === "initial"
+            )?.price,
+            subsequent_price: therapist_fees?.find(
+              (f) => f.session_category === "subsequent"
+            )?.price,
+            // Transform therapist_licenses to match the expected format in the frontend
+            licenses: therapist_licenses || [],
+          };
+        }
       );
 
       return new Response(
@@ -290,6 +343,7 @@ Deno.serve(async (req) => {
       console.log("params", params);
 
       // DB: Get Therapists - now with embedding parameter
+      perf.startEvent("database:semanticSearch");
       const { data: therapists, error: matchError } = await supabase
         .rpc("match_therapists", {
           query_embedding: embedding,
@@ -298,7 +352,8 @@ Deno.serve(async (req) => {
           sexuality_filter: params.sexuality_filter,
           ethnicity_filter: params.ethnicity_filter,
           faith_filter: params.faith_filter,
-          max_price_initial: params.max_price_initial,
+          max_price_initial:
+            params.max_price_initial > 0 ? params.max_price_initial : null,
           availability_filter: params.availability_filter,
         })
         .limit(10);
@@ -308,6 +363,7 @@ Deno.serve(async (req) => {
       console.log(`Found ${therapists?.length} therapists`);
 
       if (matchError) {
+        perf.endEvent("database:semanticSearch", { error: matchError.message });
         console.error("Error fetching therapists:", matchError);
         return new Response(
           JSON.stringify({
@@ -320,6 +376,16 @@ Deno.serve(async (req) => {
           }
         );
       }
+      perf.endEvent("database:semanticSearch", {
+        resultCount: therapists?.length,
+      });
+
+      console.log("[therapist-matches] First therapist sample data:", {
+        id: therapists?.[0]?.id,
+        name: `${therapists?.[0]?.first_name} ${therapists?.[0]?.last_name}`,
+        profile_img_url: therapists?.[0]?.profile_img_url,
+        video_intro_link: therapists?.[0]?.video_intro_link,
+      });
 
       // Create response with therapists and current filters
       const extractedFilters = {
@@ -336,7 +402,9 @@ Deno.serve(async (req) => {
           therapists?.map((t: TherapistMatch) => ({
             id: t.id,
             first_name: t.first_name,
+            middle_name: t.middle_name,
             last_name: t.last_name,
+            pronouns: t.pronouns,
             ethnicity: t.ethnicity,
             gender: t.gender,
             sexuality: t.sexuality,
@@ -349,6 +417,23 @@ Deno.serve(async (req) => {
             approaches: t.approaches,
             similarity: t.similarity,
             ai_summary: t.ai_summary,
+            bio: t.bio,
+            profile_img_url: t.profile_img_url,
+            video_intro_link: t.video_intro_link,
+            clinic_profile_url: t.clinic_profile_url,
+            clinic_booking_url: t.clinic_booking_url,
+            therapist_email: t.therapist_email,
+            therapist_phone: t.therapist_phone,
+            clinic_name: t.clinic_name,
+            clinic_street: t.clinic_street,
+            clinic_city: t.clinic_city,
+            clinic_province: t.clinic_province,
+            clinic_postal_code: t.clinic_postal_code,
+            clinic_country: t.clinic_country,
+            clinic_phone: t.clinic_phone,
+            education: t.education,
+            certifications: t.certifications,
+            licenses: t.therapist_licenses || [],
           })) || [],
         filters: {
           gender: params.gender_filter || null,
@@ -367,10 +452,23 @@ Deno.serve(async (req) => {
         extractedFilters: extractedFilters,
       };
 
+      if (therapists && therapists.length > 0) {
+        console.log(
+          "[therapist-matches] Response sample - first therapist fields:",
+          Object.keys(therapists[0])
+        );
+        console.log(
+          "[therapist-matches] First therapist profile_img_url:",
+          therapists[0].profile_img_url
+        );
+      }
+
+      perf.complete();
       return new Response(JSON.stringify(response), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     } else {
+      perf.complete();
       // Not a therapist request, return empty response with empty filters
       return new Response(
         JSON.stringify({
@@ -391,6 +489,7 @@ Deno.serve(async (req) => {
     }
   } catch (error) {
     console.error(`[therapist-matches] Error: ${error.message}`);
+    perf.complete();
     return new Response(
       JSON.stringify({
         error: error.message,
@@ -403,11 +502,12 @@ Deno.serve(async (req) => {
     );
   }
 });
-
 const determineUserMessageIntent = async (
   userMessage: string,
   context: DetermineUserMessageIntentContext
 ): Promise<DetermineUserMessageIntentResponse> => {
+  const perf = createPerformanceTracker("intent-detection");
+
   /**
    * Use an LLM to determine if the user is asking a question or requesting a therapist.
    */
@@ -477,14 +577,47 @@ const determineUserMessageIntent = async (
     explanation: z.string(),
   });
 
-  const completion = await openai.beta.chat.completions.parse({
-    model: "gpt-4o-mini",
-    messages: formattedMessage,
-    response_format: zodResponseFormat(ClassifyUserIntent, "answer"),
-  });
+  perf.startEvent("llm:intentAnalysis");
+  try {
+    console.log("[determineUserMessageIntent]: Calling OpenAI API");
+    const completion = await openai.beta.chat.completions.parse({
+      model: "gpt-4o-mini",
+      messages: formattedMessage,
+      response_format: zodResponseFormat(ClassifyUserIntent, "answer"),
+    });
 
-  console.log(completion.choices[0]);
-  return completion.choices[0].message.parsed;
+    console.log("[determineUserMessageIntent]: Received response from OpenAI");
+    console.log(
+      "[determineUserMessageIntent]: Parsed response:",
+      JSON.stringify(completion.choices[0].message.parsed)
+    );
+
+    perf.endEvent("llm:intentAnalysis", {
+      model: "gpt-4o-mini",
+      messageLength: userMessage.length,
+      isFirstMessage: context.isFirstMessage,
+      isTherapistRequest:
+        completion.choices[0].message.parsed.isTherapistRequest,
+    });
+    perf.complete();
+
+    return completion.choices[0].message.parsed;
+  } catch (error) {
+    console.error("[determineUserMessageIntent] Error:", error);
+    console.error(
+      "[determineUserMessageIntent] Error details:",
+      error.response?.data || error.message
+    );
+    perf.endEvent("llm:intentAnalysis", { error: error.message });
+    perf.complete();
+
+    // Provide a fallback response instead of throwing
+    return {
+      isTherapistRequest: true, // Default to true for user messages that look like therapist requests
+      explanation:
+        "Error in analysis, defaulting to therapist request based on message content",
+    };
+  }
 };
 
 const determineMatchTherapistParameters = async (
@@ -499,6 +632,8 @@ const determineMatchTherapistParameters = async (
   },
   triggerSource: "CHAT" | "FORM" = "CHAT"
 ): Promise<z.infer<typeof FilterParams>> => {
+  const perf = createPerformanceTracker("parameter-detection");
+
   // Define enums for better type safety
   const Gender = z.enum(["female", "male", "non_binary"]);
   const Sexuality = z.enum([
@@ -566,10 +701,14 @@ Please extract the following if mentioned:
 - price limit as a maximum hourly rate number
 - availability (online, in_person, both)
 
+IMPORTANT: For price limits, set max_price_initial to NULL when no price preference is mentioned.
+DO NOT set price to 0 as this will exclude all therapists. Only set a numeric price when the user specifically mentions a price limit.
+
 Be attentive to both explicit and implicit preferences. For example:
 - "looking for a female therapist" → gender_filter: "female"
 - "I'd prefer someone who is LGBT friendly" → Consider sexuality filters
 - "Need someone who understands Asian culture" → ethnicity_filter: ["asian"]
+- "I can only afford $100 per hour" → max_price_initial: 100
 
 ${
   currentFilters && triggerSource === "FORM"
@@ -584,8 +723,7 @@ ${Object.entries(currentFilters)
   .join("\n")}
 `
     : currentFilters && triggerSource === "CHAT"
-    ? `
-Current form filters (LOW PRIORITY - only use if chat doesn't specify preferences):
+    ? `Current form filters (LOW PRIORITY - only use if chat doesn't specify preferences):
 ${Object.entries(currentFilters)
   .filter(([_, value]) => value !== null)
   .map(
@@ -612,33 +750,52 @@ Include reasoning for the extracted preferences and explain any ambiguity in the
     },
   ];
 
-  const completion = await openai.beta.chat.completions.parse({
-    model: "gpt-4o-mini",
-    messages: formattedMessages,
-    response_format: zodResponseFormat(FilterParams, "filters"),
-  });
+  perf.startEvent("llm:parameterExtraction");
+  try {
+    const completion = await openai.beta.chat.completions.parse({
+      model: "gpt-4o-mini",
+      messages: formattedMessages,
+      response_format: zodResponseFormat(FilterParams, "filters"),
+    });
 
-  console.log(
-    `[determineMatchTherapistParameters] Completion: ${JSON.stringify(
-      completion.choices[0].message.parsed
-    )}`
-  );
+    const result = completion.choices[0].message.parsed;
 
-  // If FORM trigger, merge the AI results with current filters, prioritizing current filters
-  if (triggerSource === "FORM" && currentFilters) {
-    const aiResult = completion.choices[0].message.parsed;
-    return {
-      ...aiResult,
-      gender_filter: (currentFilters.gender as any) ?? aiResult.gender_filter,
-      sexuality_filter: currentFilters.sexuality ?? aiResult.sexuality_filter,
-      ethnicity_filter: currentFilters.ethnicity ?? aiResult.ethnicity_filter,
-      faith_filter: currentFilters.faith ?? aiResult.faith_filter,
-      max_price_initial:
-        currentFilters.max_price_initial ?? aiResult.max_price_initial,
-      availability_filter:
-        (currentFilters.availability as any) ?? aiResult.availability_filter,
-    };
+    perf.endEvent("llm:parameterExtraction", {
+      model: "gpt-4o-mini",
+      messageLength: userMessage.length,
+      filterCount:
+        Object.values(result).filter(
+          (v) => v !== null && (Array.isArray(v) ? v.length > 0 : true)
+        ).length - 1, // Subtract one to exclude reasoning which isn't a filter
+    });
+    perf.complete();
+
+    console.log(
+      `[determineMatchTherapistParameters] Completion: ${JSON.stringify(
+        result
+      )}`
+    );
+
+    // If FORM trigger, merge the AI results with current filters, prioritizing current filters
+    if (triggerSource === "FORM" && currentFilters) {
+      return {
+        ...result,
+        gender_filter: (currentFilters.gender as any) ?? result.gender_filter,
+        sexuality_filter: currentFilters.sexuality ?? result.sexuality_filter,
+        ethnicity_filter: currentFilters.ethnicity ?? result.ethnicity_filter,
+        faith_filter: currentFilters.faith ?? result.faith_filter,
+        max_price_initial:
+          currentFilters.max_price_initial ?? result.max_price_initial,
+        availability_filter:
+          (currentFilters.availability as any) ?? result.availability_filter,
+      };
+    }
+
+    return result;
+  } catch (error) {
+    console.error("[determineMatchTherapistParameters] Error:", error);
+    perf.endEvent("llm:parameterExtraction", { error: error.message });
+    perf.complete();
+    throw error;
   }
-
-  return completion.choices[0].message.parsed;
 };

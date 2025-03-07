@@ -1,0 +1,404 @@
+// Interfaces for Supabase data structures
+export interface SupabaseTherapistProfile {
+  id: string;
+  name: string;
+  first_name: string;
+  last_name: string;
+  title: string;
+  gender: string;
+  pronouns: string;
+  sexuality: string[];
+  ethnicity: string[];
+  faith: string[];
+  bio: string;
+  ai_summary: string;
+  profile_img_url: string | null;
+  video_intro_link: string | null;
+  clinic_name: string;
+  clinic_city: string;
+  clinic_province: string;
+  clinic_country: string;
+  clinic_profile_url: string | null;
+  clinic_booking_url: string | null;
+  availability: string;
+  languages: string[];
+  education: string[];
+  certifications: string[];
+  areas_of_focus: string[];
+  approaches: {
+    long_term?: string[];
+    short_term?: string[];
+  };
+
+  // Contact details
+  therapist_email?: string;
+  therapist_phone?: string;
+  clinic_phone?: string;
+
+  // Additional location details
+  clinic_street?: string;
+  clinic_postal_code?: string;
+
+  // Verification
+  is_verified?: boolean;
+
+  licenses: Array<{
+    id: string;
+    title: string;
+    license_number: string;
+    state: string;
+    issuing_body: string;
+    is_verified?: boolean;
+    expiry_date?: string;
+    last_verified_date?: string;
+  }>;
+  fees: Array<{
+    id: string;
+    session_category: string;
+    session_type: string;
+    delivery_method: string;
+    duration_minutes: number;
+    price: number;
+    currency: string;
+  }>;
+}
+
+// Interface matching the frontend's expected structure
+export interface TherapistProfile {
+  id: string;
+  name: string;
+  title?: string;
+  bio: string;
+  specialties: string[];
+  education: Array<{
+    degree: string;
+    institution: string;
+    year: number;
+  }>;
+  experience: Array<{
+    position: string;
+    organization: string;
+    startYear: number;
+    endYear?: number;
+  }>;
+  languages: string[];
+  imageUrl?: string;
+  location: {
+    city: string;
+    province: string;
+    country: string;
+  };
+  available_online: boolean;
+  booking_link: string | null;
+  approaches: string[];
+  short_summary: string;
+  qualifications: string[];
+  clinic: string;
+  gender: string;
+  clinic_profile_url?: string | null;
+  bio_link?: string | null;
+  profile_link?: string | null;
+  licenses: Array<{
+    id: string;
+    title: string;
+    license_number: string;
+    state: string;
+    issuing_body?: string;
+    is_verified?: boolean;
+    expiry_date?: string;
+    last_verified_date?: string;
+  }>;
+  fees: Array<{
+    session_type: string;
+    duration_minutes: number;
+    price: number;
+    currency: string;
+    category: string;
+  }>;
+  // Rates structure for backward compatibility with existing frontend
+  rates: {
+    initial: number;
+    ongoing: number;
+    subsequent_60?: number;
+    subsequent_90?: number;
+    couples_initial?: number;
+    couples_subsequent?: number;
+  };
+
+  // Additional fields from Supabase
+  pronouns?: string;
+  sexuality?: string[];
+  ethnicity?: string[];
+  faith?: string[];
+  therapist_email?: string;
+  therapist_phone?: string;
+  clinic_phone?: string;
+  clinic_street?: string;
+  clinic_postal_code?: string;
+  video_intro_link?: string;
+  is_verified?: boolean;
+  ai_summary?: string;
+}
+
+/**
+ * Fetch a therapist profile by name from the Supabase edge function
+ */
+export async function fetchTherapistProfile(
+  nameOrSlug: string
+): Promise<SupabaseTherapistProfile | null> {
+  try {
+    // Convert slug to name if it's in slug format
+    const searchName = nameOrSlug.includes("-")
+      ? nameFromSlug(nameOrSlug)
+      : nameOrSlug;
+
+    console.log("fetchTherapistProfile: searching for name:", searchName);
+    console.log("Original input (nameOrSlug):", nameOrSlug);
+
+    // Construct the URL
+    const apiUrl = `${
+      process.env.NEXT_PUBLIC_SUPABASE_URL
+    }/functions/v1/profile-search?name=${encodeURIComponent(searchName)}`;
+
+    console.log("API URL:", apiUrl);
+
+    // Call the profile-search edge function
+    const response = await fetch(apiUrl, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Error fetching therapist profile:", errorData);
+      return null;
+    }
+
+    const data = await response.json();
+    console.log("Profile search API response:", data);
+
+    if (!data.data) {
+      console.error("No data returned from profile search API");
+      return null;
+    }
+
+    return data.data as SupabaseTherapistProfile;
+  } catch (error) {
+    console.error("Error fetching therapist profile:", error);
+    return null;
+  }
+}
+
+/**
+ * Fetch therapist names for the sitemap
+ */
+export async function fetchTherapistNames(
+  pageSize: number = 100,
+  pageToken?: string
+): Promise<{
+  therapistNames: string[];
+  nextPageToken?: string;
+}> {
+  try {
+    let url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/profile-names-sitemap?pageSize=${pageSize}`;
+    if (pageToken) {
+      url += `&pageToken=${pageToken}`;
+    }
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Error fetching therapist names:", errorData);
+      return { therapistNames: [] };
+    }
+
+    const data = await response.json();
+    return {
+      therapistNames: data.data.therapistNames || [],
+      nextPageToken: data.debug.nextPageToken,
+    };
+  } catch (error) {
+    console.error("Error fetching therapist names:", error);
+    return { therapistNames: [] };
+  }
+}
+
+/**
+ * Generate a URL-friendly slug from a therapist name
+ */
+export function generateProfileSlug(name: string | null | undefined): string {
+  if (!name) return "";
+
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, "") // Remove special characters
+    .replace(/\s+/g, "-") // Replace spaces with hyphens
+    .replace(/-+/g, "-") // Replace multiple hyphens with a single one
+    .trim(); // Remove leading/trailing whitespace
+}
+
+/**
+ * Convert a URL slug back to a name format
+ */
+export function nameFromSlug(slug: string): string {
+  return slug
+    .replace(/-/g, " ") // Replace hyphens with spaces
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" "); // Capitalize each word
+}
+
+/**
+ * Transform the Supabase therapist profile into the format expected by the frontend
+ */
+export function mapSupabaseToTherapistProfile(
+  profile: SupabaseTherapistProfile
+): TherapistProfile {
+  // Get fee information
+  const getIndividualFee = (
+    category: string,
+    minutes: number
+  ): number | null => {
+    const fee = profile.fees?.find(
+      (f) =>
+        f.session_type === "individual" &&
+        f.session_category === category &&
+        f.duration_minutes === minutes
+    );
+    return fee?.price || null;
+  };
+
+  const getCouplesFee = (category: string, minutes: number): number | null => {
+    const fee = profile.fees?.find(
+      (f) =>
+        f.session_type === "couples" &&
+        f.session_category === category &&
+        f.duration_minutes === minutes
+    );
+    return fee?.price || null;
+  };
+
+  // Determine the initial and ongoing rates for backward compatibility
+  const initial = getIndividualFee("initial", 50) || 150;
+  const ongoing = getIndividualFee("subsequent", 50) || initial;
+
+  // Parse education strings into structured objects
+  // Format expected: "Degree | Institution | Year"
+  const parseEducation = (educationStrings: string[]) => {
+    return educationStrings.map((edu) => {
+      const parts = edu.split("|").map((part) => part.trim());
+      return {
+        degree: parts[0] || "Degree",
+        institution: parts.length > 1 ? parts[1] : "Institution",
+        year:
+          parts.length > 2
+            ? parseInt(parts[2], 10) || new Date().getFullYear()
+            : new Date().getFullYear(),
+      };
+    });
+  };
+
+  // Create a basic experience entry from available data
+  const createDefaultExperience = () => {
+    return [
+      {
+        position: profile.title || "Therapist",
+        organization: profile.clinic_name || "Private Practice",
+        startYear: new Date().getFullYear() - 3,
+        endYear: undefined, // Present
+      },
+    ];
+  };
+
+  return {
+    id: profile.id,
+    name: profile.name,
+    title: profile.title,
+    bio: profile.bio || "",
+    specialties: profile.areas_of_focus || [],
+    education: profile.education?.length
+      ? parseEducation(profile.education)
+      : [
+          {
+            degree: "Degree",
+            institution: "Institution",
+            year: new Date().getFullYear(),
+          },
+        ],
+    experience: createDefaultExperience(),
+    languages: profile.languages || [],
+    imageUrl: profile.profile_img_url || undefined,
+    location: {
+      city: profile.clinic_city || "",
+      province: profile.clinic_province || "",
+      country: profile.clinic_country || "",
+    },
+    available_online:
+      profile.availability === "online" || profile.availability === "both",
+    booking_link: profile.clinic_booking_url,
+    approaches: Array.isArray(profile.approaches?.long_term)
+      ? profile.approaches.long_term
+      : [],
+    short_summary: profile.ai_summary || "",
+    qualifications: profile.certifications || [],
+    clinic: profile.clinic_name || "",
+    gender: profile.gender || "",
+    clinic_profile_url: profile.clinic_profile_url,
+    bio_link: profile.clinic_profile_url, // Reuse the clinic profile URL as bio_link
+    profile_link: profile.profile_img_url, // Reuse the profile image URL as profile_link
+    licenses: profile.licenses || [],
+    fees:
+      profile.fees?.map((fee) => ({
+        session_type: fee.session_type,
+        duration_minutes: fee.duration_minutes,
+        price: fee.price,
+        currency: fee.currency,
+        category: fee.session_category,
+      })) || [],
+    // Legacy rates structure for backward compatibility
+    rates: {
+      initial,
+      ongoing,
+      subsequent_60: getIndividualFee("subsequent", 50) || initial,
+      subsequent_90: getIndividualFee("subsequent", 80) || ongoing,
+      couples_initial: getCouplesFee("initial", 80) || null,
+      couples_subsequent: getCouplesFee("subsequent", 80) || null,
+    },
+    pronouns: profile.pronouns,
+    sexuality: profile.sexuality,
+    ethnicity: profile.ethnicity,
+    faith: profile.faith,
+    therapist_email: profile.therapist_email,
+    therapist_phone: profile.therapist_phone,
+    clinic_phone: profile.clinic_phone,
+    clinic_street: profile.clinic_street,
+    clinic_postal_code: profile.clinic_postal_code,
+    video_intro_link: profile.video_intro_link,
+    is_verified: profile.is_verified,
+  };
+}
+
+/**
+ * Fetch and transform a therapist profile to the frontend format
+ */
+export async function getTherapistProfile(
+  nameOrSlug: string
+): Promise<TherapistProfile | null> {
+  const supabaseProfile = await fetchTherapistProfile(nameOrSlug);
+
+  if (!supabaseProfile) {
+    return null;
+  }
+
+  return mapSupabaseToTherapistProfile(supabaseProfile);
+}

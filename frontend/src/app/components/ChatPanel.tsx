@@ -1,13 +1,14 @@
-'use client';
-import React, { useState, useRef, useEffect } from 'react';
-import { useTherapist } from '../contexts/TherapistContext';
-import ChatMessages from './ChatMessages';
-import ArrowIcon from './ArrowIcon';
+"use client";
+import React, { useState, useRef, useEffect } from "react";
+import { useTherapist } from "../contexts/TherapistContext";
+import ChatMessages from "./ChatMessages";
+import ArrowIcon from "./ArrowIcon";
 
 export default function ChatPanel() {
-  const { messages, handleChatSubmission, isSendingChat, error } = useTherapist();
+  const { messages, handleChatSubmission, isSendingChat, error } =
+    useTherapist();
 
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
   const messagesEndRef = useRef(null);
 
@@ -19,12 +20,12 @@ export default function ChatPanel() {
     const message = input;
 
     // Clear the input immediately
-    setInput('');
+    setInput("");
 
     // Reset the textarea height to its minimum
-    const textarea = e.target.querySelector('textarea');
+    const textarea = e.target.querySelector("textarea");
     if (textarea) {
-      textarea.style.height = '40px';
+      textarea.style.height = "40px";
       setIsExpanded(false);
     }
 
@@ -43,7 +44,7 @@ export default function ChatPanel() {
 
   // Scroll to bottom when messages change
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   return (
@@ -54,13 +55,11 @@ export default function ChatPanel() {
       <div className=" bg-white rounded-lg w-full h-full flex flex-col border border-grey-dark">
         <ChatMessages
           messages={messages}
-          botPngFile="matcha"
           isLoadingMessages={false}
           loadingNewMsg={isSendingChat}
           onButtonClick={() => {}}
+          // By setting this to 6, we bypass the questionnaire.
           questionStage={6}
-          maxMsgs={20}
-          onOpenModal={() => {}}
         />
         <div ref={messagesEndRef} />
 
@@ -68,22 +67,19 @@ export default function ChatPanel() {
           <form className="flex items-center  gap-1" onSubmit={handleSubmit}>
             <textarea
               className={`flex-grow p-2 border text-sm min-h-[40px] max-h-[200px] overflow-y-auto resize-none focus:outline-none focus:ring-1 focus:ring-beige-dark ${
-                isExpanded ? 'rounded-md' : 'rounded-full'
+                isExpanded ? "rounded-md" : "rounded-full"
               }`}
               placeholder="Describe your preferences or ask questions"
               value={input}
               onChange={(e) => {
                 handleInputChange(e);
-                // Auto-resize until max height
-                e.target.style.height = 'auto';
+                e.target.style.height = "auto";
                 const newHeight = Math.min(e.target.scrollHeight, 200);
-                e.target.style.height = newHeight + 'px';
-
-                // Update expanded state based on height
+                e.target.style.height = newHeight + "px";
                 setIsExpanded(newHeight > 40);
               }}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
+                if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   handleSubmit(e);
                 }

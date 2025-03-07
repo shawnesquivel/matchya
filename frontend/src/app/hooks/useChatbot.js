@@ -8,28 +8,11 @@ import {
   setCookiesChatId,
 } from "../utils/chatHelpers";
 
-const useChatbot = (debug = false) => {
-  const [chatId, setChatId] = useState(() => {
-    const newChatId = generateUniqueID();
-    setCookiesChatId(newChatId);
-    return newChatId;
-  });
-
+const useChatbot = () => {
   const [messages, setMessages] = useState([]);
-
-  useEffect(() => {
-    setMessages([]);
-
-    if (debug) {
-      console.log({ chatId });
-    }
-  }, []);
-
-  // ChatMessages
   const [userMessage, setUserMessage] = useState("");
   const [error, setError] = useState(null);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
-  // Chatbot Form
   const [model, setModel] = useState("gpt-4o");
   const [promptTemplate, setPromptTemplate] = useState("girlfriend");
   const [temperature, setTemperature] = useState(0.5);
@@ -38,37 +21,33 @@ const useChatbot = (debug = false) => {
   const [finishedQuestions, setFinishedQuestions] = useState([]);
   const [initialChatMsg, setInitialChatMsg] = useState(true);
 
-  // New: Structured preferences state with explicit keys (no therapyTypes field)
-  const [preferences, setPreferences] = useState({
-    reason: "", // question
-    frequency: "", // e.g., "one_time"
-    preferred_therapy: "", // e.g., "structured"
-    session_type: "", // e.g., "group"
-    insurance: null, // e.g., true/false
-    insurance_provider: "", // e.g., "sunlife"
-    gender: null, // e.g., "male" or "female"
-    location: "Vancouver, BC", // default location
-    additional_preferences: "", // any extra notes (freeform final user input)
+  useEffect(() => {
+    setMessages([]);
+  }, []);
+
+  const [chatId, setChatId] = useState(() => {
+    const newChatId = generateUniqueID();
+    setCookiesChatId(newChatId);
+    return newChatId;
   });
 
-  // Update a specific preference field.
+  const [preferences, setPreferences] = useState({
+    reason: "",
+    frequency: "",
+    preferred_therapy: "",
+    session_type: "",
+    insurance: null,
+    insurance_provider: "",
+    gender: null,
+    location: "Vancouver, BC",
+    additional_preferences: "",
+  });
+
   const updatePreference = (key, value) => {
     console.log("updatePreference called", { key, value });
     setPreferences((prev) => ({
       ...prev,
       [key]: value,
-    }));
-  };
-
-  // (Optional) A merge function if a field should aggregate multiple values,
-  // but for the keys above, we expect a single value.
-  const mergePreference = (key, valueArray) => {
-    console.warn("mergePreference should not be used for key:", key);
-    setPreferences((prev) => ({
-      ...prev,
-      [key]: Array.isArray(prev[key])
-        ? [...new Set([...prev[key], ...valueArray])]
-        : valueArray,
     }));
   };
 
@@ -322,48 +301,6 @@ const useChatbot = (debug = false) => {
     questions[0],
   ];
 
-  const fetchInitialChatMessages = async () => {
-    try {
-      setLoadingNewMsg(true);
-      setMessages([]);
-      setError("");
-
-      for (let i = 0; i < initialChatMessages.length; i++) {
-        const message = initialChatMessages[i];
-
-        // Add the full message immediately, but with a flag to indicate it's not fully typed
-        setMessages((prevMessages) => [
-          ...prevMessages,
-          { ...message, content: message.content, isTyping: true },
-        ]);
-
-        // Simulate typing delay
-        await new Promise((resolve) =>
-          setTimeout(resolve, message.content.length * 10)
-        );
-
-        // Update the message to indicate typing is complete
-        setMessages((prevMessages) =>
-          prevMessages.map((msg, index) =>
-            index === prevMessages.length - 1
-              ? { ...msg, isTyping: false }
-              : msg
-          )
-        );
-
-        if (i < initialChatMessages.length - 1) {
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-        }
-      }
-
-      setLoadingNewMsg(false);
-    } catch (err) {
-      setLoadingNewMsg(false);
-      console.error(err);
-      setError("Error fetching messages. Please try again.");
-    }
-  };
-
   const handleSubmit = async () => {
     /**
      * Run the chat function
@@ -510,51 +447,6 @@ const useChatbot = (debug = false) => {
     });
   };
 
-  const fetchPreviousMessages = async () => {
-    /** Phase 1: No need to use. */
-    return;
-  };
-  // const fetchPreviousMessages = async () => {
-  //   /**
-  //    * Get old messages based on the current ChatID, then update the `messages` state.
-  //    *
-  //    *  Note: This will not work unless the endpoint is created and running.
-  //    */
-  //   try {
-  //     // Get the messages using the ChatID
-  //     setIsLoadingMessages(true);
-  //     const chatId = getChatID();
-  //     const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/chat/messages/${chatId}`, {
-  //       method: "GET",
-  //     });
-  //     if (!response.ok) {
-  //       throw new Error(`HTTP error! status: ${response.status}`);
-  //     }
-  //     const resJson = await response.json();
-
-  //     if (debug) {
-  //       console.log("useChatbot, fetchPreviousMessages");
-  //       console.log({ response });
-  //       console.log("chat/messages response", { resJson });
-  //       console.log(`Retrieved messages: ${resJson.data}`);
-  //     }
-
-  //     // Update messages array, and turn off loading state.
-  //     setMessages(resJson.data);
-  //     setError("");
-  //     setIsLoadingMessages(false);
-  //   } catch (err) {
-  //     console.error(err);
-  //     setError("Error fetching messages.");
-  //   }
-  // };
-
-  useEffect(() => {
-    /** Helper function to check a ChatID is set. */
-    if (debug) {
-      console.log(`Found messages for ${chatId}`, { messages });
-    }
-  }, [chatId, messages]);
   const handleButtonClick = async (value, content, clickedQuestionIndex) => {
     switch (clickedQuestionIndex) {
       case 0: {
@@ -601,16 +493,9 @@ const useChatbot = (debug = false) => {
           clickedQuestionIndex
         );
     }
-
-    // Continue with your existing flow to push a new message,
-    // display the next question, and toggle questionStage if needed.
-    // (Make sure none of this additional logic calls mergePreference("therapyTypes", ...))
-
-    // Example: Append a message to messages and then simulate the AI typing delay.
     try {
       setLoadingNewMsg(true);
       const newQuestionIndex = clickedQuestionIndex + 1;
-      // Add new question message if it exists:
       if (questions[newQuestionIndex]) {
         const nextMsg = questions[newQuestionIndex];
         setMessages((prev) => [
@@ -664,10 +549,8 @@ const useChatbot = (debug = false) => {
     setPromptTemplate,
     temperature,
     setTemperature,
-    fetchPreviousMessages,
     chatId,
     newChat,
-    fetchInitialChatMessages,
     handleButtonClick,
     questionStage,
     preferences,

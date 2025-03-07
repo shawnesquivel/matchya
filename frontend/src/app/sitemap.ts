@@ -1,93 +1,46 @@
 import { MetadataRoute } from "next";
-import { generateProfileSlug } from "./utils/pineconeHelpers";
+import {
+  generateProfileSlug,
+  fetchTherapistNames,
+} from "./utils/supabaseHelpers";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL; // localhost or https://www.matchya.app
-const API_URL = process.env.NEXT_PUBLIC_API_URL; // backend api url
 
-if (!BASE_URL || !API_URL) {
-  throw new Error("NEXT_PUBLIC_BASE_URL and NEXT_PUBLIC_API_URL must be set.");
-}
-
-interface TherapistNamesResponse {
-  data: {
-    therapistNames: string[];
-    lastModified: string;
-  };
-  debug: {
-    count: number;
-    timestamp: string;
-    hasMore: boolean;
-    nextPageToken?: string;
-    queryTimeSeconds: number;
-    pageSize: number;
-    currentPage: string;
-  };
+if (!BASE_URL) {
+  throw new Error("NEXT_PUBLIC_BASE_URL must be set.");
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const startTime = Date.now();
   try {
     const allNames: string[] = [];
-    let lastModified: string;
     let pageToken: string | undefined;
     const PAGE_SIZE = 60; // Smaller batch size for testing
     let pageCount = 0;
 
-    console.log("[SITEMAP_NEXT] Starting sitemap generation...");
+    console.log("[SITEMAP_NEXT] Starting sitemap generation with Supabase...");
 
     // Fetch all pages
     do {
       pageCount++;
       const fetchStartTime = Date.now();
 
-      const url = new URL(`${API_URL}/profile/names-sitemap`);
-      if (pageToken) {
-        url.searchParams.set("pageToken", pageToken);
-      }
-      url.searchParams.set("pageSize", PAGE_SIZE.toString());
-
       console.log(`[SITEMAP_NEXT] Fetching page ${pageCount}:
-      - URL: ${url.toString()}
       - Page token: ${pageToken || "None (first page)"}
       - Names collected so far: ${allNames.length}`);
 
-      const response = await fetch(url.toString(), {
-        next: { revalidate: 3600 }, // Cache for 1 hour
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("[SITEMAP_NEXT] API Error:", {
-          status: response.status,
-          statusText: response.statusText,
-          url: url.toString(),
-          pageCount,
-          namesCollected: allNames.length,
-          pageToken,
-          errorText,
-          timeElapsed: `${((Date.now() - startTime) / 1000).toFixed(2)}s`,
-        });
-        return []; // Return empty sitemap on error
-      }
-
-      const {
-        data: { therapistNames, lastModified: newLastModified },
-        debug,
-      } = (await response.json()) as TherapistNamesResponse;
+      const result = await fetchTherapistNames(PAGE_SIZE, pageToken);
+      const therapistNames = result.therapistNames;
+      pageToken = result.nextPageToken;
 
       const fetchTime = Date.now() - fetchStartTime;
 
       console.log(`[SITEMAP_NEXT] Page ${pageCount} results:
       - Names received: ${therapistNames.length}
-      - Query time (backend): ${debug.queryTimeSeconds}s
       - Fetch time (frontend): ${(fetchTime / 1000).toFixed(2)}s
-      - Sample names: ${JSON.stringify(therapistNames.slice(0, 3))}...
-      - Debug info: ${JSON.stringify(debug, null, 2)}`);
+      - Sample names: ${JSON.stringify(therapistNames.slice(0, 3))}...`);
 
-      // Keep the most recent lastModified
-      lastModified = newLastModified;
       allNames.push(...therapistNames);
-      pageToken = debug.nextPageToken;
     } while (pageToken);
 
     const totalTime = (Date.now() - startTime) / 1000;
@@ -97,7 +50,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       - Total time: ${totalTime.toFixed(2)}s
       - Avg time per page: ${(totalTime / pageCount).toFixed(2)}s`);
 
-    const lastModifiedDate = new Date(parseInt(lastModified!) * 1000);
+    const lastModifiedDate = new Date();
 
     // Static routes - these rarely change
     const routes = [

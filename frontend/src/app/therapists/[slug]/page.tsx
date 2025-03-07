@@ -1,25 +1,23 @@
-import { Metadata } from 'next';
-import { notFound } from 'next/navigation';
-import Image from 'next/image';
-import Script from 'next/script';
-import type { TherapistProfile } from '../../utils/pineconeHelpers';
+import { Metadata } from "next";
+import { notFound } from "next/navigation";
+import Image from "next/image";
+import Script from "next/script";
+import type { TherapistProfile } from "../../utils/supabaseHelpers";
 import {
-  fetchPineconeProfile,
-  mapPineconeToTherapistProfile,
+  getTherapistProfile,
   nameFromSlug,
   generateProfileSlug,
-} from '../../utils/pineconeHelpers';
-import { Suspense } from 'react';
-import Loading from './loading';
-import { getSafeImageUrl } from '@/app/utils/imageHelpers';
-import { useState } from 'react';
-import CollapsibleSpecialties from '@/app/components/CollapsibleSpecialties';
-import CollapsibleApproaches from '@/app/components/CollapsibleApproaches';
-import { Checkmark, XMark, Warning } from '@/components/Icons';
-import TelehealthStatus from '@/components/TelehealthStatus';
+  fetchTherapistNames,
+} from "../../utils/supabaseHelpers";
+import { Suspense } from "react";
+import Loading from "./loading";
+import { getSafeImageUrl } from "@/app/utils/imageHelpers";
+import CollapsibleSpecialties from "@/app/components/CollapsibleSpecialties";
+import CollapsibleApproaches from "@/app/components/CollapsibleApproaches";
+// import { Checkmark, XMark, Warning } from "@/components/Icons";
+import TelehealthStatus from "@/components/TelehealthStatus";
 
 async function getTherapist(slug: string): Promise<TherapistProfile | null> {
-  //  NEVER TOUCH THIS
   try {
     // Decode any URL-encoded or Unicode characters in the slug
     const decodedSlug = decodeURIComponent(slug);
@@ -27,13 +25,11 @@ async function getTherapist(slug: string): Promise<TherapistProfile | null> {
     // Convert slug back to name format with decoded characters
     const nameFromSlugFormat = nameFromSlug(decodedSlug);
 
-    // Try exact match first
-    const exactMatchProfile = await fetchPineconeProfile(nameFromSlugFormat);
-    if (exactMatchProfile) {
-      // console.log(
-      //   `[getTherapist] ✅ Found profile by exact name match: ${exactMatchProfile.name}`
-      // );
-      return mapPineconeToTherapistProfile(exactMatchProfile);
+    // Get therapist profile using our new Supabase helper
+    const therapistProfile = await getTherapistProfile(nameFromSlugFormat);
+
+    if (therapistProfile) {
+      return therapistProfile;
     } else {
       console.log(
         `[getTherapist] ❌ No profile found for slug: ${slug}, decodedSlug: ${decodedSlug}, nameFromSlugFormat: ${nameFromSlugFormat}`
@@ -46,84 +42,35 @@ async function getTherapist(slug: string): Promise<TherapistProfile | null> {
   }
 }
 
-// Generate static paths - this will be replaced with actual data fetching
+// Generate static paths
 export async function generateStaticParams() {
-  //  NEVER TOUCH THIS
-  console.log('[generateStaticParams] Generating static params');
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-  if (!apiUrl) {
-    console.error('[generateStaticParams] NEXT_PUBLIC_API_URL not set');
-    return [];
-  }
+  console.log("[generateStaticParams] Generating static params");
 
   try {
     const allNames: string[] = [];
     let pageToken: string | undefined;
-    const PAGE_SIZE = 60;
+    const PAGE_SIZE = 60; // Smaller batch size for testing
+    let pageCount = 0;
 
     // Fetch all pages
     do {
-      const url = new URL(`${apiUrl}/profile/names-sitemap`);
-      url.searchParams.set('pageSize', PAGE_SIZE.toString());
-      if (pageToken) {
-        url.searchParams.set('pageToken', pageToken);
-      }
+      pageCount++;
+      console.log(`[generateStaticParams] Fetching page ${pageCount}`);
 
-      console.log(`[generateStaticParams] Fetching names from: ${url.toString()}`);
-      const res = await fetch(url.toString());
-
-      if (!res.ok) {
-        console.error(`[generateStaticParams] API error: ${res.status} ${res.statusText}`);
-        return [];
-      }
-
-      const data = await res.json();
-      const names = data?.data?.therapistNames || [];
-      const debug = data?.debug;
-
-      allNames.push(...names);
-      pageToken = debug?.nextPageToken;
-
-      console.log(
-        `[generateStaticParams] Fetched ${names.length} names (total: ${allNames.length})`
-      );
+      const result = await fetchTherapistNames(PAGE_SIZE, pageToken);
+      allNames.push(...result.therapistNames);
+      pageToken = result.nextPageToken;
     } while (pageToken);
 
-    // Filter out any null/undefined/invalid names
-    const validNames = allNames.filter(
-      (name: any): name is string => typeof name === 'string' && name.trim().length > 0
-    );
-
-    if (validNames.length === 0) {
-      console.error('[THERAPIST_PAGE] No valid names found in response:', {
-        totalNames: allNames.length,
-        sampleNames: allNames.slice(0, 5),
-      });
-      return [];
-    }
-
     console.log(
-      `[THERAPIST_PAGE] Found ${
-        validNames.length
-      } valid therapist names out of ${allNames.length} total.
-Sample names: ${validNames.slice(0, 3).join(', ')}...`
+      `[generateStaticParams] Fetched ${allNames.length} therapist names`
     );
 
-    // Generate slugs for each therapist
-    const params = validNames.map((name) => {
-      const slug = generateProfileSlug(name.trim());
-      if (slug === 'unknown-therapist') {
-        console.warn(`[THERAPIST_PAGE] Generated fallback slug for name: "${name}"`);
-      }
-      return { slug };
-    });
-
-    return params;
+    return allNames.map((name) => ({
+      slug: generateProfileSlug(name),
+    }));
   } catch (error) {
-    console.error('[THERAPIST_PAGE] Error generating static params:', {
-      error,
-      stack: error instanceof Error ? error.stack : undefined,
-    });
+    console.error("[generateStaticParams] Error:", error);
     return [];
   }
 }
@@ -132,40 +79,42 @@ Sample names: ${validNames.slice(0, 3).join(', ')}...`
 function generateJsonLd(therapist: TherapistProfile) {
   //  NEVER TOUCH THIS
   return {
-    '@context': 'https://schema.org',
-    '@type': 'Person',
+    "@context": "https://schema.org",
+    "@type": "Person",
     name: therapist.name,
     description: therapist.bio,
     jobTitle: therapist.title,
     knowsLanguage: therapist.languages,
     address: {
-      '@type': 'PostalAddress',
+      "@type": "PostalAddress",
       addressLocality: therapist.location.city,
       addressRegion: therapist.location.province,
       addressCountry: therapist.location.country,
     },
     hasCredential: therapist.education.map((edu) => ({
-      '@type': 'EducationalOccupationalCredential',
+      "@type": "EducationalOccupationalCredential",
       credentialCategory: edu.degree,
-      educationalLevel: 'PostBaccalaureate',
+      educationalLevel: "PostBaccalaureate",
       recognizedBy: {
-        '@type': 'Organization',
+        "@type": "Organization",
         name: edu.institution,
       },
       dateCreated: edu.year.toString(),
     })),
     workExperience: therapist.experience.map((exp) => ({
-      '@type': 'OccupationalExperience',
+      "@type": "OccupationalExperience",
       title: exp.position,
       employedIn: {
-        '@type': 'Organization',
+        "@type": "Organization",
         name: exp.organization,
       },
       startDate: exp.startYear.toString(),
-      endDate: exp.endYear?.toString() || 'Present',
+      endDate: exp.endYear?.toString() || "Present",
     })),
     priceRange: `$${therapist.rates.initial}-${therapist.rates.ongoing}`,
-    image: therapist.imageUrl ? `https://matchya.ai${therapist.imageUrl}` : undefined,
+    image: therapist.imageUrl
+      ? `https://matchya.ai${therapist.imageUrl}`
+      : undefined,
   };
 }
 
@@ -180,15 +129,19 @@ export async function generateMetadata({
 
   if (!therapist) {
     return {
-      title: 'Therapist Not Found | Matchya',
-      description: 'The requested therapist profile could not be found.',
+      title: "Therapist Not Found | Matchya",
+      description: "The requested therapist profile could not be found.",
     };
   }
 
-  const title = `${therapist.name} - ${therapist.title || 'Therapist'} | Matchya`;
+  const title = `${therapist.name} - ${
+    therapist.title || "Therapist"
+  } | Matchya`;
   const description = `${therapist.name} is a ${therapist.title} in ${
     therapist.location.city
-  }, specializing in ${therapist.specialties.join(', ')}. Book your session today.`;
+  }, specializing in ${therapist.specialties.join(
+    ", "
+  )}. Book your session today.`;
 
   return {
     title,
@@ -196,7 +149,7 @@ export async function generateMetadata({
     openGraph: {
       title,
       description,
-      type: 'profile',
+      type: "profile",
       images: therapist.imageUrl
         ? [
             {
@@ -207,10 +160,10 @@ export async function generateMetadata({
             },
           ]
         : undefined,
-      locale: 'en_US',
+      locale: "en_US",
     },
     twitter: {
-      card: 'summary_large_image',
+      card: "summary_large_image",
       title,
       description,
       images: therapist.imageUrl ? [therapist.imageUrl] : undefined,
@@ -263,7 +216,7 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => (
           </div>
           <div className="flex flex-col gap-2 md:col-span-3 col-span-6">
             <h1 className="font-tuppence font-light text-3xl lg:text-4xl font-bold md:mb-2 md:pb-12">
-              {therapist.name || 'Name Not Available'}
+              {therapist.name || "Name Not Available"}
             </h1>
           </div>
           <div className="md:col-span-2 col-span-6 flex gap-2 mb-6 sm:mb-0 md:justify-end justify-start sm:flex-col-reverse sm:flex-col lg:flex-row">
@@ -294,8 +247,12 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => (
         <div className="container mx-auto gap-8 grid md:grid-cols-3 sm:grid-cols-1 md:py-14 sm:py-8">
           <div className="md:col-span-2 sm:col-span-2 gap-8">
             <div className="flex flex-col gap-2">
-              <h2 className="font-medium mb-2">About {therapist.name || 'Name Not Available'}</h2>
-              <p className="text-gray-700 text-base">{therapist.bio || 'No bio available'}</p>
+              <h2 className="font-medium mb-2">
+                About {therapist.name || "Name Not Available"}
+              </h2>
+              <p className="text-gray-700 text-base">
+                {therapist.bio || "No bio available"}
+              </p>
             </div>
           </div>
           <div className="md:col-span-1 sm:col-span-2">
@@ -305,20 +262,24 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => (
                   <h2 className="font-medium mb-2 text-2xl">Location</h2>
                   <div className="mb-8">
                     <h3 className="text-sm mb-2">In-Person Appointments</h3>
-                    {therapist.clinic || 'Not Specified'}
+                    {therapist.clinic || "Not Specified"}
                     <div className="space-y-1"></div>
                   </div>
                   <div className="">
                     <h3 className="text-sm mb-2">Telehealth</h3>
                     <div className="mb-4">
-                      <TelehealthStatus isAvailable={therapist.available_online} />
+                      <TelehealthStatus
+                        isAvailable={therapist.available_online}
+                      />
                     </div>
                   </div>
                 </div>
                 <hr />
                 <div className="flex flex-col gap-3">
                   <div className="flex justify-between items-center mb-4">
-                    <h2 className="font-medium text-2xl">Billing & Insurance</h2>
+                    <h2 className="font-medium text-2xl">
+                      Billing & Insurance
+                    </h2>
                     <a
                       href={therapist.booking_link}
                       target="_blank"
@@ -345,12 +306,17 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => (
                     <div className="">
                       {/* Individual Counselling */}
                       <div className="mb-8">
-                        <h3 className="text-lg mb-4">For Individual Counselling</h3>
+                        <h3 className="text-lg mb-4">
+                          For Individual Counselling
+                        </h3>
                         <div className="space-y-4">
                           <div className="flex justify-between items-center">
                             <span>Initial Visit</span>
-                            {therapist.rates?.initial && therapist.rates.initial > 0 ? (
-                              <span className="text-xl">${therapist.rates.initial}</span>
+                            {therapist.rates?.initial &&
+                            therapist.rates.initial > 0 ? (
+                              <span className="text-xl">
+                                ${therapist.rates.initial}
+                              </span>
                             ) : (
                               <span className="text-sm text-grey-extraDark">
                                 Info not available
@@ -362,8 +328,11 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => (
                               <span>Subsequent Visit </span>
                               <span className="text-gray-500">(60 min)</span>
                             </div>
-                            {therapist.rates?.subsequent_60 && therapist.rates.subsequent_60 > 0 ? (
-                              <span className="text-xl">${therapist.rates.subsequent_60}</span>
+                            {therapist.rates?.subsequent_60 &&
+                            therapist.rates.subsequent_60 > 0 ? (
+                              <span className="text-xl">
+                                ${therapist.rates.subsequent_60}
+                              </span>
                             ) : (
                               <span className="text-sm text-grey-extraDark">
                                 Info not available
@@ -375,8 +344,11 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => (
                               <span>Subsequent Visit </span>
                               <span className="text-gray-500">(90 min)</span>
                             </div>
-                            {therapist.rates?.subsequent_90 && therapist.rates.subsequent_90 > 0 ? (
-                              <span className="text-xl">${therapist.rates.subsequent_90}</span>
+                            {therapist.rates?.subsequent_90 &&
+                            therapist.rates.subsequent_90 > 0 ? (
+                              <span className="text-xl">
+                                ${therapist.rates.subsequent_90}
+                              </span>
                             ) : (
                               <span className="text-sm text-grey-extraDark">
                                 Info not available
@@ -388,13 +360,17 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => (
 
                       {/* Couple's Counselling */}
                       <div className="mb-8">
-                        <h3 className="text-lg mb-4">For Couple's Counselling</h3>
+                        <h3 className="text-lg mb-4">
+                          For Couple's Counselling
+                        </h3>
                         <div className="space-y-4">
                           <div className="flex justify-between items-center">
                             <span>Initial Visit</span>
                             {therapist.rates?.couples_initial &&
                             therapist.rates.couples_initial > 0 ? (
-                              <span className="text-xl">${therapist.rates.couples_initial}</span>
+                              <span className="text-xl">
+                                ${therapist.rates.couples_initial}
+                              </span>
                             ) : (
                               <span className="text-sm text-grey-extraDark">
                                 Info not available
@@ -405,7 +381,9 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => (
                             <span>Subsequent Visit</span>
                             {therapist.rates?.couples_subsequent &&
                             therapist.rates.couples_subsequent > 0 ? (
-                              <span className="text-xl">${therapist.rates.couples_subsequent}</span>
+                              <span className="text-xl">
+                                ${therapist.rates.couples_subsequent}
+                              </span>
                             ) : (
                               <span className="text-sm text-grey-extraDark">
                                 Info not available
@@ -420,7 +398,9 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => (
                         <h3 className="text-lg mb-2">Sliding Scale</h3>
                         <div className="flex items-center">
                           {/* <div className="w-4 h-4 rounded-full bg-matchya-yellow" /> */}
-                          <span className="text-sm text-grey-extraDark">Info Not Available</span>
+                          <span className="text-sm text-grey-extraDark">
+                            Info Not Available
+                          </span>
                         </div>
                       </div>
 
@@ -429,7 +409,9 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => (
                         <h3 className="text-lg mb-2">Billing</h3>
                         <div className="flex items-center">
                           {/* <div className="w-4 h-4 rounded-full bg-matchya-yellow " /> */}
-                          <span className="text-sm text-grey-extraDark">Info Not Available</span>
+                          <span className="text-sm text-grey-extraDark">
+                            Info Not Available
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -453,20 +435,99 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => (
                 <hr />
                 <div className="space-y-8">
                   <div className="flex flex-col gap-3">
-                    <h2 className="font-medium mb-2 text-2xl">Areas of Practice</h2>
-                    <CollapsibleSpecialties specialties={therapist.specialties || []} />
+                    <h2 className="font-medium mb-2 text-2xl">
+                      Areas of Practice
+                    </h2>
+                    <CollapsibleSpecialties
+                      specialties={therapist.specialties || []}
+                    />
                   </div>
                   <hr />
                   <div className="flex flex-col gap-3">
-                    <h2 className="font-medium mb-2 text-2xl">Therapeutic Approaches</h2>
-                    <CollapsibleApproaches approaches={therapist.approaches || []} />
+                    <h2 className="font-medium mb-2 text-2xl">
+                      Therapeutic Approaches
+                    </h2>
+                    <CollapsibleApproaches
+                      approaches={therapist.approaches || []}
+                    />
                   </div>
                 </div>
                 <hr />
                 <div className="flex flex-col gap-3">
                   <h2 className="font-medium mb-2 text-2xl">License</h2>
-                  <p className="text-gray-700"></p>
+                  {therapist.licenses && therapist.licenses.length > 0 ? (
+                    <div className="space-y-4">
+                      {therapist.licenses.map((license, index) => (
+                        <div key={index} className="space-y-1">
+                          <h3 className="font-medium">{license.title}</h3>
+                          <p className="text-gray-600">
+                            License Number: {license.license_number}
+                          </p>
+                          <p className="text-gray-600">
+                            State/Province: {license.state}
+                          </p>
+                          {license.issuing_body && (
+                            <p className="text-gray-600">
+                              Issuing Body: {license.issuing_body}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : therapist.experience.some(
+                      (exp) =>
+                        exp.position.toLowerCase().includes("license") ||
+                        exp.organization.toLowerCase().includes("license")
+                    ) ? (
+                    <div className="space-y-4">
+                      {therapist.experience
+                        .filter(
+                          (exp) =>
+                            exp.position.toLowerCase().includes("license") ||
+                            exp.organization.toLowerCase().includes("license")
+                        )
+                        .map((license, index) => (
+                          <div key={index} className="space-y-1">
+                            <h3 className="font-medium">{license.position}</h3>
+                            <p className="text-gray-600">
+                              {license.organization}
+                            </p>
+                            <p className="text-gray-500 text-sm">
+                              {license.startYear}
+                              {license.endYear
+                                ? ` - ${license.endYear}`
+                                : " - Present"}
+                            </p>
+                          </div>
+                        ))}
+                    </div>
+                  ) : therapist.qualifications &&
+                    therapist.qualifications.length > 0 ? (
+                    <div className="space-y-1">
+                      <ul className="list-disc list-inside">
+                        {therapist.qualifications.map((qual, index) => (
+                          <li key={index} className="text-gray-700 mb-1">
+                            {qual}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <span className="text-sm text-grey-extraDark">
+                        License information not available
+                      </span>
+                    </div>
+                  )}
                 </div>
+
+                {/* TODO: Replace with this code to use the reusable component */}
+                {/* 
+                <TherapistLicenses 
+                  therapist={therapist} 
+                  variant="page" 
+                /> 
+                */}
               </div>
             </div>
           </div>
@@ -476,7 +537,11 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => (
   </>
 );
 
-export default async function TherapistProfile({ params }: { params: { slug: string } }) {
+export default async function TherapistProfile({
+  params,
+}: {
+  params: { slug: string };
+}) {
   const therapist = await getTherapist(params.slug);
 
   if (!therapist) {
@@ -488,6 +553,166 @@ export default async function TherapistProfile({ params }: { params: { slug: str
       <Suspense fallback={<Loading />}>
         <TherapistContent therapist={therapist} />
       </Suspense>
+
+      {/* Testing Section for Designer Reference */}
+      <div className="container mx-auto mt-16 mb-16 px-4">
+        <div className="border-2 border-dashed border-red-400 p-6 rounded-lg">
+          <h2 className="text-2xl font-bold mb-6 text-red-500">
+            Testing - Additional Available Data
+          </h2>
+          <p className="text-sm text-gray-500 mb-4">
+            This section displays all available data from the database that
+            isn't currently shown in the UI. For designer reference only.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* Identity Information */}
+            <div className="border border-gray-200 rounded-lg p-4">
+              <h3 className="text-lg font-medium mb-3">Identity Information</h3>
+              <div className="space-y-2">
+                <div>
+                  <span className="font-medium">Pronouns:</span>{" "}
+                  {therapist.pronouns || "Not specified"}
+                </div>
+                <div>
+                  <span className="font-medium">Sexuality:</span>{" "}
+                  {therapist.sexuality && therapist.sexuality.length > 0
+                    ? therapist.sexuality.join(", ")
+                    : "Not specified"}
+                </div>
+                <div>
+                  <span className="font-medium">Ethnicity:</span>{" "}
+                  {therapist.ethnicity && therapist.ethnicity.length > 0
+                    ? therapist.ethnicity.join(", ")
+                    : "Not specified"}
+                </div>
+                <div>
+                  <span className="font-medium">Faith:</span>{" "}
+                  {therapist.faith && therapist.faith.length > 0
+                    ? therapist.faith.join(", ")
+                    : "Not specified"}
+                </div>
+              </div>
+            </div>
+
+            {/* Contact Information */}
+            <div className="border border-gray-200 rounded-lg p-4">
+              <h3 className="text-lg font-medium mb-3">Contact Information</h3>
+              <div className="space-y-2">
+                <div>
+                  <span className="font-medium">Therapist Email:</span>{" "}
+                  {therapist.therapist_email || "Not specified"}
+                </div>
+                <div>
+                  <span className="font-medium">Therapist Phone:</span>{" "}
+                  {therapist.therapist_phone || "Not specified"}
+                </div>
+                <div>
+                  <span className="font-medium">Clinic Phone:</span>{" "}
+                  {therapist.clinic_phone || "Not specified"}
+                </div>
+              </div>
+            </div>
+
+            {/* Full Address */}
+            <div className="border border-gray-200 rounded-lg p-4">
+              <h3 className="text-lg font-medium mb-3">Complete Address</h3>
+              <div className="space-y-2">
+                <div>
+                  <span className="font-medium">Street:</span>{" "}
+                  {therapist.clinic_street || "Not specified"}
+                </div>
+                <div>
+                  <span className="font-medium">City:</span>{" "}
+                  {therapist.location?.city || "Not specified"}
+                </div>
+                <div>
+                  <span className="font-medium">Province/State:</span>{" "}
+                  {therapist.location?.province || "Not specified"}
+                </div>
+                <div>
+                  <span className="font-medium">Postal/Zip Code:</span>{" "}
+                  {therapist.clinic_postal_code || "Not specified"}
+                </div>
+                <div>
+                  <span className="font-medium">Country:</span>{" "}
+                  {therapist.location?.country || "Not specified"}
+                </div>
+              </div>
+            </div>
+
+            {/* Media */}
+            <div className="border border-gray-200 rounded-lg p-4">
+              <h3 className="text-lg font-medium mb-3">Media</h3>
+              <div className="space-y-2">
+                <div>
+                  <span className="font-medium">Video Intro:</span>{" "}
+                  {therapist.video_intro_link ? (
+                    <a
+                      href={therapist.video_intro_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-500 underline"
+                    >
+                      View Video
+                    </a>
+                  ) : (
+                    "Not available"
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Verification Status */}
+            <div className="border border-gray-200 rounded-lg p-4">
+              <h3 className="text-lg font-medium mb-3">Verification Status</h3>
+              <div className="space-y-2">
+                <div>
+                  <span className="font-medium">Profile Verified:</span>{" "}
+                  {therapist.is_verified ? "✓ Verified" : "✗ Not Verified"}
+                </div>
+
+                {therapist.licenses && therapist.licenses.length > 0 && (
+                  <div className="mt-3">
+                    <h4 className="font-medium">License Verification:</h4>
+                    {therapist.licenses.map((license, index) => (
+                      <div
+                        key={index}
+                        className="ml-4 mt-2 p-2 bg-gray-50 rounded"
+                      >
+                        <div>
+                          <span className="font-medium">{license.title}:</span>{" "}
+                          {license.is_verified
+                            ? "✓ Verified"
+                            : "✗ Not Verified"}
+                        </div>
+                        {license.expiry_date && (
+                          <div>
+                            <span className="font-medium">Expires:</span>{" "}
+                            {license.expiry_date}
+                          </div>
+                        )}
+                        {license.last_verified_date && (
+                          <div>
+                            <span className="font-medium">Last Verified:</span>{" "}
+                            {license.last_verified_date}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* AI Summary */}
+            <div className="border border-gray-200 rounded-lg p-4">
+              <h3 className="text-lg font-medium mb-3">AI-Generated Summary</h3>
+              <div>{therapist.ai_summary || "No AI summary available"}</div>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
   );
 }
