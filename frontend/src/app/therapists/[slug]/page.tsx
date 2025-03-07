@@ -16,11 +16,18 @@ import CollapsibleSpecialties from "@/app/components/CollapsibleSpecialties";
 import CollapsibleApproaches from "@/app/components/CollapsibleApproaches";
 // import { Checkmark, XMark, Warning } from "@/components/Icons";
 import TelehealthStatus from "@/components/TelehealthStatus";
+import { mockTherapistProfile, shouldUseMockDataForSlug } from "../../utils/mockTherapistData";
 
 async function getTherapist(slug: string): Promise<TherapistProfile | null> {
   try {
     // Decode any URL-encoded or Unicode characters in the slug
     const decodedSlug = decodeURIComponent(slug);
+
+    // Check if this is our test user
+    if (shouldUseMockDataForSlug(decodedSlug)) {
+      console.log(`[getTherapist] Using mock data for slug: ${slug}`);
+      return mockTherapistProfile;
+    }
 
     // Convert slug back to name format with decoded characters
     const nameFromSlugFormat = nameFromSlug(decodedSlug);
@@ -62,9 +69,7 @@ export async function generateStaticParams() {
       pageToken = result.nextPageToken;
     } while (pageToken);
 
-    console.log(
-      `[generateStaticParams] Fetched ${allNames.length} therapist names`
-    );
+    console.log(`[generateStaticParams] Fetched ${allNames.length} therapist names`);
 
     return allNames.map((name) => ({
       slug: generateProfileSlug(name),
@@ -112,9 +117,7 @@ function generateJsonLd(therapist: TherapistProfile) {
       endDate: exp.endYear?.toString() || "Present",
     })),
     priceRange: `$${therapist.rates.initial}-${therapist.rates.ongoing}`,
-    image: therapist.imageUrl
-      ? `https://matchya.ai${therapist.imageUrl}`
-      : undefined,
+    image: therapist.imageUrl ? `https://matchya.app${therapist.imageUrl}` : undefined,
   };
 }
 
@@ -134,14 +137,10 @@ export async function generateMetadata({
     };
   }
 
-  const title = `${therapist.name} - ${
-    therapist.title || "Therapist"
-  } | Matchya`;
+  const title = `${therapist.name} - ${therapist.title || "Therapist"} | Matchya`;
   const description = `${therapist.name} is a ${therapist.title} in ${
     therapist.location.city
-  }, specializing in ${therapist.specialties.join(
-    ", "
-  )}. Book your session today.`;
+  }, specializing in ${therapist.specialties.join(", ")}. Book your session today.`;
 
   return {
     title,
@@ -247,12 +246,8 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => (
         <div className="container mx-auto gap-8 grid md:grid-cols-3 sm:grid-cols-1 md:py-14 sm:py-8">
           <div className="md:col-span-2 sm:col-span-2 gap-8">
             <div className="flex flex-col gap-2">
-              <h2 className="font-medium mb-2">
-                About {therapist.name || "Name Not Available"}
-              </h2>
-              <p className="text-gray-700 text-base">
-                {therapist.bio || "No bio available"}
-              </p>
+              <h2 className="font-medium mb-2">About {therapist.name || "Name Not Available"}</h2>
+              <p className="text-gray-700 text-base">{therapist.bio || "No bio available"}</p>
             </div>
           </div>
           <div className="md:col-span-1 sm:col-span-2">
@@ -268,18 +263,14 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => (
                   <div className="">
                     <h3 className="text-sm mb-2">Telehealth</h3>
                     <div className="mb-4">
-                      <TelehealthStatus
-                        isAvailable={therapist.available_online}
-                      />
+                      <TelehealthStatus isAvailable={therapist.available_online} />
                     </div>
                   </div>
                 </div>
                 <hr />
                 <div className="flex flex-col gap-3">
                   <div className="flex justify-between items-center mb-4">
-                    <h2 className="font-medium text-2xl">
-                      Billing & Insurance
-                    </h2>
+                    <h2 className="font-medium text-2xl">Billing & Insurance</h2>
                     <a
                       href={therapist.booking_link}
                       target="_blank"
@@ -306,17 +297,12 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => (
                     <div className="">
                       {/* Individual Counselling */}
                       <div className="mb-8">
-                        <h3 className="text-lg mb-4">
-                          For Individual Counselling
-                        </h3>
+                        <h3 className="text-lg mb-4">For Individual Counselling</h3>
                         <div className="space-y-4">
                           <div className="flex justify-between items-center">
                             <span>Initial Visit</span>
-                            {therapist.rates?.initial &&
-                            therapist.rates.initial > 0 ? (
-                              <span className="text-xl">
-                                ${therapist.rates.initial}
-                              </span>
+                            {therapist.rates?.initial && therapist.rates.initial > 0 ? (
+                              <span className="text-xl">${therapist.rates.initial}</span>
                             ) : (
                               <span className="text-sm text-grey-extraDark">
                                 Info not available
@@ -328,11 +314,8 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => (
                               <span>Subsequent Visit </span>
                               <span className="text-gray-500">(60 min)</span>
                             </div>
-                            {therapist.rates?.subsequent_60 &&
-                            therapist.rates.subsequent_60 > 0 ? (
-                              <span className="text-xl">
-                                ${therapist.rates.subsequent_60}
-                              </span>
+                            {therapist.rates?.subsequent_60 && therapist.rates.subsequent_60 > 0 ? (
+                              <span className="text-xl">${therapist.rates.subsequent_60}</span>
                             ) : (
                               <span className="text-sm text-grey-extraDark">
                                 Info not available
@@ -344,11 +327,8 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => (
                               <span>Subsequent Visit </span>
                               <span className="text-gray-500">(90 min)</span>
                             </div>
-                            {therapist.rates?.subsequent_90 &&
-                            therapist.rates.subsequent_90 > 0 ? (
-                              <span className="text-xl">
-                                ${therapist.rates.subsequent_90}
-                              </span>
+                            {therapist.rates?.subsequent_90 && therapist.rates.subsequent_90 > 0 ? (
+                              <span className="text-xl">${therapist.rates.subsequent_90}</span>
                             ) : (
                               <span className="text-sm text-grey-extraDark">
                                 Info not available
@@ -360,17 +340,13 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => (
 
                       {/* Couple's Counselling */}
                       <div className="mb-8">
-                        <h3 className="text-lg mb-4">
-                          For Couple's Counselling
-                        </h3>
+                        <h3 className="text-lg mb-4">For Couple's Counselling</h3>
                         <div className="space-y-4">
                           <div className="flex justify-between items-center">
                             <span>Initial Visit</span>
                             {therapist.rates?.couples_initial &&
                             therapist.rates.couples_initial > 0 ? (
-                              <span className="text-xl">
-                                ${therapist.rates.couples_initial}
-                              </span>
+                              <span className="text-xl">${therapist.rates.couples_initial}</span>
                             ) : (
                               <span className="text-sm text-grey-extraDark">
                                 Info not available
@@ -381,9 +357,7 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => (
                             <span>Subsequent Visit</span>
                             {therapist.rates?.couples_subsequent &&
                             therapist.rates.couples_subsequent > 0 ? (
-                              <span className="text-xl">
-                                ${therapist.rates.couples_subsequent}
-                              </span>
+                              <span className="text-xl">${therapist.rates.couples_subsequent}</span>
                             ) : (
                               <span className="text-sm text-grey-extraDark">
                                 Info not available
@@ -398,9 +372,7 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => (
                         <h3 className="text-lg mb-2">Sliding Scale</h3>
                         <div className="flex items-center">
                           {/* <div className="w-4 h-4 rounded-full bg-matchya-yellow" /> */}
-                          <span className="text-sm text-grey-extraDark">
-                            Info Not Available
-                          </span>
+                          <span className="text-sm text-grey-extraDark">Info Not Available</span>
                         </div>
                       </div>
 
@@ -409,9 +381,7 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => (
                         <h3 className="text-lg mb-2">Billing</h3>
                         <div className="flex items-center">
                           {/* <div className="w-4 h-4 rounded-full bg-matchya-yellow " /> */}
-                          <span className="text-sm text-grey-extraDark">
-                            Info Not Available
-                          </span>
+                          <span className="text-sm text-grey-extraDark">Info Not Available</span>
                         </div>
                       </div>
                     </div>
@@ -435,21 +405,13 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => (
                 <hr />
                 <div className="space-y-8">
                   <div className="flex flex-col gap-3">
-                    <h2 className="font-medium mb-2 text-2xl">
-                      Areas of Practice
-                    </h2>
-                    <CollapsibleSpecialties
-                      specialties={therapist.specialties || []}
-                    />
+                    <h2 className="font-medium mb-2 text-2xl">Areas of Practice</h2>
+                    <CollapsibleSpecialties specialties={therapist.specialties || []} />
                   </div>
                   <hr />
                   <div className="flex flex-col gap-3">
-                    <h2 className="font-medium mb-2 text-2xl">
-                      Therapeutic Approaches
-                    </h2>
-                    <CollapsibleApproaches
-                      approaches={therapist.approaches || []}
-                    />
+                    <h2 className="font-medium mb-2 text-2xl">Therapeutic Approaches</h2>
+                    <CollapsibleApproaches approaches={therapist.approaches || []} />
                   </div>
                 </div>
                 <hr />
@@ -460,16 +422,10 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => (
                       {therapist.licenses.map((license, index) => (
                         <div key={index} className="space-y-1">
                           <h3 className="font-medium">{license.title}</h3>
-                          <p className="text-gray-600">
-                            License Number: {license.license_number}
-                          </p>
-                          <p className="text-gray-600">
-                            State/Province: {license.state}
-                          </p>
+                          <p className="text-gray-600">License Number: {license.license_number}</p>
+                          <p className="text-gray-600">State/Province: {license.state}</p>
                           {license.issuing_body && (
-                            <p className="text-gray-600">
-                              Issuing Body: {license.issuing_body}
-                            </p>
+                            <p className="text-gray-600">Issuing Body: {license.issuing_body}</p>
                           )}
                         </div>
                       ))}
@@ -489,20 +445,15 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => (
                         .map((license, index) => (
                           <div key={index} className="space-y-1">
                             <h3 className="font-medium">{license.position}</h3>
-                            <p className="text-gray-600">
-                              {license.organization}
-                            </p>
+                            <p className="text-gray-600">{license.organization}</p>
                             <p className="text-gray-500 text-sm">
                               {license.startYear}
-                              {license.endYear
-                                ? ` - ${license.endYear}`
-                                : " - Present"}
+                              {license.endYear ? ` - ${license.endYear}` : " - Present"}
                             </p>
                           </div>
                         ))}
                     </div>
-                  ) : therapist.qualifications &&
-                    therapist.qualifications.length > 0 ? (
+                  ) : therapist.qualifications && therapist.qualifications.length > 0 ? (
                     <div className="space-y-1">
                       <ul className="list-disc list-inside">
                         {therapist.qualifications.map((qual, index) => (
@@ -537,11 +488,7 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => (
   </>
 );
 
-export default async function TherapistProfile({
-  params,
-}: {
-  params: { slug: string };
-}) {
+export default async function TherapistProfile({ params }: { params: { slug: string } }) {
   const therapist = await getTherapist(params.slug);
 
   if (!therapist) {
@@ -561,8 +508,8 @@ export default async function TherapistProfile({
             Testing - Additional Available Data
           </h2>
           <p className="text-sm text-gray-500 mb-4">
-            This section displays all available data from the database that
-            isn't currently shown in the UI. For designer reference only.
+            This section displays all available data from the database that isn't currently shown in
+            the UI. For designer reference only.
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -676,20 +623,14 @@ export default async function TherapistProfile({
                   <div className="mt-3">
                     <h4 className="font-medium">License Verification:</h4>
                     {therapist.licenses.map((license, index) => (
-                      <div
-                        key={index}
-                        className="ml-4 mt-2 p-2 bg-gray-50 rounded"
-                      >
+                      <div key={index} className="ml-4 mt-2 p-2 bg-gray-50 rounded">
                         <div>
                           <span className="font-medium">{license.title}:</span>{" "}
-                          {license.is_verified
-                            ? "✓ Verified"
-                            : "✗ Not Verified"}
+                          {license.is_verified ? "✓ Verified" : "✗ Not Verified"}
                         </div>
                         {license.expiry_date && (
                           <div>
-                            <span className="font-medium">Expires:</span>{" "}
-                            {license.expiry_date}
+                            <span className="font-medium">Expires:</span> {license.expiry_date}
                           </div>
                         )}
                         {license.last_verified_date && (

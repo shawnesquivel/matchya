@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from "react";
 
 const CollapsibleApproaches = ({ approaches }: { approaches: string[] }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -29,11 +29,11 @@ const CollapsibleApproaches = ({ approaches }: { approaches: string[] }) => {
       <div
         ref={contentRef}
         className="overflow-hidden transition-all duration-300 ease-in-out"
-        style={{ height: height ? `${height}px` : 'auto' }}
+        style={{ height: height ? `${height}px` : "auto" }}
       >
         <div className="flex flex-wrap gap-2">
           {displayedApproaches.map((approach) => (
-            <span key={approach} className="px-2 py-1 rounded-full text-sm border border-gray-400">
+            <span key={approach} className="px-2 py-1 rounded-full text-sm border border-grey-dark">
               {approach}
             </span>
           ))}
@@ -44,7 +44,7 @@ const CollapsibleApproaches = ({ approaches }: { approaches: string[] }) => {
           onClick={() => setIsExpanded(!isExpanded)}
           className="text-sm text-green hover:underline mt-2 transition-colors duration-200"
         >
-          {isExpanded ? 'Show less' : `Show ${approaches.length - initialDisplayCount} more`}
+          {isExpanded ? "Show less" : `Show ${approaches.length - initialDisplayCount} more`}
         </button>
       )}
     </div>

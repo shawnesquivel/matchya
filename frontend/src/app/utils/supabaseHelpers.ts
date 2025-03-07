@@ -140,6 +140,9 @@ export interface TherapistProfile {
   ai_summary?: string;
 }
 
+// Add import for mock data
+import { mockTherapistProfile, shouldUseMockDataForSlug } from './mockTherapistData';
+
 /**
  * Fetch a therapist profile by name from the Supabase edge function
  */
@@ -155,12 +158,11 @@ export async function fetchTherapistProfile(
     console.log("fetchTherapistProfile: searching for name:", searchName);
     console.log("Original input (nameOrSlug):", nameOrSlug);
 
-    // Construct the URL
     const apiUrl = `${
       process.env.NEXT_PUBLIC_SUPABASE_URL
     }/functions/v1/profile-search?name=${encodeURIComponent(searchName)}`;
 
-    console.log("API URL:", apiUrl);
+    console.log("API URL for profile search:", apiUrl);
 
     // Call the profile-search edge function
     const response = await fetch(apiUrl, {
@@ -251,11 +253,14 @@ export function generateProfileSlug(name: string | null | undefined): string {
  * Convert a URL slug back to a name format
  */
 export function nameFromSlug(slug: string): string {
+  // Special case for test-user
+  if (shouldUseMockDataForSlug(slug)) {
+    return 'Dr. Emma Thompson';
+  }
+
   return slug
-    .replace(/-/g, " ") // Replace hyphens with spaces
-    .split(" ")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" "); // Capitalize each word
+    .replace(/-/g, ' ') // Replace hyphens with spaces
+    .replace(/\b\w/g, (l) => l.toUpperCase()); // Capitalize first letter of each word
 }
 
 /**
@@ -389,16 +394,31 @@ export function mapSupabaseToTherapistProfile(
 }
 
 /**
- * Fetch and transform a therapist profile to the frontend format
+ * Get a therapist profile by name.
  */
 export async function getTherapistProfile(
-  nameOrSlug: string
+  nameOrId: string
 ): Promise<TherapistProfile | null> {
-  const supabaseProfile = await fetchTherapistProfile(nameOrSlug);
+  console.log('getTherapistProfile: fetching for name/id:', nameOrId);
 
-  if (!supabaseProfile) {
-    return null;
+  // Check if this is our test user
+  if (shouldUseMockDataForSlug(nameOrId) || 
+     (nameOrId === 'Dr. Emma Thompson' || nameOrId === 'Emma Thompson')) {
+    console.log('getTherapistProfile: Using mock therapist data for:', nameOrId);
+    return mockTherapistProfile;
   }
 
-  return mapSupabaseToTherapistProfile(supabaseProfile);
+  try {
+    // Attempt to fetch from Supabase
+    const profile = await fetchTherapistProfile(nameOrId);
+    if (!profile) {
+      console.error('getTherapistProfile: No profile found for:', nameOrId);
+      return null;
+    }
+
+    return mapSupabaseToTherapistProfile(profile);
+  } catch (error) {
+    console.error('getTherapistProfile: Error fetching therapist:', error);
+    return null;
+  }
 }

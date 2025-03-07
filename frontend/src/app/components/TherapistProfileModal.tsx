@@ -1,15 +1,20 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import {
-  TherapistProfile,
-  getTherapistProfile,
-} from "../utils/supabaseHelpers";
+import { TherapistProfile, getTherapistProfile } from "../utils/supabaseHelpers";
 import CollapsibleSpecialties from "@/app/components/CollapsibleSpecialties";
 import CollapsibleApproaches from "@/app/components/CollapsibleApproaches";
 import TelehealthStatus from "@/components/TelehealthStatus";
 import TherapistHeader from "./TherapistHeader";
 import TherapistFees from "./TherapistFees";
 import TherapistLicenses from "./TherapistLicenses";
+import TherapistLocation from "./TherapistLocation";
+import TherapistQualifications from "./TherapistQualifications";
+import { useTherapist } from "../contexts/TherapistContext";
+import { mockTherapistProfile } from "../utils/mockTherapistData";
+import Image from "next/image";
+import { getSafeImageUrl } from "../utils/imageHelpers";
+import GlobeIcon from "../../components/icons/GlobeIcon";
+import CalendarIcon from "../../components/icons/CalendarIcon";
 
 interface TherapistProfileModalProps {
   isOpen: boolean;
@@ -18,26 +23,31 @@ interface TherapistProfileModalProps {
 }
 
 export default function TherapistProfileModal({
-  isOpen,
+  isOpen = true,
   onClose,
-  therapistId,
+  therapistId = "00305285-e634-4efe-bc76-cca8b723f441",
 }: TherapistProfileModalProps) {
   const [therapist, setTherapist] = useState<TherapistProfile | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { useMockData } = useTherapist();
 
   // Fetch therapist data when the modal opens and therapistId changes
   useEffect(() => {
     async function fetchTherapist() {
       if (!isOpen || !therapistId) return;
 
+      // If we're in mock mode, use the mock data
+      if (useMockData) {
+        console.log("TherapistProfileModal: Using mock data");
+        setTherapist(mockTherapistProfile);
+        return;
+      }
+
       setLoading(true);
       setError(null);
 
-      console.log(
-        "TherapistProfileModal: Fetching therapist with ID/name:",
-        therapistId
-      );
+      console.log("TherapistProfileModal: Fetching therapist with ID/name:", therapistId);
 
       try {
         const profile = await getTherapistProfile(therapistId);
@@ -45,10 +55,7 @@ export default function TherapistProfileModal({
         setTherapist(profile);
 
         if (!profile) {
-          console.error(
-            "TherapistProfileModal: No profile found for:",
-            therapistId
-          );
+          console.error("TherapistProfileModal: No profile found for:", therapistId);
           setError(`No profile found for "${therapistId}"`);
         }
       } catch (err) {
@@ -60,7 +67,7 @@ export default function TherapistProfileModal({
     }
 
     fetchTherapist();
-  }, [isOpen, therapistId]);
+  }, [isOpen, therapistId, useMockData]);
 
   // Handle escape key to close modal
   useEffect(() => {
@@ -92,6 +99,9 @@ export default function TherapistProfileModal({
     }
   };
 
+  // If in mock mode and the modal is open, show the mock therapist
+  const displayTherapist = useMockData ? mockTherapistProfile : therapist;
+
   return (
     <div
       className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-start overflow-y-auto p-4 animate-fadeIn"
@@ -101,7 +111,7 @@ export default function TherapistProfileModal({
       aria-labelledby="therapist-profile-title"
     >
       <div
-        className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto relative animate-slideIn"
+        className="bg-white rounded-lg w-full max-w-5xl max-h-[90vh] overflow-y-auto relative animate-slideIn"
         onClick={(e) => e.stopPropagation()} // Prevent clicks inside the modal from closing it
       >
         {/* Close button */}
@@ -127,7 +137,14 @@ export default function TherapistProfileModal({
           </svg>
         </button>
 
-        {loading ? (
+        {/* If in mock mode, add a banner indicating that it's mock data */}
+        {useMockData && (
+          <div className="bg-blue-100 text-blue-800 px-4 py-2 text-center text-sm">
+            Using mock therapist data
+          </div>
+        )}
+
+        {loading && !useMockData ? (
           <div className="flex items-center justify-center h-64">
             <div
               className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"
@@ -135,7 +152,7 @@ export default function TherapistProfileModal({
             ></div>
             <span className="sr-only">Loading therapist profile...</span>
           </div>
-        ) : error ? (
+        ) : error && !useMockData ? (
           <div className="p-8 text-center text-red-500">
             <p>{error}</p>
             <button
@@ -145,79 +162,90 @@ export default function TherapistProfileModal({
               Close
             </button>
           </div>
-        ) : therapist ? (
-          <div className="p-6">
-            <TherapistHeader
-              therapist={therapist}
-              variant="modal"
-              showBookingButton={false}
-            />
-
-            <TherapistLicenses
-              therapist={therapist}
-              variant="modal"
-              className="border-t pt-4 mt-4 mb-6"
-            />
-
-            {/* Quick info */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <div className="border rounded-lg p-4">
-                <h2 className="font-medium mb-2">About</h2>
-                <p className="text-gray-700">
-                  {therapist.bio || "No bio available"}
-                </p>
+        ) : displayTherapist ? (
+          <div>
+            {/* Banner and Header styled like the slug page */}
+            <div className="bg-beige sm:py-14 py-20"></div>
+            <div className="bg-white pt-8 px-8">
+              <div className="grid grid-cols-6 gap-8 container mx-auto">
+                <div className="relative md:col-span-1 sm:col-span-2 col-span-6">
+                  <div className="relative w-[40vw] md:w-full md:left-0 md:translate-x-0">
+                    <div className="absolute max-w-[150px] md:max-w-none w-full bottom-0 border border-grey-extraDark aspect-square rounded-full overflow-hidden md:translate-y-[50%]">
+                      <Image
+                        src={getSafeImageUrl(displayTherapist.imageUrl)}
+                        alt={`${displayTherapist.name}'s profile photo`}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 50vw, 33vw"
+                        priority
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2 md:col-span-3 col-span-6">
+                  <h1 className="font-tuppence font-light text-3xl lg:text-4xl font-bold">
+                    {displayTherapist.name || "Name Not Available"}
+                  </h1>
+                  {/* Add pronouns below the therapist's name */}
+                  {/* {therapist.pronouns && (
+                    <p className="text-sm text-gray-500">{therapist.pronouns}</p>
+                  )} */}
+                </div>
+                <div className="md:col-span-2 col-span-6 flex gap-2 mb-6 sm:mb-0 md:justify-end justify-start sm:flex-col-reverse sm:flex-col lg:flex-col">
+                  {displayTherapist.bio_link && (
+                    <a
+                      href={displayTherapist.bio_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-full flex items-center justify-center px-4 py-3 text-mblack bg-beige-light hover:bg-beige transition-colors"
+                    >
+                      <GlobeIcon className="w-4 h-4 mr-2" />
+                      View Website
+                    </a>
+                  )}
+                  {displayTherapist.booking_link && (
+                    <a
+                      href={displayTherapist.booking_link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="rounded-full flex items-center justify-center px-4 py-3 bg-green text-white hover:bg-green-dark transition-colors"
+                    >
+                      <CalendarIcon className="w-4 h-4 mr-2" />
+                      Book Appointment
+                    </a>
+                  )}
+                </div>
               </div>
+            </div>
 
-              <div className="border rounded-lg p-4">
-                <h2 className="font-medium mb-2">Contact & Availability</h2>
-                <div className="mb-2">
-                  <h3 className="text-sm font-medium">Telehealth</h3>
-                  <TelehealthStatus isAvailable={therapist.available_online} />
+            {/* Main Content */}
+            <div className="bg-white px-8">
+              <div className="container mx-auto gap-8 grid md:grid-cols-3 sm:grid-cols-1 md:py-14 sm:py-8">
+                <div className="md:col-span-2 sm:col-span-2 gap-8">
+                  <div className="flex flex-col gap-2">
+                    <h2 className="font-medium text-xl">About</h2>
+                    <p className="text-mblack">{displayTherapist.bio || "No bio available"}</p>
+
+                    <div className="mt-8 flex flex-col gap-2">
+                      <h2 className="font-medium text-xl">Areas of Practice</h2>
+                      <CollapsibleSpecialties specialties={displayTherapist.specialties || []} />
+                    </div>
+
+                    <div className="mt-8 flex flex-col gap-2">
+                      <h2 className="font-medium text-xl">Therapeutic Approaches</h2>
+                      <CollapsibleApproaches approaches={displayTherapist.approaches || []} />
+                    </div>
+                    <div className="mt-8 flex flex-col gap-2">
+                      <TherapistLicenses therapist={displayTherapist} variant="modal" />
+                    </div>
+                  </div>
                 </div>
 
-                {therapist.booking_link && (
-                  <a
-                    href={therapist.booking_link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-2 inline-block px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-                  >
-                    Book an Appointment
-                  </a>
-                )}
-              </div>
-            </div>
-
-            {/* Specialties & Approaches */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <div className="border rounded-lg p-4">
-                <h2 className="font-medium mb-2">Areas of Practice</h2>
-                <CollapsibleSpecialties
-                  specialties={therapist.specialties || []}
-                />
-              </div>
-
-              <div className="border rounded-lg p-4">
-                <h2 className="font-medium mb-2">Therapeutic Approaches</h2>
-                <CollapsibleApproaches
-                  approaches={therapist.approaches || []}
-                />
-              </div>
-            </div>
-
-            <TherapistFees therapist={therapist} variant="modal" />
-
-            <div className="border rounded-lg p-4">
-              <h2 className="font-medium mb-2">Qualifications</h2>
-              <div className="mb-4">
-                {therapist.education.map((edu, index) => (
-                  <div key={index} className="mb-2">
-                    <h3 className="font-medium">{edu.degree}</h3>
-                    <p className="text-gray-600">
-                      {edu.institution}, {edu.year}
-                    </p>
-                  </div>
-                ))}
+                <div className="md:col-span-1 sm:col-span-2 space-y-8">
+                  <TherapistLocation therapist={displayTherapist} variant="modal" />
+                  <TherapistFees therapist={displayTherapist} variant="modal" />
+                  <TherapistQualifications therapist={displayTherapist} variant="modal" />
+                </div>
               </div>
             </div>
           </div>

@@ -1,11 +1,5 @@
 "use client";
-import React, {
-  createContext,
-  useContext,
-  useReducer,
-  useEffect,
-  useState,
-} from "react";
+import React, { createContext, useContext, useReducer, useEffect, useState } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 // Define filter types
@@ -103,6 +97,7 @@ const initialState = {
 
   // New flags
   skipFilterEffect: false,
+  useMockData: false,
 
   // Additional state variables
   isTherapistLoading: false,
@@ -130,6 +125,7 @@ const ACTIONS = {
   SET_THERAPIST_LOADING: "SET_THERAPIST_LOADING",
   SET_CHAT_LOADING: "SET_CHAT_LOADING",
   SET_FORM_DISABLED: "SET_FORM_DISABLED",
+  TOGGLE_MOCK_DATA: "TOGGLE_MOCK_DATA",
 };
 
 // Reducer function
@@ -213,6 +209,12 @@ function therapistReducer(state, action) {
       return {
         ...state,
         isFormDisabled: action.payload,
+      };
+
+    case ACTIONS.TOGGLE_MOCK_DATA:
+      return {
+        ...state,
+        useMockData: action.payload !== undefined ? action.payload : !state.useMockData,
       };
 
     default:
@@ -335,10 +337,7 @@ export function TherapistProvider({ children }) {
       }
 
       const matchData = await matchResponse.json();
-      console.log(
-        "[Context] ✅ Received therapist matches:",
-        matchData.therapists?.length || 0
-      );
+      console.log("[Context] ✅ Received therapist matches:", matchData.therapists?.length || 0);
 
       // Update therapist results and filters
       if (matchData.therapists && Array.isArray(matchData.therapists)) {
@@ -362,9 +361,7 @@ export function TherapistProvider({ children }) {
 
       // Mark therapist loading as complete, but keep form disabled
       dispatch({ type: ACTIONS.SET_THERAPIST_LOADING, payload: false });
-      console.log(
-        "[Context] ✅ Therapist loading complete, form still disabled"
-      );
+      console.log("[Context] ✅ Therapist loading complete, form still disabled");
 
       // STEP 2: Call chat-v3 to get AI response
       console.log("[Context] 💬 Calling chat-v3 API");
@@ -420,9 +417,7 @@ export function TherapistProvider({ children }) {
       return false;
     } finally {
       // Always clear all loading states when done
-      console.log(
-        "[Context] 🏁 Chat submission complete, resetting all loading states"
-      );
+      console.log("[Context] 🏁 Chat submission complete, resetting all loading states");
       dispatch({ type: ACTIONS.SET_SENDING_CHAT, payload: false });
       dispatch({ type: ACTIONS.SET_CHAT_LOADING, payload: false });
       dispatch({ type: ACTIONS.SET_FORM_DISABLED, payload: false });
@@ -438,12 +433,10 @@ export function TherapistProvider({ children }) {
       dispatch({ type: ACTIONS.SET_THERAPIST_LOADING, payload: true });
       dispatch({ type: ACTIONS.SET_FORM_DISABLED, payload: true });
 
-      console.log(
-        "[Context] 📊 Fetching therapists with filters:",
-        state.filters
-      );
+      console.log("[Context] 📊 Fetching therapists with filters:", state.filters);
 
       // Call the API
+      console.log("therapist-matches using", process.env.NEXT_PUBLIC_SUPABASE_URL);
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/therapist-matches`,
         {
@@ -461,23 +454,16 @@ export function TherapistProvider({ children }) {
       );
 
       if (!response.ok) {
-        throw new Error(
-          `Failed to fetch therapists: ${response.status} ${response.statusText}`
-        );
+        throw new Error(`Failed to fetch therapists: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
-      console.log(
-        "[Context] ✅ Received therapists:",
-        data.therapists?.length || 0
-      );
+      console.log("[Context] ✅ Received therapists:", data.therapists?.length || 0);
 
       if (data.therapists && Array.isArray(data.therapists)) {
         dispatch({ type: ACTIONS.SET_THERAPISTS, payload: data.therapists });
       } else {
-        console.warn(
-          "[Context] ⚠️ No therapists in response or invalid format"
-        );
+        console.warn("[Context] ⚠️ No therapists in response or invalid format");
         dispatch({ type: ACTIONS.SET_THERAPISTS, payload: [] });
       }
 
@@ -495,12 +481,22 @@ export function TherapistProvider({ children }) {
       return false;
     } finally {
       // Always clear loading states when done
-      console.log(
-        "[Context] 🏁 Therapist filtering complete, resetting loading states"
-      );
+      console.log("[Context] 🏁 Therapist filtering complete, resetting loading states");
       dispatch({ type: ACTIONS.SET_THERAPIST_LOADING, payload: false });
       dispatch({ type: ACTIONS.SET_FORM_DISABLED, payload: false });
     }
+  };
+
+  // Function to toggle mock data mode
+  const toggleMockData = (value?: boolean) => {
+    console.log(
+      "[Context] Toggling mock data mode:",
+      value !== undefined ? value : !state.useMockData
+    );
+    dispatch({
+      type: ACTIONS.TOGGLE_MOCK_DATA,
+      payload: value,
+    });
   };
 
   // Make sure the filters useEffect doesn't run unnecessarily
@@ -542,6 +538,8 @@ export function TherapistProvider({ children }) {
         isTherapistLoading: state.isTherapistLoading,
         isChatLoading: state.isChatLoading,
         isFormDisabled: state.isFormDisabled,
+        useMockData: state.useMockData,
+        toggleMockData,
       }}
     >
       {children}

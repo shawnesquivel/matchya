@@ -33,7 +33,10 @@ const CollapsibleSpecialties = ({ specialties }: { specialties: string[] }) => {
       >
         <div className="flex flex-wrap gap-2">
           {displayedSpecialties.map((specialty) => (
-            <span key={specialty} className="px-2 py-1 rounded-full text-sm border border-gray-400">
+            <span
+              key={specialty}
+              className="px-2 py-1 rounded-full text-sm border border-grey-dark"
+            >
               {specialty}
             </span>
           ))}

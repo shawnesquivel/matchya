@@ -20,11 +20,16 @@ const nextConfig = {
       "assets-jane-cac1-23.janeapp.net",
       "assets-jane-cac1-24.janeapp.net",
       "randomuser.me",
+      "images.unsplash.com",
     ],
     remotePatterns: [
       {
         protocol: "https",
         hostname: "randomuser.me",
+      },
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
       },
     ],
   },
