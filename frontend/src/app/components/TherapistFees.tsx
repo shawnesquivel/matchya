@@ -107,7 +107,9 @@ export default function TherapistFees({
                         <span className="text-base">Subsequent Visit</span>
                         <span className="text-gray-500 ml-1">(60 min)</span>
                       </div>
-                      <span className="text-2xl font-medium">${therapist.rates.subsequent_60}</span>
+                      <span className="text-base font-medium">
+                        ${therapist.rates.subsequent_60}
+                      </span>
                     </div>
                   ) : (
                     therapist.rates?.ongoing && (
@@ -116,7 +118,7 @@ export default function TherapistFees({
                           <span className="text-base">Subsequent Visit</span>
                           <span className="text-gray-500 ml-1">(60 min)</span>
                         </div>
-                        <span className="text-2xl font-medium">${therapist.rates.ongoing}</span>
+                        <span className="text-base font-medium">${therapist.rates.ongoing}</span>
                       </div>
                     )
                   )}
@@ -126,7 +128,9 @@ export default function TherapistFees({
                         <span className="text-base">Subsequent Visit</span>
                         <span className="text-gray-500 ml-1">(90 min)</span>
                       </div>
-                      <span className="text-2xl font-medium">${therapist.rates.subsequent_90}</span>
+                      <span className="text-base font-medium">
+                        ${therapist.rates.subsequent_90}
+                      </span>
                     </div>
                   )}
                 </>
