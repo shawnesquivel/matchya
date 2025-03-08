@@ -124,13 +124,7 @@ function generateJsonLd(therapist: TherapistProfile) {
     },
     hasCredential: therapist.education.map((edu) => ({
       "@type": "EducationalOccupationalCredential",
-      credentialCategory: edu.degree,
-      educationalLevel: "PostBaccalaureate",
-      recognizedBy: {
-        "@type": "Organization",
-        name: edu.institution,
-      },
-      dateCreated: edu.year.toString(),
+      name: edu,
     })),
     workExperience: therapist.experience.map((exp) => ({
       "@type": "OccupationalExperience",
@@ -488,15 +482,12 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => {
                     <h2 className="font-medium mb-2 text-2xl">
                       Qualifications
                     </h2>
-                    <div className="space-y-4">
-                      {therapist.education.map((edu, index) => (
-                        <div key={index}>
-                          <h3 className="font-medium">{edu.degree}</h3>
-                          <p className="text-gray-600">
-                            {edu.institution}, {edu.year}
-                          </p>
-                        </div>
-                      ))}
+                    <div className="mb-4">
+                      <ul className="list-disc pl-5 space-y-2">
+                        {therapist.education.map((edu, index) => (
+                          <li key={index}>{edu}</li>
+                        ))}
+                      </ul>
                     </div>
                   </div>
                   <hr />
