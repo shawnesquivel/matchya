@@ -15,3 +15,7 @@ frontend/src/app/_disabled/
 tests/
 prds/
 prompts/
+supabase/functions/gumloop/gumloop_custom_node_request.json
+supabase/functions/gumloop/gumloop_custom_node_request.txt
+# supabase/functions/gumloop/gumloop_custom_node.py
+supabase/functions/gumloop/gumloop_input_sample.json
