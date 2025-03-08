@@ -62,7 +62,8 @@ export const mockTherapist: Therapist = {
 // Mock data for TherapistProfileModal
 export const mockTherapistProfile: TherapistProfile = {
   id: 'mock-therapist-001',
-  name: 'Dr. Emma Thompson',
+  first_name: 'Emma',
+  last_name: 'Thompson',
   title: 'Licensed Psychologist',
   bio: 'I am a licensed psychologist with over 10 years of experience helping individuals overcome anxiety, depression, and trauma. My approach is collaborative, warm, and evidence-based. I believe in creating a safe space where clients can explore their thoughts and feelings without judgment.',
   specialties: ['Anxiety', 'Depression', 'Trauma', 'Relationship Issues', 'Life Transitions'],
@@ -93,7 +94,7 @@ export const mockTherapistProfile: TherapistProfile = {
     }
   ],
   languages: ['English', 'Spanish'],
-  imageUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
+  profile_img_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
   location: {
     city: 'San Francisco',
     province: 'CA',

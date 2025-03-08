@@ -8,6 +8,15 @@ interface TherapistFeesProps {
   className?: string;
 }
 
+// Add this interface to match your current fee structure
+interface TherapistFee {
+  session_type: string;
+  duration_minutes: number;
+  price: number;
+  currency: string;
+  category: string;
+}
+
 /**
  * Reusable component for displaying therapist fees
  */
@@ -24,26 +33,34 @@ export default function TherapistFees({
 
   const titleClasses = variant === "modal" ? "font-medium text-xl" : "font-medium mb-4 text-2xl";
 
-  // Get individual and couple fees
-  const getIndividualFees = () => {
-    if (therapist.fees && therapist.fees.length > 0) {
-      return therapist.fees.filter((fee) => fee.category?.toLowerCase() === "individual");
-    }
-    return [];
-  };
-
-  const getCoupleFees = () => {
+  // Get fees by session type
+  const getFeesBySessionType = (sessionType: string) => {
     if (therapist.fees && therapist.fees.length > 0) {
       return therapist.fees.filter(
-        (fee) =>
-          fee.category?.toLowerCase() === "couples" || fee.category?.toLowerCase() === "couple"
+        (fee) => fee.category?.toLowerCase() === sessionType.toLowerCase()
       );
     }
     return [];
   };
 
-  const individualFees = getIndividualFees();
-  const coupleFees = getCoupleFees();
+  const individualFees = getFeesBySessionType("individual");
+  const coupleFees = getFeesBySessionType("couples") || getFeesBySessionType("couple");
+  const familyFees = getFeesBySessionType("family");
+  const groupFees = getFeesBySessionType("group");
+
+  // Group fees by delivery method if applicable
+  const getDeliveryMethodLabel = (method: string) => {
+    switch (method?.toLowerCase()) {
+      case "in_person":
+        return "In-Person";
+      case "virtual":
+        return "Online";
+      case "hybrid":
+        return "Hybrid";
+      default:
+        return method;
+    }
+  };
 
   // Fallback rates
   const hasIndividualRates =
@@ -52,6 +69,14 @@ export default function TherapistFees({
     therapist.rates?.subsequent_60 ||
     therapist.rates?.subsequent_90;
   const hasCoupleRates = therapist.rates?.couples_initial || therapist.rates?.couples_subsequent;
+
+  // Format currency if available
+  const formatPrice = (price: number, currency?: string) => {
+    if (!currency || currency === "USD" || currency === "CAD") {
+      return `$${price}`;
+    }
+    return `${price} ${currency}`;
+  };
 
   return (
     <div className={`${containerClasses} ${className}`}>
@@ -80,16 +105,18 @@ export default function TherapistFees({
               {/* Display detailed fees if available */}
               {individualFees.length > 0 ? (
                 individualFees.map((fee, index) => (
-                  <div key={index} className="flex justify-between items-center">
-                    <div>
-                      <span className="text-base">{fee.session_type}</span>
-                      {fee.duration_minutes && (
-                        <span className="text-grey-medium text-xs ml-1">
-                          ({fee.duration_minutes} min)
-                        </span>
-                      )}
+                  <div key={index} className="flex justify-between items-start">
+                    <div className="flex flex-col">
+                      <div className="flex items-center">
+                        <span className="text-base">{fee.session_type}</span>
+                      </div>
+                      <div className="flex text-xs text-grey-medium">
+                        {fee.duration_minutes && (
+                          <span className="mr-2">{fee.duration_minutes} min</span>
+                        )}
+                      </div>
                     </div>
-                    <span className="text-base">${fee.price}</span>
+                    <span className="text-base">{formatPrice(fee.price, fee.currency)}</span>
                   </div>
                 ))
               ) : (
@@ -150,16 +177,18 @@ export default function TherapistFees({
               {/* Display detailed fees if available */}
               {coupleFees.length > 0 ? (
                 coupleFees.map((fee, index) => (
-                  <div key={index} className="flex justify-between items-center">
-                    <div>
-                      <span className="text-base">{fee.session_type}</span>
-                      {fee.duration_minutes && (
-                        <span className="text-grey-medium text-xs ml-1">
-                          ({fee.duration_minutes} min)
-                        </span>
-                      )}
+                  <div key={index} className="flex justify-between items-start">
+                    <div className="flex flex-col">
+                      <div className="flex items-center">
+                        <span className="text-base">{fee.session_type}</span>
+                      </div>
+                      <div className="flex text-xs text-grey-medium">
+                        {fee.duration_minutes && (
+                          <span className="mr-2">{fee.duration_minutes} min</span>
+                        )}
+                      </div>
                     </div>
-                    <span className="text-base">${fee.price}</span>
+                    <span className="text-base">{formatPrice(fee.price, fee.currency)}</span>
                   </div>
                 ))
               ) : (
@@ -183,6 +212,60 @@ export default function TherapistFees({
                   )}
                 </>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Family Counselling Section - New */}
+      {familyFees.length > 0 && (
+        <div className="">
+          <hr className="border-grey-light mt-1 mb-6" />
+          <div className="flex flex-col gap-2">
+            <h3 className="text-xs font-medium">For Family Counselling</h3>
+            <div className="flex flex-col gap-1">
+              {familyFees.map((fee, index) => (
+                <div key={index} className="flex justify-between items-start">
+                  <div className="flex flex-col">
+                    <div className="flex items-center">
+                      <span className="text-base">{fee.session_type}</span>
+                    </div>
+                    <div className="flex text-xs text-grey-medium">
+                      {fee.duration_minutes && (
+                        <span className="mr-2">{fee.duration_minutes} min</span>
+                      )}
+                    </div>
+                  </div>
+                  <span className="text-base">{formatPrice(fee.price, fee.currency)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Group Counselling Section - New */}
+      {groupFees.length > 0 && (
+        <div className="">
+          <hr className="border-grey-light mt-1 mb-6" />
+          <div className="flex flex-col gap-2">
+            <h3 className="text-xs font-medium">For Group Counselling</h3>
+            <div className="flex flex-col gap-1">
+              {groupFees.map((fee, index) => (
+                <div key={index} className="flex justify-between items-start">
+                  <div className="flex flex-col">
+                    <div className="flex items-center">
+                      <span className="text-base">{fee.session_type}</span>
+                    </div>
+                    <div className="flex text-xs text-grey-medium">
+                      {fee.duration_minutes && (
+                        <span className="mr-2">{fee.duration_minutes} min</span>
+                      )}
+                    </div>
+                  </div>
+                  <span className="text-base">{formatPrice(fee.price, fee.currency)}</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>

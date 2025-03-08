@@ -62,11 +62,11 @@ export interface SupabaseTherapistProfile {
     currency: string;
   }>;
 }
-
 // Interface matching the frontend's expected structure
 export interface TherapistProfile {
   id: string;
-  name: string;
+  first_name: string;
+  last_name: string;
   title?: string;
   bio: string;
   specialties: string[];
@@ -82,7 +82,7 @@ export interface TherapistProfile {
     endYear?: number;
   }>;
   languages: string[];
-  imageUrl?: string;
+  profile_img_url?: string;
   location: {
     city: string;
     province: string;
@@ -327,7 +327,8 @@ export function mapSupabaseToTherapistProfile(
 
   return {
     id: profile.id,
-    name: profile.name,
+    first_name: profile.first_name,
+    last_name: profile.last_name,
     title: profile.title,
     bio: profile.bio || "",
     specialties: profile.areas_of_focus || [],
@@ -342,7 +343,7 @@ export function mapSupabaseToTherapistProfile(
         ],
     experience: createDefaultExperience(),
     languages: profile.languages || [],
-    imageUrl: profile.profile_img_url || undefined,
+    profile_img_url: profile.profile_img_url || undefined,
     location: {
       city: profile.clinic_city || "",
       province: profile.clinic_province || "",

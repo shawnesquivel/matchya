@@ -86,7 +86,7 @@ function generateJsonLd(therapist: TherapistProfile) {
   return {
     "@context": "https://schema.org",
     "@type": "Person",
-    name: therapist.name,
+    name: therapist.first_name,
     description: therapist.bio,
     jobTitle: therapist.title,
     knowsLanguage: therapist.languages,
@@ -117,7 +117,9 @@ function generateJsonLd(therapist: TherapistProfile) {
       endDate: exp.endYear?.toString() || "Present",
     })),
     priceRange: `$${therapist.rates.initial}-${therapist.rates.ongoing}`,
-    image: therapist.imageUrl ? `https://matchya.app${therapist.imageUrl}` : undefined,
+    image: therapist.profile_img_url
+      ? `https://matchya.app${therapist.profile_img_url}`
+      : undefined,
   };
 }
 
@@ -137,8 +139,8 @@ export async function generateMetadata({
     };
   }
 
-  const title = `${therapist.name} - ${therapist.title || "Therapist"} | Matchya`;
-  const description = `${therapist.name} is a ${therapist.title} in ${
+  const title = `${therapist.first_name} - ${therapist.title || "Therapist"} | Matchya`;
+  const description = `${therapist.first_name} is a ${therapist.title} in ${
     therapist.location.city
   }, specializing in ${therapist.specialties.join(", ")}. Book your session today.`;
 
@@ -149,13 +151,13 @@ export async function generateMetadata({
       title,
       description,
       type: "profile",
-      images: therapist.imageUrl
+      images: therapist.profile_img_url
         ? [
             {
-              url: therapist.imageUrl,
+              url: therapist.profile_img_url,
               width: 800,
               height: 800,
-              alt: therapist.name,
+              alt: therapist.first_name,
             },
           ]
         : undefined,
@@ -165,7 +167,7 @@ export async function generateMetadata({
       card: "summary_large_image",
       title,
       description,
-      images: therapist.imageUrl ? [therapist.imageUrl] : undefined,
+      images: therapist.profile_img_url ? [therapist.profile_img_url] : undefined,
     },
   };
 }
@@ -203,8 +205,8 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => (
             <div className="relative w-[40vw] md:w-full md:left-0 md:translate-x-0">
               <div className="absolute max-w-[150px] md:max-w-none w-full bottom-0 border border-grey-extraDark aspect-square rounded-full overflow-hidden md:translate-y-[50%]">
                 <Image
-                  src={getSafeImageUrl(therapist.imageUrl)}
-                  alt={`${therapist.name}'s profile photo`}
+                  src={getSafeImageUrl(therapist.profile_img_url)}
+                  alt={`${therapist.first_name}'s profile photo`}
                   fill
                   className="object-cover"
                   sizes="(max-width: 768px) 50vw, 33vw"
@@ -214,11 +216,11 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => (
             </div>
           </div>
           <div className="flex flex-col gap-2 md:col-span-3 col-span-6">
-            <h1 className="font-tuppence font-light text-3xl lg:text-4xl font-bold md:mb-2 md:pb-12">
-              {therapist.name || "Name Not Available"}
+            <h1 className="font-tuppence text-3xl lg:text-4xl font-bold md:mb-2 md:pb-12">
+              {therapist.first_name || "Name Not Available"}
             </h1>
           </div>
-          <div className="md:col-span-2 col-span-6 flex gap-2 mb-6 sm:mb-0 md:justify-end justify-start sm:flex-col-reverse sm:flex-col lg:flex-row">
+          <div className="md:col-span-2 col-span-6 flex gap-2 mb-6 sm:mb-0 md:justify-end justify-start sm:flex-col-reverse lg:flex-row">
             {therapist.bio_link && (
               <a
                 href={therapist.bio_link}
@@ -246,7 +248,9 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => (
         <div className="container mx-auto gap-8 grid md:grid-cols-3 sm:grid-cols-1 md:py-14 sm:py-8">
           <div className="md:col-span-2 sm:col-span-2 gap-8">
             <div className="flex flex-col gap-2">
-              <h2 className="font-medium mb-2">About {therapist.name || "Name Not Available"}</h2>
+              <h2 className="font-medium mb-2">
+                About {therapist.first_name || "Name Not Available"}
+              </h2>
               <p className="text-gray-700 text-base">{therapist.bio || "No bio available"}</p>
             </div>
           </div>

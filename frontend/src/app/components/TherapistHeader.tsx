@@ -19,9 +19,7 @@ export default function TherapistHeader({
 }: TherapistHeaderProps) {
   // Style configurations based on variant
   const containerClasses =
-    variant === "modal"
-      ? "flex mb-6 items-center"
-      : "grid grid-cols-6 gap-8 container mx-auto";
+    variant === "modal" ? "flex mb-6 items-center" : "grid grid-cols-6 gap-8 container mx-auto";
 
   const imageContainerClasses =
     variant === "modal"
@@ -44,8 +42,8 @@ export default function TherapistHeader({
           <div className="relative w-[40vw] md:w-full md:left-0 md:translate-x-0">
             <div className="absolute max-w-[150px] md:max-w-none w-full bottom-0 border border-grey-extraDark aspect-square rounded-full overflow-hidden md:translate-y-[50%]">
               <Image
-                src={getSafeImageUrl(therapist.imageUrl)}
-                alt={`${therapist.name}'s profile photo`}
+                src={getSafeImageUrl(therapist.profile_img_url)}
+                alt={`${therapist.first_name}'s profile photo`}
                 fill
                 className="object-cover"
                 sizes="(max-width: 768px) 50vw, 33vw"
@@ -55,8 +53,8 @@ export default function TherapistHeader({
           </div>
         ) : (
           <Image
-            src={getSafeImageUrl(therapist.imageUrl)}
-            alt={`${therapist.name}'s profile photo`}
+            src={getSafeImageUrl(therapist.profile_img_url)}
+            alt={`${therapist.first_name}'s profile photo`}
             fill
             className="object-cover"
           />
@@ -66,7 +64,7 @@ export default function TherapistHeader({
       {/* Therapist info */}
       <div className={infoContainerClasses}>
         <h1 id="therapist-profile-title" className={nameClasses}>
-          {therapist.name || "Name Not Available"}
+          {therapist.first_name || "Name Not Available"}
         </h1>
         {variant === "modal" && (
           <>
@@ -80,7 +78,7 @@ export default function TherapistHeader({
 
       {/* Booking buttons - only shown on page variant or if explicitly requested */}
       {variant === "page" && showBookingButton && (
-        <div className="md:col-span-2 col-span-6 flex gap-2 mb-6 sm:mb-0 md:justify-end justify-start sm:flex-col-reverse sm:flex-col lg:flex-row">
+        <div className="md:col-span-2 col-span-6 flex gap-2 mb-6 sm:mb-0 md:justify-end justify-start sm:flex-col lg:flex-row">
           {therapist.bio_link && (
             <a
               href={therapist.bio_link}

@@ -102,6 +102,11 @@ export default function TherapistProfileModal({
   // If in mock mode and the modal is open, show the mock therapist
   const displayTherapist = useMockData ? mockTherapistProfile : therapist;
 
+  // Early return if therapist is null or undefined
+  if (!displayTherapist) {
+    return null; // Or a loading spinner, or some other fallback UI
+  }
+
   return (
     <div
       className="fixed inset-0 bg-black bg-opacity-50 z-50 flex justify-center items-start overflow-y-auto p-4 animate-fadeIn"
@@ -171,27 +176,30 @@ export default function TherapistProfileModal({
                 <div className="relative md:col-span-1 sm:col-span-2 col-span-6">
                   <div className="relative w-[40vw] md:w-full md:left-0 md:translate-x-0">
                     <div className="absolute max-w-[150px] md:max-w-none w-full bottom-0 border border-grey-extraDark aspect-square rounded-full overflow-hidden md:translate-y-[50%]">
-                      <Image
-                        src={getSafeImageUrl(displayTherapist.imageUrl)}
-                        alt={`${displayTherapist.name}'s profile photo`}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 768px) 50vw, 33vw"
-                        priority
-                      />
+                      {displayTherapist.profile_img_url ? (
+                        <Image
+                          src={displayTherapist.profile_img_url}
+                          alt={`${displayTherapist.first_name} ${displayTherapist.last_name}`}
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="bg-grey-light h-full w-full flex items-center justify-center"></div>
+                      )}
                     </div>
                   </div>
                 </div>
                 <div className="flex flex-col gap-2 md:col-span-3 col-span-6">
-                  <h1 className="font-tuppence font-light text-3xl lg:text-4xl font-bold">
-                    {displayTherapist.name || "Name Not Available"}
+                  <h1 className="font-tuppence text-3xl lg:text-4xl font-bold">
+                    {displayTherapist.first_name || "Name Not Available"}{" "}
+                    {displayTherapist.last_name || ""}
                   </h1>
                   {/* Add pronouns below the therapist's name */}
                   {/* {therapist.pronouns && (
                     <p className="text-sm text-gray-500">{therapist.pronouns}</p>
                   )} */}
                 </div>
-                <div className="md:col-span-2 col-span-6 flex gap-2 mb-6 sm:mb-0 md:justify-end justify-start sm:flex-col-reverse sm:flex-col lg:flex-col">
+                <div className="md:col-span-2 col-span-6 flex gap-2 mb-6 sm:mb-0 md:justify-end justify-start sm:flex-col-reverse lg:flex-col">
                   {displayTherapist.bio_link && (
                     <a
                       href={displayTherapist.bio_link}
