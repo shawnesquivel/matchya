@@ -26,6 +26,10 @@ CREATE TYPE faith_type AS ENUM (
   'muslim', 'sikh', 'spiritual', 'other', 'prefer_not_to_say'
 );
 
+CREATE TYPE pronouns_type AS ENUM (
+  'she/her', 'he/him', 'they/them', 'ze/zir',  'prefer_not_to_say'
+);
+
 -- Create ENUMs for fees validation
 CREATE TYPE session_category_type AS ENUM (
   'initial', 'consultation', 'subsequent'
@@ -68,7 +72,7 @@ create table therapists (
   first_name text not null,
   middle_name text,
   last_name text not null,
-  pronouns text,
+  pronouns pronouns_type,
   gender text not null check (gender in ('female', 'male', 'non_binary')),
   sexuality sexuality_type[] not null default '{}',
   ethnicity ethnicity_type[] not null default '{}',
