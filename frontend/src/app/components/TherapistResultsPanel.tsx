@@ -94,6 +94,22 @@ export default function TherapistResultsPanel() {
     setIsModalOpen(true);
   };
 
+  // Helper to check if any filters are active or if chat has been used
+  const hasUserTakenAction = () => {
+    // Check if any filters have been set
+    const hasActiveFilters = !!(
+      filters.gender ||
+      filters.ethnicity?.length ||
+      filters.sexuality?.length ||
+      filters.faith?.length ||
+      filters.max_price_initial ||
+      filters.availability
+    );
+
+    // Return true if either filters are active or chat has messages
+    return hasActiveFilters;
+  };
+
   return (
     <div className="w-full h-full overflow-y-auto bg-white">
       <div className="sticky top-0 p-4 z-10 flex justify-between items-center">
@@ -272,7 +288,7 @@ export default function TherapistResultsPanel() {
               </div>
             ))}
           </div>
-        ) : (
+        ) : hasUserTakenAction() ? (
           <div className="text-center text-grey-medium py-16 bg-white rounded-xl border border-grey-light p-8">
             <p className="text-lg font-medium mb-2">
               No therapists match your current criteria
@@ -280,6 +296,16 @@ export default function TherapistResultsPanel() {
             <p className="text-base">
               Try adjusting your filters or describe what you're looking for in
               the chat.
+            </p>
+          </div>
+        ) : (
+          <div className="text-center text-grey-medium py-16 bg-white rounded-xl border border-grey-light p-8">
+            <p className="text-lg font-medium mb-2">
+              Ready to find your match?
+            </p>
+            <p className="text-base mb-4">
+              Use the filters on the left to refine your search, or simply
+              describe what you're looking for in the chat.
             </p>
           </div>
         )}
