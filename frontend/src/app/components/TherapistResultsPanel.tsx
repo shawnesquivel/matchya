@@ -8,17 +8,27 @@ import TherapistProfileModal from "./TherapistProfileModal";
 import { mockTherapist } from "../utils/mockTherapistData";
 
 export default function TherapistResultsPanel() {
-  const { therapists, isLoading, isSendingChat, filters, useMockData, toggleMockData } =
-    useTherapist();
+  const {
+    therapists,
+    isLoading,
+    isSendingChat,
+    filters,
+    useMockData,
+    toggleMockData,
+  } = useTherapist();
   // Add state for the modal - initialize with specific therapist ID
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedTherapistId, setSelectedTherapistId] = useState<string | null>(null);
+  const [selectedTherapistId, setSelectedTherapistId] = useState<string | null>(
+    null
+  );
 
   // Handle opening the mock modal when in mock mode
   useEffect(() => {
     if (useMockData && !selectedTherapistId) {
       // Set the mock therapist ID
-      setSelectedTherapistId(`${mockTherapist.first_name} ${mockTherapist.last_name}`);
+      setSelectedTherapistId(
+        `${mockTherapist.first_name} ${mockTherapist.last_name}`
+      );
     }
   }, [useMockData, selectedTherapistId]);
 
@@ -46,11 +56,16 @@ export default function TherapistResultsPanel() {
     const activeFilters = [];
 
     if (filters.gender) activeFilters.push(`Gender: ${filters.gender}`);
-    if (filters.ethnicity?.length) activeFilters.push(`Ethnicity: ${filters.ethnicity.join(", ")}`);
-    if (filters.sexuality?.length) activeFilters.push(`Sexuality: ${filters.sexuality.join(", ")}`);
-    if (filters.faith?.length) activeFilters.push(`Faith: ${filters.faith.join(", ")}`);
-    if (filters.max_price_initial) activeFilters.push(`Max price: $${filters.max_price_initial}`);
-    if (filters.availability) activeFilters.push(`Availability: ${filters.availability}`);
+    if (filters.ethnicity?.length)
+      activeFilters.push(`Ethnicity: ${filters.ethnicity.join(", ")}`);
+    if (filters.sexuality?.length)
+      activeFilters.push(`Sexuality: ${filters.sexuality.join(", ")}`);
+    if (filters.faith?.length)
+      activeFilters.push(`Faith: ${filters.faith.join(", ")}`);
+    if (filters.max_price_initial)
+      activeFilters.push(`Max price: $${filters.max_price_initial}`);
+    if (filters.availability)
+      activeFilters.push(`Availability: ${filters.availability}`);
 
     return activeFilters.length > 0
       ? `Current filters: ${activeFilters.join(" • ")}`
@@ -79,7 +94,9 @@ export default function TherapistResultsPanel() {
             <button
               onClick={() => toggleMockData()}
               className={`mr-4 px-3 py-1 text-xs rounded-md ${
-                useMockData ? "bg-green-medium text-white" : "bg-gray-200 text-gray-800"
+                useMockData
+                  ? "bg-green-medium text-white"
+                  : "bg-gray-200 text-gray-800"
               }`}
               title={useMockData ? "Using mock data" : "Using real data"}
             >
@@ -87,7 +104,8 @@ export default function TherapistResultsPanel() {
             </button>
           )}
           <span className="text-grey-medium px-2 py-1 text-sm">
-            Showing {useMockData ? 1 : displayTherapists?.length || 0} Therapists
+            Showing {useMockData ? 1 : displayTherapists?.length || 0}{" "}
+            Therapists
             {useMockData && " (Mock)"}
           </span>
         </div>
@@ -104,7 +122,11 @@ export default function TherapistResultsPanel() {
               <div
                 key={therapist.id}
                 className="block bg-beige-extralight border border-grey-light rounded-xl p-6 hover:shadow-sm relative transition-all duration-200 hover:border-beige-dark hover:bg-beige-xxl cursor-pointer"
-                onClick={() => openTherapistModal(`${therapist.first_name} ${therapist.last_name}`)}
+                onClick={() =>
+                  openTherapistModal(
+                    `${therapist.first_name} ${therapist.last_name}`
+                  )
+                }
               >
                 <div className="flex items-center mb-4">
                   <div className="relative w-24 h-24 rounded-full overflow-hidden mr-4 flex-shrink-0">
@@ -139,7 +161,8 @@ export default function TherapistResultsPanel() {
                     </div>
                   </div>
                   <div className="ml-auto flex gap-2 mb-auto">
-                    {therapist.availability === "online" || therapist.availability === "both" ? (
+                    {therapist.availability === "online" ||
+                    therapist.availability === "both" ? (
                       therapist.clinic_profile_url ? (
                         <a
                           href={therapist.clinic_profile_url}
@@ -162,7 +185,8 @@ export default function TherapistResultsPanel() {
                       )
                     ) : null}
 
-                    {therapist.availability === "in_person" || therapist.availability === "both" ? (
+                    {therapist.availability === "in_person" ||
+                    therapist.availability === "both" ? (
                       therapist.clinic_booking_url ? (
                         <a
                           href={therapist.clinic_booking_url}
@@ -240,14 +264,13 @@ export default function TherapistResultsPanel() {
           </div>
         ) : (
           <div className="text-center text-grey-medium py-16 bg-white rounded-xl border border-grey-light p-8">
-            <p className="text-lg font-medium mb-2">No therapists match your current criteria</p>
-            <p className="text-base">
-              Try adjusting your filters or describe what you're looking for in the chat.
+            <p className="text-lg font-medium mb-2">
+              No therapists match your current criteria
             </p>
-            <div className="text-sm text-left bg-beige-extralight p-4 rounded-lg max-w-md mx-auto">
-              <p className="font-medium mb-2">Current Filter Settings:</p>
-              <p>{getActiveFiltersText()}</p>
-            </div>
+            <p className="text-base">
+              Try adjusting your filters or describe what you're looking for in
+              the chat.
+            </p>
           </div>
         )}
       </div>
