@@ -51,7 +51,7 @@ begin
     t.first_name,        -- Column 2
     t.middle_name,       -- Column 3
     t.last_name,         -- Column 4
-    t.pronouns,          -- Column 5
+    t.pronouns::text,    -- Column 5 - Adding explicit cast to text
     t.bio,               -- Column 6
     t.gender,            -- Column 7
     t.ethnicity,         -- Column 8

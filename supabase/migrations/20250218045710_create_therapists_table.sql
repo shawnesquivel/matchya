@@ -54,7 +54,10 @@ CREATE TYPE jurisdiction_type AS ENUM (
 -- Create ENUM for Canadian license types
 CREATE TYPE license_title_type AS ENUM (
   'RCC', -- Registered Clinical Counsellor
+  'RTC', -- Registered Therapeutic Counsellor
   'RSW', -- Registered Social Worker
+  'MACP', -- Master of Arts in Counselling Psychology
+  'CCC', --- Canadian Certified Counsellor
   'RP',  -- Registered Psychotherapist
   'CPsych', -- Clinical Psychologist
   'MFT', -- Marriage and Family Therapist
@@ -90,8 +93,8 @@ create table therapists (
   therapist_phone text check (therapist_phone ~ '^\+?[1-9]\d{1,14}$'),
   clinic_name text not null default '',
   clinic_street text not null default '',
-  clinic_city text not null default '',
-  clinic_postal_code text not null default '',
+  clinic_city text not null,
+  clinic_postal_code text default '', 
   clinic_province text not null,
   clinic_country char(2) not null,  -- ISO 3166-1 alpha-2
   clinic_phone text check (clinic_phone ~ '^\+?[1-9]\d{1,14}$'),
