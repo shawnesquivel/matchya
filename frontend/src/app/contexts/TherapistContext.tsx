@@ -39,10 +39,7 @@ export interface Therapist {
   bio?: string;
   ai_summary?: string;
   areas_of_focus: string[];
-  approaches: {
-    long_term: string[];
-    short_term?: string[];
-  };
+  approaches: string[];
   profile_img_url?: string;
   video_intro_link?: string;
   clinic_profile_url?: string;

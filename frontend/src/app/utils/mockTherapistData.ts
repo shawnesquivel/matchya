@@ -15,10 +15,7 @@ export const mockTherapist: Therapist = {
   bio: 'I am a licensed psychologist with over 10 years of experience helping individuals overcome anxiety, depression, and trauma. My approach is collaborative, warm, and evidence-based.',
   ai_summary: 'Dr. Emma Thompson specializes in anxiety disorders, depression, and trauma recovery, utilizing evidence-based approaches including CBT and mindfulness practices. She creates a warm, judgment-free space for clients from diverse backgrounds.',
   areas_of_focus: ['anxiety', 'depression', 'trauma', 'relationship issues', 'life transitions'],
-  approaches: {
-    long_term: ['psychodynamic', 'attachment-based'],
-    short_term: ['cognitive behavioral therapy', 'mindfulness-based stress reduction']
-  },
+  approaches: ['psychodynamic', 'attachment-based', 'cognitive behavioral therapy', 'mindfulness-based stress reduction'],
   profile_img_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&auto=format&fit=crop&q=60&ixlib=rb-4.0.3',
   video_intro_link: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
   clinic_profile_url: 'https://www.psychologytoday.com',

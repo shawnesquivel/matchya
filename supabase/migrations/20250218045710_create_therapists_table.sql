@@ -36,7 +36,7 @@ CREATE TYPE session_category_type AS ENUM (
 );
 
 CREATE TYPE session_type_type AS ENUM (
-  'individual', 'couples', 'family', 'group'
+  'individual', 'couples', 'family', 'group', 'psychedelic_integration'
 );
 
 CREATE TYPE delivery_method_type AS ENUM (
@@ -104,7 +104,7 @@ create table therapists (
     check (array_length(education, 1) <= 4),  -- max 4 entries
   certifications text[] not null default '{}'
     check (array_length(certifications, 1) <= 4),
-  approaches jsonb not null default '{"long_term": [], "short_term": []}',
+  approaches text[] not null default '{}',
   areas_of_focus text[] not null default '{}',
   languages text[] not null default '{}',
   
@@ -125,7 +125,7 @@ CREATE TABLE therapist_fees (
   session_type session_type_type not null,
   delivery_method delivery_method_type not null,
   duration_minutes integer not null check (duration_minutes > 0),
-  price decimal not null check (price > 0),
+  price decimal not null check (price >= 0),
   currency char(3) check (currency ~ '^[A-Z]{3}$')
 );
 

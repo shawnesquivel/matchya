@@ -22,7 +22,7 @@ create or replace function match_therapists(
   languages text[],       -- Column 12
   ai_summary text,        -- Column 13
   areas_of_focus text[],  -- Column 14
-  approaches jsonb,       -- Column 15
+  approaches text[],       -- Column 15
   initial_price text,     -- Column 16
   subsequent_price text,  -- Column 17
   similarity float,       -- Column 18

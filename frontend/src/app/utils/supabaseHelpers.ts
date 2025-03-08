@@ -25,10 +25,7 @@ export interface SupabaseTherapistProfile {
   education: string[];
   certifications: string[];
   areas_of_focus: string[];
-  approaches: {
-    long_term?: string[];
-    short_term?: string[];
-  };
+  approaches: string[];
 
   // Contact details
   therapist_email?: string;
@@ -316,16 +313,14 @@ export function mapSupabaseToTherapistProfile(
     available_online:
       profile.availability === "online" || profile.availability === "both",
     booking_link: profile.clinic_booking_url,
-    approaches: Array.isArray(profile.approaches?.long_term)
-      ? profile.approaches.long_term
-      : [],
+    approaches: profile.approaches || [],
     short_summary: profile.ai_summary || "",
     qualifications: profile.certifications || [],
     clinic: profile.clinic_name || "",
     gender: profile.gender || "",
     clinic_profile_url: profile.clinic_profile_url,
-    bio_link: profile.clinic_profile_url, // Reuse the clinic profile URL as bio_link
-    profile_link: profile.profile_img_url, // Reuse the profile image URL as profile_link
+    bio_link: profile.clinic_profile_url, 
+    profile_link: profile.profile_img_url, 
     licenses: profile.licenses || [],
     fees:
       profile.fees?.map((fee) => ({
