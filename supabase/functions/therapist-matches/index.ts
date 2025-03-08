@@ -87,8 +87,10 @@ Deno.serve(async (req) => {
   const perf = createPerformanceTracker("therapist-matches");
 
   try {
+    // Handle CORS preflight request
     if (req.method === "OPTIONS") {
-      return new Response("ok", { headers: corsHeaders });
+      console.log("[therapist-matches] CORS preflight request received");
+      return new Response("ok", { headers: corsHeaders, status: 200 });
     }
 
     if (!supabaseUrl || !supabaseAnonKey) {
