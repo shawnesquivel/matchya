@@ -98,7 +98,7 @@ export default function TherapistFees({
                   {therapist.rates?.initial && (
                     <div className="flex justify-between items-center">
                       <span className="text-base">Initial Visit</span>
-                      <span className="text-2xl font-medium">${therapist.rates.initial}</span>
+                      <span className="text-base font-medium">${therapist.rates.initial}</span>
                     </div>
                   )}
                   {therapist.rates?.subsequent_60 ? (
@@ -168,7 +168,7 @@ export default function TherapistFees({
                   {therapist.rates?.couples_initial && (
                     <div className="flex justify-between items-center">
                       <span className="text-base">Initial Visit</span>
-                      <span className="text-2xl font-medium">
+                      <span className="text-base font-medium">
                         ${therapist.rates.couples_initial}
                       </span>
                     </div>
@@ -176,7 +176,7 @@ export default function TherapistFees({
                   {therapist.rates?.couples_subsequent && (
                     <div className="flex justify-between items-center">
                       <span className="text-base">Subsequent Visit</span>
-                      <span className="text-2xl font-medium">
+                      <span className="text-base font-medium">
                         ${therapist.rates.couples_subsequent}
                       </span>
                     </div>
