@@ -1,5 +1,5 @@
 "use client";
-import React, { createContext, useContext, useReducer, useEffect, useState } from "react";
+import React, { createContext, useContext, useReducer, useEffect } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 
 // Define filter types
@@ -211,7 +211,8 @@ function therapistReducer(state, action) {
     case ACTIONS.TOGGLE_MOCK_DATA:
       return {
         ...state,
-        useMockData: action.payload !== undefined ? action.payload : !state.useMockData,
+        useMockData:
+          action.payload !== undefined ? action.payload : !state.useMockData,
       };
 
     default:
@@ -276,6 +277,14 @@ export function TherapistProvider({ children }) {
     }
   };
 
+  // Add this utility function near the other helper functions
+  const deduplicateTherapists = (therapists: Therapist[]): Therapist[] => {
+    if (!therapists || !therapists.length) return [];
+    return Array.from(
+      new Map(therapists.map((therapist) => [therapist.id, therapist])).values()
+    );
+  };
+
   // Function to handle chat submission
   const handleChatSubmission = async (text) => {
     try {
@@ -334,16 +343,22 @@ export function TherapistProvider({ children }) {
       }
 
       const matchData = await matchResponse.json();
-      console.log("[Context] ✅ Received therapist matches:", matchData.therapists?.length || 0);
+      console.log(
+        "[Context] ✅ Received therapist matches:",
+        matchData.therapists?.length || 0
+      );
 
       // Update therapist results and filters
       if (matchData.therapists && Array.isArray(matchData.therapists)) {
+        // Deduplicate therapists before updating state
+        const uniqueTherapists = deduplicateTherapists(matchData.therapists);
+
         if (matchData.extractedFilters) {
           console.log("[Context] 📊 Setting combined therapists and filters");
           dispatch({
             type: ACTIONS.SET_FILTERS_AND_THERAPISTS,
             payload: {
-              therapists: matchData.therapists,
+              therapists: uniqueTherapists,
               filters: matchData.extractedFilters,
             },
           });
@@ -351,14 +366,16 @@ export function TherapistProvider({ children }) {
           console.log("[Context] 📊 Setting only therapists");
           dispatch({
             type: ACTIONS.SET_THERAPISTS,
-            payload: matchData.therapists,
+            payload: uniqueTherapists,
           });
         }
       }
 
       // Mark therapist loading as complete, but keep form disabled
       dispatch({ type: ACTIONS.SET_THERAPIST_LOADING, payload: false });
-      console.log("[Context] ✅ Therapist loading complete, form still disabled");
+      console.log(
+        "[Context] ✅ Therapist loading complete, form still disabled"
+      );
 
       // STEP 2: Call chat-v3 to get AI response
       console.log("[Context] 💬 Calling chat-v3 API");
@@ -407,6 +424,16 @@ export function TherapistProvider({ children }) {
       });
       dispatch({ type: ACTIONS.INCREMENT_REQUEST_COUNT });
 
+      if (chatData?.therapists && chatData.therapists.length > 0) {
+        // Deduplicate therapists before updating state
+        const uniqueTherapists = deduplicateTherapists(chatData.therapists);
+
+        dispatch({
+          type: ACTIONS.SET_THERAPISTS,
+          payload: uniqueTherapists,
+        });
+      }
+
       return true;
     } catch (error) {
       console.error("[Context] ❌ Error in chat submission:", error);
@@ -414,7 +441,9 @@ export function TherapistProvider({ children }) {
       return false;
     } finally {
       // Always clear all loading states when done
-      console.log("[Context] 🏁 Chat submission complete, resetting all loading states");
+      console.log(
+        "[Context] 🏁 Chat submission complete, resetting all loading states"
+      );
       dispatch({ type: ACTIONS.SET_SENDING_CHAT, payload: false });
       dispatch({ type: ACTIONS.SET_CHAT_LOADING, payload: false });
       dispatch({ type: ACTIONS.SET_FORM_DISABLED, payload: false });
@@ -430,10 +459,16 @@ export function TherapistProvider({ children }) {
       dispatch({ type: ACTIONS.SET_THERAPIST_LOADING, payload: true });
       dispatch({ type: ACTIONS.SET_FORM_DISABLED, payload: true });
 
-      console.log("[Context] 📊 Fetching therapists with filters:", state.filters);
+      console.log(
+        "[Context] 📊 Fetching therapists with filters:",
+        state.filters
+      );
 
       // Call the API
-      console.log("therapist-matches using", process.env.NEXT_PUBLIC_SUPABASE_URL);
+      console.log(
+        "therapist-matches using",
+        process.env.NEXT_PUBLIC_SUPABASE_URL
+      );
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/therapist-matches`,
         {
@@ -451,16 +486,29 @@ export function TherapistProvider({ children }) {
       );
 
       if (!response.ok) {
-        throw new Error(`Failed to fetch therapists: ${response.status} ${response.statusText}`);
+        throw new Error(
+          `Failed to fetch therapists: ${response.status} ${response.statusText}`
+        );
       }
 
       const data = await response.json();
-      console.log("[Context] ✅ Received therapists:", data.therapists?.length || 0);
+      console.log(
+        "[Context] ✅ Received therapists:",
+        data.therapists?.length || 0
+      );
 
-      if (data.therapists && Array.isArray(data.therapists)) {
-        dispatch({ type: ACTIONS.SET_THERAPISTS, payload: data.therapists });
+      if (data?.therapists) {
+        // Deduplicate therapists before updating state
+        const uniqueTherapists = deduplicateTherapists(data.therapists);
+
+        dispatch({
+          type: ACTIONS.SET_THERAPISTS,
+          payload: uniqueTherapists,
+        });
       } else {
-        console.warn("[Context] ⚠️ No therapists in response or invalid format");
+        console.warn(
+          "[Context] ⚠️ No therapists in response or invalid format"
+        );
         dispatch({ type: ACTIONS.SET_THERAPISTS, payload: [] });
       }
 
@@ -478,7 +526,9 @@ export function TherapistProvider({ children }) {
       return false;
     } finally {
       // Always clear loading states when done
-      console.log("[Context] 🏁 Therapist filtering complete, resetting loading states");
+      console.log(
+        "[Context] 🏁 Therapist filtering complete, resetting loading states"
+      );
       dispatch({ type: ACTIONS.SET_THERAPIST_LOADING, payload: false });
       dispatch({ type: ACTIONS.SET_FORM_DISABLED, payload: false });
     }

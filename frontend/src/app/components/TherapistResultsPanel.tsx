@@ -39,8 +39,18 @@ export default function TherapistResultsPanel() {
   // If in mock mode, always show the therapist
   const showTherapists = useMockData || therapists?.length > 0;
 
-  // Get therapists to display - either mock data or real data
-  const displayTherapists = useMockData ? [mockTherapist] : therapists;
+  // Helper function to deduplicate therapists by ID
+  const deduplicateTherapists = (therapists: any[]): any[] => {
+    if (!therapists || !therapists.length) return [];
+    return Array.from(
+      new Map(therapists.map((therapist) => [therapist.id, therapist])).values()
+    );
+  };
+
+  // Get therapists to display - either mock data or real data (with deduplication)
+  const displayTherapists = useMockData
+    ? [mockTherapist]
+    : deduplicateTherapists(therapists);
 
   // Add this useEffect for logging license data
   useEffect(() => {
