@@ -154,7 +154,7 @@ export default function TherapistFees({
                     <div>
                       <span className="text-base">{fee.session_type}</span>
                       {fee.duration_minutes && (
-                        <span className="text-gray-500 text-xs ml-1">
+                        <span className="text-grey-medium text-xs ml-1">
                           ({fee.duration_minutes} min)
                         </span>
                       )}

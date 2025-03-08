@@ -138,7 +138,7 @@ export default function TherapistResultsPanel() {
                       </span>
                     </div>
                   </div>
-                  <div className="ml-auto flex gap-2">
+                  <div className="ml-auto flex gap-2 mb-auto">
                     {therapist.availability === "online" || therapist.availability === "both" ? (
                       therapist.clinic_profile_url ? (
                         <a
