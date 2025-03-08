@@ -21,7 +21,8 @@ export default function TherapistQualifications({
       ? "border border-grey-dark rounded-lg p-8 flex flex-col gap-6"
       : "flex flex-col gap-3";
 
-  const titleClasses = variant === "modal" ? "font-medium text-xl" : "font-medium text-2xl";
+  const titleClasses =
+    variant === "modal" ? "font-medium text-xl" : "font-medium text-2xl";
 
   return (
     <div className={`${containerClasses} ${className}`}>
@@ -32,19 +33,17 @@ export default function TherapistQualifications({
         {therapist.education && therapist.education.length > 0 && (
           <div className="flex flex-col gap-2">
             <h3 className="text-xs font-medium">Education</h3>
-            <div className="flex flex-col gap-0.5">
+            <ul className="list-disc space-y-0.5 ml-4">
               {therapist.education.map((edu, index) => (
-                <div key={index} className="">
-                  <p className="font-medium">{edu.degree}</p>
-                  <p className="text-grey-medium text-xs">
-                    {edu.institution}, {edu.year}
-                  </p>
-                </div>
+                <li key={index} className="">
+                  {edu}
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
         )}
-        <hr className="border-grey-light mt-2 mb-2" /> {/* Professional Experience */}
+        <hr className="border-grey-light mt-2 mb-2" />{" "}
+        {/* Professional Experience */}
         {therapist.experience && therapist.experience.length > 0 && (
           <div className="flex flex-col gap-2">
             <h3 className="text-xs font-medium">Professional Experience</h3>
@@ -65,7 +64,9 @@ export default function TherapistQualifications({
         <hr className="border-grey-light mt-2 mb-2" /> {/* Certifications */}
         {therapist.qualifications && therapist.qualifications.length > 0 && (
           <div className="flex flex-col gap-2">
-            <h3 className="text-xs font-medium">Certifications & Specialties</h3>
+            <h3 className="text-xs font-medium">
+              Certifications & Specialties
+            </h3>
             <ul className="list-disc space-y-0.5 ml-4">
               {therapist.qualifications.map((qual, index) => (
                 <li key={index} className="">
@@ -95,8 +96,11 @@ export default function TherapistQualifications({
         {/* No qualifications case */}
         {(!therapist.education || therapist.education.length === 0) &&
           (!therapist.experience || therapist.experience.length === 0) &&
-          (!therapist.qualifications || therapist.qualifications.length === 0) && (
-            <p className="text-sm text-grey-extraDark">Qualification information not available</p>
+          (!therapist.qualifications ||
+            therapist.qualifications.length === 0) && (
+            <p className="text-sm text-grey-extraDark">
+              Qualification information not available
+            </p>
           )}
       </div>
     </div>

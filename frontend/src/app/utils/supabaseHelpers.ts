@@ -67,11 +67,7 @@ export interface TherapistProfile {
   title?: string;
   bio: string;
   specialties: string[];
-  education: Array<{
-    degree: string;
-    institution: string;
-    year: number;
-  }>;
+  education: string[];
   experience: Array<{
     position: string;
     organization: string;
@@ -258,22 +254,6 @@ export function nameFromSlug(slug: string): string {
 export function mapSupabaseToTherapistProfile(
   profile: SupabaseTherapistProfile
 ): TherapistProfile {
-  // Parse education strings into structured objects
-  // Format expected: "Degree | Institution | Year"
-  const parseEducation = (educationStrings: string[]) => {
-    return educationStrings.map((edu) => {
-      const parts = edu.split("|").map((part) => part.trim());
-      return {
-        degree: parts[0] || "Degree",
-        institution: parts.length > 1 ? parts[1] : "Institution",
-        year:
-          parts.length > 2
-            ? parseInt(parts[2], 10) || new Date().getFullYear()
-            : new Date().getFullYear(),
-      };
-    });
-  };
-
   // Create a basic experience entry from available data
   const createDefaultExperience = () => {
     return [
@@ -293,15 +273,7 @@ export function mapSupabaseToTherapistProfile(
     title: profile.title,
     bio: profile.bio || "",
     specialties: profile.areas_of_focus || [],
-    education: profile.education?.length
-      ? parseEducation(profile.education)
-      : [
-          {
-            degree: "Degree",
-            institution: "Institution",
-            year: new Date().getFullYear(),
-          },
-        ],
+    education: profile.education || [], // Keep as string array directly from database
     experience: createDefaultExperience(),
     languages: profile.languages || [],
     profile_img_url: profile.profile_img_url || undefined,
