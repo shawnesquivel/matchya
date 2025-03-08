@@ -105,7 +105,7 @@ export default function TherapistFees({
                     <div className="flex justify-between items-center">
                       <div>
                         <span className="text-base">Subsequent Visit</span>
-                        <span className="text-gray-500 ml-1">(60 min)</span>
+                        <span className="text-gray-500 ml-1 text-xs">(60 min)</span>
                       </div>
                       <span className="text-base font-medium">
                         ${therapist.rates.subsequent_60}
@@ -116,7 +116,7 @@ export default function TherapistFees({
                       <div className="flex justify-between items-center">
                         <div>
                           <span className="text-base">Subsequent Visit</span>
-                          <span className="text-gray-500 ml-1">(60 min)</span>
+                          <span className="text-gray-500 ml-1 text-xs">(60 min)</span>
                         </div>
                         <span className="text-base font-medium">${therapist.rates.ongoing}</span>
                       </div>
@@ -126,7 +126,7 @@ export default function TherapistFees({
                     <div className="flex justify-between items-center">
                       <div>
                         <span className="text-base">Subsequent Visit</span>
-                        <span className="text-gray-500 ml-1">(90 min)</span>
+                        <span className="text-gray-500 ml-1 text-xs">(90 min)</span>
                       </div>
                       <span className="text-base font-medium">
                         ${therapist.rates.subsequent_90}
@@ -146,7 +146,7 @@ export default function TherapistFees({
           <hr className="border-grey-light mt-1 mb-6" />
           <div className="flex flex-col gap-2">
             <h3 className="text-xs font-medium">For Couple's Counselling</h3>
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-1">
               {/* Display detailed fees if available */}
               {coupleFees.length > 0 ? (
                 coupleFees.map((fee, index) => (
