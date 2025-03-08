@@ -49,8 +49,8 @@ interface TherapistData {
 }
 
 interface TherapistFee {
-  session_category: "initial" | "consultation" | "subsequent";
-  session_type: "individual" | "couples" | "family" | "group";
+  session_category: string;
+  session_type: string;
   delivery_method: "in_person" | "virtual" | "hybrid";
   duration_minutes: number;
   price: number;
@@ -125,10 +125,6 @@ const VALID_SESSION_TYPES = [
   "psychedelic_integration",
 ];
 
-const SESSION_TYPE_MAPPING: Record<string, string> = {
-  "relationship": "couples",
-};
-
 const VALID_DELIVERY_METHODS = [
   "in_person",
   "virtual",
@@ -160,8 +156,13 @@ const VALID_LICENSE_TITLES = [
   "RP",
   "RSW",
   "MACP",
+  "MSW",
   "CCC",
+  "MC",
   "RTC",
+  "MBA",
+  "Practicum Student",
+  "MA",
 ];
 
 // Helper function to clean markdown formatting from strings
@@ -242,11 +243,6 @@ function parseFees(feeStrings: string[]): TherapistFee[] {
       if (typeof feeObj !== "object") {
         console.warn(`Fee is not an object: ${feeString}`);
         continue;
-      }
-
-      // Map "relationship" session type to "couples"
-      if (feeObj.session_type && SESSION_TYPE_MAPPING[feeObj.session_type]) {
-        feeObj.session_type = SESSION_TYPE_MAPPING[feeObj.session_type];
       }
 
       // Convert duration to number

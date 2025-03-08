@@ -592,7 +592,18 @@ I'm passionate about supporting clients through life transitions, identity explo
     ];
 
     // License data
-    const licenseTypes = ["RCC", "RSW", "RP", "CPsych", "MFT", "RPN", "MD"];
+    const licenseTypes = [
+      "RCC",
+      "RSW",
+      "RP",
+      "CPsych",
+      "MFT",
+      "RPN",
+      "MD",
+      "MC",
+      "MSW",
+      "RTC",
+    ];
     const jurisdictions = ["ON", "BC", "AB", "MB", "QC", "NS", "SK"];
 
     // Build the random therapist object

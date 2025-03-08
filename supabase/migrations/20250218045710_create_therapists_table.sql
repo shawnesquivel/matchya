@@ -35,6 +35,7 @@ CREATE TYPE session_category_type AS ENUM (
   'initial', 'consultation', 'subsequent'
 );
 
+-- Who is involved?
 CREATE TYPE session_type_type AS ENUM (
   'individual', 'couples', 'family', 'group', 'psychedelic_integration'
 );
@@ -57,12 +58,17 @@ CREATE TYPE license_title_type AS ENUM (
   'RTC', -- Registered Therapeutic Counsellor
   'RSW', -- Registered Social Worker
   'MACP', -- Master of Arts in Counselling Psychology
+  'MSW', -- Master of Social Work
+  'MC', -- Master of Counselling
   'CCC', --- Canadian Certified Counsellor
   'RP',  -- Registered Psychotherapist
   'CPsych', -- Clinical Psychologist
   'MFT', -- Marriage and Family Therapist
   'RPN', -- Registered Psychiatric Nurse
-  'MD'   -- Psychiatrist (Medical Doctor)
+  'MD', -- Psychiatrist (Medical Doctor)
+  'MBA', -- Master of Business Administration
+  'Prarcticum Student', -- Practicum Student
+  'MA' -- Master of Arts
 );
 
 -- Core therapists table
