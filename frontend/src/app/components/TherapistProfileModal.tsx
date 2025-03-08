@@ -1,6 +1,9 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { TherapistProfile, getTherapistProfile } from "../utils/supabaseHelpers";
+import {
+  TherapistProfile,
+  getTherapistProfile,
+} from "../utils/supabaseHelpers";
 import CollapsibleSpecialties from "@/app/components/CollapsibleSpecialties";
 import CollapsibleApproaches from "@/app/components/CollapsibleApproaches";
 import TelehealthStatus from "@/components/TelehealthStatus";
@@ -25,7 +28,7 @@ interface TherapistProfileModalProps {
 export default function TherapistProfileModal({
   isOpen = true,
   onClose,
-  therapistId = "00305285-e634-4efe-bc76-cca8b723f441",
+  therapistId,
 }: TherapistProfileModalProps) {
   const [therapist, setTherapist] = useState<TherapistProfile | null>(null);
   const [loading, setLoading] = useState(false);
@@ -47,15 +50,16 @@ export default function TherapistProfileModal({
       setLoading(true);
       setError(null);
 
-      console.log("TherapistProfileModal: Fetching therapist with ID/name:", therapistId);
-
       try {
         const profile = await getTherapistProfile(therapistId);
         console.log("TherapistProfileModal: Fetch result:", profile);
         setTherapist(profile);
 
         if (!profile) {
-          console.error("TherapistProfileModal: No profile found for:", therapistId);
+          console.error(
+            "TherapistProfileModal: No profile found for:",
+            therapistId
+          );
           setError(`No profile found for "${therapistId}"`);
         }
       } catch (err) {
@@ -232,27 +236,44 @@ export default function TherapistProfileModal({
                 <div className="md:col-span-2 sm:col-span-2 gap-8">
                   <div className="flex flex-col gap-2">
                     <h2 className="font-medium text-xl">About</h2>
-                    <p className="text-mblack">{displayTherapist.bio || "No bio available"}</p>
+                    <p className="text-mblack">
+                      {displayTherapist.bio || "No bio available"}
+                    </p>
 
                     <div className="mt-8 flex flex-col gap-2">
                       <h2 className="font-medium text-xl">Areas of Practice</h2>
-                      <CollapsibleSpecialties specialties={displayTherapist.specialties || []} />
+                      <CollapsibleSpecialties
+                        specialties={displayTherapist.specialties || []}
+                      />
                     </div>
 
                     <div className="mt-8 flex flex-col gap-2">
-                      <h2 className="font-medium text-xl">Therapeutic Approaches</h2>
-                      <CollapsibleApproaches approaches={displayTherapist.approaches || []} />
+                      <h2 className="font-medium text-xl">
+                        Therapeutic Approaches
+                      </h2>
+                      <CollapsibleApproaches
+                        approaches={displayTherapist.approaches || []}
+                      />
                     </div>
                     <div className="mt-8 flex flex-col gap-2">
-                      <TherapistLicenses therapist={displayTherapist} variant="modal" />
+                      <TherapistLicenses
+                        therapist={displayTherapist}
+                        variant="modal"
+                      />
                     </div>
                   </div>
                 </div>
 
                 <div className="md:col-span-1 sm:col-span-2 space-y-8">
-                  <TherapistLocation therapist={displayTherapist} variant="modal" />
+                  <TherapistLocation
+                    therapist={displayTherapist}
+                    variant="modal"
+                  />
                   <TherapistFees therapist={displayTherapist} variant="modal" />
-                  <TherapistQualifications therapist={displayTherapist} variant="modal" />
+                  <TherapistQualifications
+                    therapist={displayTherapist}
+                    variant="modal"
+                  />
                 </div>
               </div>
             </div>

@@ -134,35 +134,38 @@ export const mockTherapistProfile: TherapistProfile = {
   ],
   fees: [
     {
-      session_type: 'Initial Consultation',
+      session_type: 'individual',
+      session_category: 'initial',
+      delivery_method: 'in_person',
       duration_minutes: 50,
       price: 175,
-      currency: 'USD',
-      category: 'individual'
+      currency: 'USD'
     },
     {
-      session_type: 'Individual Therapy',
+      session_type: 'individual',
+      session_category: 'subsequent',
+      delivery_method: 'in_person',
       duration_minutes: 50,
       price: 150,
-      currency: 'USD',
-      category: 'individual'
+      currency: 'USD'
     },
     {
-      session_type: 'Couples Therapy',
+      session_type: 'couples',
+      session_category: 'initial',
+      delivery_method: 'in_person',
       duration_minutes: 80,
       price: 200,
-      currency: 'USD',
-      category: 'couples'
+      currency: 'USD'
+    },
+    {
+      session_type: 'couples',
+      session_category: 'subsequent',
+      delivery_method: 'in_person',
+      duration_minutes: 80,
+      price: 190,
+      currency: 'USD'
     }
   ],
-  rates: {
-    initial: 175,
-    ongoing: 150,
-    subsequent_60: 150,
-    subsequent_90: 200,
-    couples_initial: 200,
-    couples_subsequent: 190
-  },
   pronouns: 'she/her',
   sexuality: ['Straight'],
   ethnicity: ['Caucasian', 'Asian'],

@@ -185,7 +185,7 @@ Deno.serve(async (req) => {
         clinic_phone,
         education,
         certifications,
-        therapist_fees!inner(session_category, session_type, price, currency),
+        therapist_fees!inner(session_category, session_type, price, currency, delivery_method, duration_minutes),
         therapist_licenses(*)
       `);
 
@@ -250,16 +250,22 @@ Deno.serve(async (req) => {
       // Format the therapists to include price information
       const formattedTherapists = therapists.map(
         ({ therapist_fees, therapist_licenses, ...t }: any) => {
-          // Create a complete therapist object with all fields
           return {
             ...t,
+            fees: therapist_fees ? therapist_fees.map(fee => ({
+              session_type: fee.session_type,
+              session_category: fee.session_category,
+              delivery_method: fee.delivery_method,
+              duration_minutes: fee.duration_minutes,
+              price: fee.price,
+              currency: fee.currency
+            })) : [],
             initial_price: therapist_fees?.find(
               (f) => f.session_category === "initial"
             )?.price,
             subsequent_price: therapist_fees?.find(
               (f) => f.session_category === "subsequent"
             )?.price,
-            // Transform therapist_licenses to match the expected format in the frontend
             licenses: therapist_licenses || [],
           };
         }
@@ -297,6 +303,7 @@ Deno.serve(async (req) => {
         }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 400
         }
       );
     }
@@ -372,7 +379,7 @@ Deno.serve(async (req) => {
           }),
           {
             status: 500,
-            headers: { "Content-Type": "application/json" },
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
           }
         );
       }

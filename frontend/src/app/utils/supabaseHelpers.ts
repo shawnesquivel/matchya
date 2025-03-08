@@ -110,20 +110,12 @@ export interface TherapistProfile {
   }>;
   fees: Array<{
     session_type: string;
+    session_category: string;
+    delivery_method: string;
     duration_minutes: number;
     price: number;
     currency: string;
-    category: string;
   }>;
-  // Rates structure for backward compatibility with existing frontend
-  rates: {
-    initial: number;
-    ongoing: number;
-    subsequent_60?: number;
-    subsequent_90?: number;
-    couples_initial?: number;
-    couples_subsequent?: number;
-  };
 
   // Additional fields from Supabase
   pronouns?: string;
@@ -269,34 +261,6 @@ export function nameFromSlug(slug: string): string {
 export function mapSupabaseToTherapistProfile(
   profile: SupabaseTherapistProfile
 ): TherapistProfile {
-  // Get fee information
-  const getIndividualFee = (
-    category: string,
-    minutes: number
-  ): number | null => {
-    const fee = profile.fees?.find(
-      (f) =>
-        f.session_type === "individual" &&
-        f.session_category === category &&
-        f.duration_minutes === minutes
-    );
-    return fee?.price || null;
-  };
-
-  const getCouplesFee = (category: string, minutes: number): number | null => {
-    const fee = profile.fees?.find(
-      (f) =>
-        f.session_type === "couples" &&
-        f.session_category === category &&
-        f.duration_minutes === minutes
-    );
-    return fee?.price || null;
-  };
-
-  // Determine the initial and ongoing rates for backward compatibility
-  const initial = getIndividualFee("initial", 50) || 150;
-  const ongoing = getIndividualFee("subsequent", 50) || initial;
-
   // Parse education strings into structured objects
   // Format expected: "Degree | Institution | Year"
   const parseEducation = (educationStrings: string[]) => {
@@ -366,20 +330,12 @@ export function mapSupabaseToTherapistProfile(
     fees:
       profile.fees?.map((fee) => ({
         session_type: fee.session_type,
+        session_category: fee.session_category,
+        delivery_method: fee.delivery_method,
         duration_minutes: fee.duration_minutes,
         price: fee.price,
         currency: fee.currency,
-        category: fee.session_category,
       })) || [],
-    // Legacy rates structure for backward compatibility
-    rates: {
-      initial,
-      ongoing,
-      subsequent_60: getIndividualFee("subsequent", 50) || initial,
-      subsequent_90: getIndividualFee("subsequent", 80) || ongoing,
-      couples_initial: getCouplesFee("initial", 80) || null,
-      couples_subsequent: getCouplesFee("subsequent", 80) || null,
-    },
     pronouns: profile.pronouns,
     sexuality: profile.sexuality,
     ethnicity: profile.ethnicity,
