@@ -64,18 +64,7 @@ export const mockTherapistProfile: TherapistProfile = {
   title: 'Licensed Psychologist',
   bio: 'I am a licensed psychologist with over 10 years of experience helping individuals overcome anxiety, depression, and trauma. My approach is collaborative, warm, and evidence-based. I believe in creating a safe space where clients can explore their thoughts and feelings without judgment.',
   specialties: ['Anxiety', 'Depression', 'Trauma', 'Relationship Issues', 'Life Transitions'],
-  education: [
-    {
-      degree: 'Ph.D. Clinical Psychology',
-      institution: 'Stanford University',
-      year: 2012
-    },
-    {
-      degree: 'M.A. Counseling Psychology',
-      institution: 'UC Berkeley',
-      year: 2009
-    }
-  ],
+  education: ['Ph.D. Clinical Psychology, Stanford University', 'M.A. Counseling Psychology, UC Berkeley'],
   experience: [
     {
       position: 'Clinical Psychologist',
