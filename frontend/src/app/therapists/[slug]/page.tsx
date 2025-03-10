@@ -2,6 +2,8 @@ import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Script from "next/script";
+import dynamic from "next/dynamic";
+import { Suspense } from "react";
 import type { TherapistProfile } from "../../utils/supabaseHelpers";
 import {
   getTherapistProfile,
@@ -9,12 +11,10 @@ import {
   generateProfileSlug,
   fetchTherapistNames,
 } from "../../utils/supabaseHelpers";
-import { Suspense } from "react";
 import Loading from "./loading";
 import { getSafeImageUrl } from "@/app/utils/imageHelpers";
 import CollapsibleSpecialties from "@/app/components/CollapsibleSpecialties";
 import CollapsibleApproaches from "@/app/components/CollapsibleApproaches";
-// import { Checkmark, XMark, Warning } from "@/components/Icons";
 import TelehealthStatus from "@/components/TelehealthStatus";
 import { mockTherapistProfile, shouldUseMockDataForSlug } from "../../utils/mockTherapistData";
 import GlobeIcon from "@/components/icons/GlobeIcon";
@@ -23,17 +23,24 @@ import TherapistLocation from "@/app/components/TherapistLocation";
 import TherapistFees from "@/app/components/TherapistFees";
 import TherapistLicenses from "@/app/components/TherapistLicenses";
 import TherapistQualifications from "@/app/components/TherapistQualifications";
-// import { Checkmark, XMark, Warning } from "@/components/Icons";
-import dynamic from "next/dynamic";
 
-// Ensure we're using a proper client-side only import with no SSR
+// Dynamically import the client components with no SSR for proper client-side rendering
 const TherapistProfileTracker = dynamic(() => import("../../components/TherapistProfileTracker"), {
   ssr: false,
-  loading: () => <div style={{ display: "none" }}>Loading tracker...</div>,
 });
 
-// Log for debugging the dynamic import
-console.log("TherapistProfileTracker dynamically imported");
+// Define a client component placeholder for where the links should appear
+// This ensures we're not trying to pass event handlers to server components
+const LinkPlaceholder = dynamic(() => import("../../components/OutboundLinkTracker"), {
+  ssr: false,
+  // Use a loading placeholder that matches the size of the links area
+  loading: () => (
+    <div className="md:col-span-2 col-span-6 flex gap-2 mb-6 sm:mb-0 md:justify-end justify-start flex-col">
+      <div className="h-12 bg-gray-100 rounded-full animate-pulse"></div>
+      <div className="h-12 bg-gray-100 rounded-full animate-pulse"></div>
+    </div>
+  ),
+});
 
 // CSS for fill-from-left hover effect
 const buttonHoverStyles = `
@@ -239,6 +246,7 @@ export const revalidate = 3600;
 const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => {
   return (
     <>
+      {/* Client component for tracking views */}
       <TherapistProfileTracker therapist={therapist} />
 
       <Script
@@ -288,30 +296,7 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => {
                 <p className="text-base text-gray-500">{therapist.pronouns}</p>
               )}
             </div>
-            <div className="md:col-span-2 col-span-6 flex gap-2 mb-6 sm:mb-0 md:justify-end justify-start flex-col">
-              {therapist.bio_link && (
-                <a
-                  href={therapist.bio_link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="fill-from-left rounded-full flex items-center justify-center px-4 py-3 text-mblack bg-beige transition-all duration-300 transform hover:shadow-sm"
-                >
-                  <GlobeIcon className="w-4 h-4 mr-2" />
-                  View Website
-                </a>
-              )}
-              {therapist.booking_link && (
-                <a
-                  href={therapist.booking_link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="fill-from-left rounded-full flex items-center justify-center px-4 py-3 bg-green text-white transition-all duration-300 transform hover:shadow-sm"
-                >
-                  <CalendarIcon className="w-4 h-4 mr-2" />
-                  Book Appointment
-                </a>
-              )}
-            </div>
+            <LinkPlaceholder therapist={therapist} />
           </div>
         </div>
 
