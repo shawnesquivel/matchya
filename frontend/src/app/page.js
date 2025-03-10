@@ -59,7 +59,7 @@ export default function SupaChatContextPage() {
   }, []);
 
   return (
-    <div className="relative min-h-screen w-full">
+    <div className="relative min-h-screen w-full bg-white">
       <style jsx global>
         {scrollbarStyles}
       </style>
