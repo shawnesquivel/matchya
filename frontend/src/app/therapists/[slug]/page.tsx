@@ -24,6 +24,12 @@ import TherapistFees from "@/app/components/TherapistFees";
 import TherapistLicenses from "@/app/components/TherapistLicenses";
 import TherapistQualifications from "@/app/components/TherapistQualifications";
 // import { Checkmark, XMark, Warning } from "@/components/Icons";
+import dynamic from "next/dynamic";
+
+// Dynamically import the tracker with no SSR
+const TherapistProfileTracker = dynamic(() => import("../../components/TherapistProfileTracker"), {
+  ssr: false,
+});
 
 // CSS for fill-from-left hover effect
 const buttonHoverStyles = `
@@ -229,6 +235,8 @@ export const revalidate = 3600;
 const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => {
   return (
     <>
+      <TherapistProfileTracker therapist={therapist} />
+
       <Script
         id="adobe-fonts"
         strategy="beforeInteractive"

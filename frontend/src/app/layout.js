@@ -21,6 +21,14 @@ export default function RootLayout({ children }) {
             async
             src="https://js.stripe.com/v3/pricing-table.js"
           ></script>
+          {/* Initialize dataLayer before GTM */}
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                window.dataLayer = window.dataLayer || [];
+              `
+            }}
+          />
           {/* Google Tag Manager */}
           <script
             dangerouslySetInnerHTML={{

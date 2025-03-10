@@ -233,14 +233,17 @@ export default function TherapistProfileModal({
                       target="_blank"
                       rel="noopener noreferrer"
                       className="fill-from-left rounded-full flex items-center justify-center px-4 py-3 text-mblack bg-beige-light transition-all duration-300 transform hover:shadow-sm"
-                      onClick={() =>
+                      onClick={(e) => {
+                        console.log("Website link clicked in modal", displayTherapist.id);
+                        // Prevent the click from bubbling up if needed
+                        e.stopPropagation();
                         trackOutboundLink(displayTherapist.clinic_profile_url, {
                           id: displayTherapist.id,
                           name: `${displayTherapist.first_name} ${displayTherapist.last_name}`,
                           linkType: "website",
                           source: "modal",
-                        })
-                      }
+                        });
+                      }}
                     >
                       <GlobeIcon className="w-4 h-4 mr-2" />
                       View Website
@@ -252,14 +255,17 @@ export default function TherapistProfileModal({
                       target="_blank"
                       rel="noopener noreferrer"
                       className="fill-from-left rounded-full flex items-center justify-center px-4 py-3 bg-green text-white transition-all duration-300 transform hover:shadow-sm"
-                      onClick={() =>
+                      onClick={(e) => {
+                        console.log("Booking link clicked in modal", displayTherapist.id);
+                        // Prevent the click from bubbling up if needed
+                        e.stopPropagation();
                         trackOutboundLink(displayTherapist.booking_link, {
                           id: displayTherapist.id,
                           name: `${displayTherapist.first_name} ${displayTherapist.last_name}`,
                           linkType: "booking",
                           source: "modal",
-                        })
-                      }
+                        });
+                      }}
                     >
                       <CalendarIcon className="w-4 h-4 mr-2" />
                       Book Appointment
