@@ -20,10 +20,9 @@ export default function TherapistFees({
   const containerClasses =
     variant === "modal"
       ? "border border-grey-dark rounded-lg p-8 flex flex-col gap-4"
-      : "flex flex-col gap-5";
+      : "border border-grey-dark rounded-lg p-8 flex flex-col gap-4";
 
-  const titleClasses =
-    variant === "modal" ? "font-medium text-xl" : "font-medium mb-4 text-2xl";
+  const titleClasses = variant === "modal" ? "font-medium text-xl" : "font-medium mb-4 text-2xl";
 
   // Get fees by session type
   const getFeesBySessionType = (sessionType: string) => {
@@ -36,8 +35,7 @@ export default function TherapistFees({
   };
 
   const individualFees = getFeesBySessionType("individual");
-  const coupleFees =
-    getFeesBySessionType("couples") || getFeesBySessionType("couple");
+  const coupleFees = getFeesBySessionType("couples") || getFeesBySessionType("couple");
   const familyFees = getFeesBySessionType("family");
   const groupFees = getFeesBySessionType("group");
 
@@ -79,18 +77,21 @@ export default function TherapistFees({
 
   return (
     <div className={`${containerClasses} ${className}`}>
-      <div className="flex justify-between items-center">
+      <div className="flex md:justify-between md:items-center items-start md:flex-row flex-col">
         <h2 className={`${titleClasses} flex items-center gap-2`}>
-          {variant === "modal" ? "Fees" : "Billing + Insurance"}
+          {variant === "modal" ? "Fees" : "Fees"}
         </h2>
         {variant === "page" && therapist.booking_link && (
           <a
             href={therapist.booking_link}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-mblack underline text-base"
+            className="text-mblack text-sm relative group"
           >
-            Full Pricing
+            <span className="relative inline-block">
+              View Full Pricing
+              <span className="absolute left-0 bottom-0 w-0 h-px bg-current transition-all duration-300 group-hover:w-full"></span>
+            </span>
           </a>
         )}
       </div>
@@ -114,15 +115,11 @@ export default function TherapistFees({
                         <span className="mr-2">{fee.duration_minutes} min</span>
                       )}
                       {fee.delivery_method && (
-                        <span>
-                          {getDeliveryMethodLabel(fee.delivery_method)}
-                        </span>
+                        <span>{getDeliveryMethodLabel(fee.delivery_method)}</span>
                       )}
                     </div>
                   </div>
-                  <span className="text-base">
-                    {formatPrice(fee.price, fee.currency)}
-                  </span>
+                  <span className="text-base">{formatPrice(fee.price, fee.currency)}</span>
                 </div>
               ))}
             </div>
@@ -150,15 +147,11 @@ export default function TherapistFees({
                         <span className="mr-2">{fee.duration_minutes} min</span>
                       )}
                       {fee.delivery_method && (
-                        <span>
-                          {getDeliveryMethodLabel(fee.delivery_method)}
-                        </span>
+                        <span>{getDeliveryMethodLabel(fee.delivery_method)}</span>
                       )}
                     </div>
                   </div>
-                  <span className="text-base">
-                    {formatPrice(fee.price, fee.currency)}
-                  </span>
+                  <span className="text-base">{formatPrice(fee.price, fee.currency)}</span>
                 </div>
               ))}
             </div>
@@ -186,15 +179,11 @@ export default function TherapistFees({
                         <span className="mr-2">{fee.duration_minutes} min</span>
                       )}
                       {fee.delivery_method && (
-                        <span>
-                          {getDeliveryMethodLabel(fee.delivery_method)}
-                        </span>
+                        <span>{getDeliveryMethodLabel(fee.delivery_method)}</span>
                       )}
                     </div>
                   </div>
-                  <span className="text-base">
-                    {formatPrice(fee.price, fee.currency)}
-                  </span>
+                  <span className="text-base">{formatPrice(fee.price, fee.currency)}</span>
                 </div>
               ))}
             </div>
@@ -222,15 +211,11 @@ export default function TherapistFees({
                         <span className="mr-2">{fee.duration_minutes} min</span>
                       )}
                       {fee.delivery_method && (
-                        <span>
-                          {getDeliveryMethodLabel(fee.delivery_method)}
-                        </span>
+                        <span>{getDeliveryMethodLabel(fee.delivery_method)}</span>
                       )}
                     </div>
                   </div>
-                  <span className="text-base">
-                    {formatPrice(fee.price, fee.currency)}
-                  </span>
+                  <span className="text-base">{formatPrice(fee.price, fee.currency)}</span>
                 </div>
               ))}
             </div>
@@ -240,11 +225,11 @@ export default function TherapistFees({
 
       {/* Insurance Information (only on page view) */}
       {variant === "page" && (
-        <div className="mt-4">
-          <h3 className="text-lg font-medium mb-2">Insurance</h3>
+        <div className="mt-2">
+          <hr className="border-grey-light mt-1 mb-6" />
+          <h3 className="text-xs mb-2">Insurance</h3>
           <p className="text-gray-700">
-            Please contact the therapist directly to inquire about insurance
-            coverage.
+            Please contact the therapist directly to inquire about insurance coverage.
           </p>
         </div>
       )}

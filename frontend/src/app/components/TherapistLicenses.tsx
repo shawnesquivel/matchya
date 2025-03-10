@@ -20,7 +20,7 @@ export default function TherapistLicenses({
   const containerClasses =
     variant === "modal"
       ? "border border-grey-dark rounded-lg p-8 flex flex-col gap-6"
-      : "flex flex-col gap-3";
+      : "border border-grey-dark rounded-lg p-8 flex flex-col gap-6";
 
   const titleClasses = variant === "modal" ? "font-medium text-xl" : "font-medium mb-2 text-2xl";
 

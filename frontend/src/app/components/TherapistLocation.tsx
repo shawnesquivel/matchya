@@ -19,7 +19,7 @@ export default function TherapistLocation({
   const containerClasses =
     variant === "modal"
       ? "border border-grey-dark rounded-lg p-8 flex flex-col gap-6"
-      : "flex flex-col gap-8";
+      : "border border-grey-dark rounded-lg p-8 flex flex-col gap-6";
 
   const titleClasses = variant === "modal" ? "font-medium text-xl" : "font-medium text-3xl";
 
@@ -70,11 +70,10 @@ export default function TherapistLocation({
         )}
       </div>
 
-      <hr className="border-grey-light" />
-
       {/* Only show Contact section if any contact info exists */}
       {(therapist.therapist_phone || therapist.clinic_phone || therapist.therapist_email) && (
         <div className="flex flex-col gap-3 text-mblack">
+          <hr className="border-grey-light" />
           <h2 className={titleClasses}>Contact</h2>
           <div className="flex flex-col gap-2">
             {therapist.therapist_phone && (

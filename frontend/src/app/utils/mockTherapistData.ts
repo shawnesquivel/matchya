@@ -176,5 +176,10 @@ export const getNameFromMockSlug = (slug: string): string => {
 
 // Helper function to check if we should use mock data for a slug
 export const shouldUseMockDataForSlug = (slug: string): boolean => {
-  return slug === 'test-user' || slug === 'emma-thompson';
-}; 
+  const shouldUseMock = slug === 'test-user' || slug === 'emma-thompson';
+  console.log(`[shouldUseMockDataForSlug] Checking slug: ${slug}, shouldUseMock: ${shouldUseMock}`);
+  return shouldUseMock;
+};
+
+// Log that mock data is loaded for debugging
+console.log('[mockTherapistData] Mock therapist module loaded'); 

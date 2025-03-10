@@ -19,10 +19,9 @@ export default function TherapistQualifications({
   const containerClasses =
     variant === "modal"
       ? "border border-grey-dark rounded-lg p-8 flex flex-col gap-6"
-      : "flex flex-col gap-3";
+      : "border border-grey-dark rounded-lg p-8 flex flex-col gap-6";
 
-  const titleClasses =
-    variant === "modal" ? "font-medium text-xl" : "font-medium text-2xl";
+  const titleClasses = variant === "modal" ? "font-medium text-xl" : "font-medium text-2xl";
 
   return (
     <div className={`${containerClasses} ${className}`}>
@@ -42,10 +41,10 @@ export default function TherapistQualifications({
             </ul>
           </div>
         )}
-        <hr className="border-grey-light mt-2 mb-2" />{" "}
         {/* Professional Experience */}
         {therapist.experience && therapist.experience.length > 0 && (
           <div className="flex flex-col gap-2">
+            <hr className="border-grey-light mt-2 mb-4" />
             <h3 className="text-xs font-medium">Professional Experience</h3>
             <div className="space-y-2">
               {therapist.experience.map((exp, index) => (
@@ -61,12 +60,11 @@ export default function TherapistQualifications({
             </div>
           </div>
         )}
-        <hr className="border-grey-light mt-2 mb-2" /> {/* Certifications */}
+        {/* Certifications */}
         {therapist.qualifications && therapist.qualifications.length > 0 && (
           <div className="flex flex-col gap-2">
-            <h3 className="text-xs font-medium">
-              Certifications & Specialties
-            </h3>
+            <hr className="border-grey-light mt-2 mb-4" />
+            <h3 className="text-xs font-medium">Certifications & Specialties</h3>
             <ul className="list-disc space-y-0.5 ml-4">
               {therapist.qualifications.map((qual, index) => (
                 <li key={index} className="">
@@ -76,9 +74,10 @@ export default function TherapistQualifications({
             </ul>
           </div>
         )}
-        <hr className="border-grey-light mt-2 mb-2" /> {/* Languages */}
+        {/* Languages */}
         {therapist.languages && therapist.languages.length > 0 && (
           <div className="flex flex-col gap-2">
+            <hr className="border-grey-light mt-2 mb-4" />
             <h3 className="text-xs font-medium">Languages</h3>
             <div className="flex flex-wrap gap-2">
               {therapist.languages.map((language, index) => (
@@ -96,11 +95,8 @@ export default function TherapistQualifications({
         {/* No qualifications case */}
         {(!therapist.education || therapist.education.length === 0) &&
           (!therapist.experience || therapist.experience.length === 0) &&
-          (!therapist.qualifications ||
-            therapist.qualifications.length === 0) && (
-            <p className="text-sm text-grey-extraDark">
-              Qualification information not available
-            </p>
+          (!therapist.qualifications || therapist.qualifications.length === 0) && (
+            <p className="text-sm text-grey-extraDark">Qualification information not available</p>
           )}
       </div>
     </div>

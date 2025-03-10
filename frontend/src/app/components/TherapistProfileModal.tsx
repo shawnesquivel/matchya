@@ -1,9 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import {
-  TherapistProfile,
-  getTherapistProfile,
-} from "../utils/supabaseHelpers";
+import { TherapistProfile, getTherapistProfile } from "../utils/supabaseHelpers";
 import CollapsibleSpecialties from "@/app/components/CollapsibleSpecialties";
 import CollapsibleApproaches from "@/app/components/CollapsibleApproaches";
 import TelehealthStatus from "@/components/TelehealthStatus";
@@ -18,6 +15,31 @@ import Image from "next/image";
 import { getSafeImageUrl } from "../utils/imageHelpers";
 import GlobeIcon from "../../components/icons/GlobeIcon";
 import CalendarIcon from "../../components/icons/CalendarIcon";
+
+// CSS for fill-from-left hover effect
+const buttonHoverStyles = `
+  .fill-from-left {
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+  }
+  
+  .fill-from-left::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.02);
+    transition: width 0.3s ease;
+    z-index: -1;
+  }
+  
+  .fill-from-left:hover::before {
+    width: 100%;
+  }
+`;
 
 interface TherapistProfileModalProps {
   isOpen: boolean;
@@ -56,10 +78,7 @@ export default function TherapistProfileModal({
         setTherapist(profile);
 
         if (!profile) {
-          console.error(
-            "TherapistProfileModal: No profile found for:",
-            therapistId
-          );
+          console.error("TherapistProfileModal: No profile found for:", therapistId);
           setError(`No profile found for "${therapistId}"`);
         }
       } catch (err) {
@@ -126,7 +145,7 @@ export default function TherapistProfileModal({
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 bg-gray-200 hover:bg-gray-300 rounded-full p-2"
+          className="absolute top-4 right-4 z-10 bg-gray-200 hover:bg-gray-300 rounded-full p-2 transition-all duration-300"
           aria-label="Close modal"
         >
           <svg
@@ -145,6 +164,9 @@ export default function TherapistProfileModal({
             <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
         </button>
+
+        {/* Style for button hover effect */}
+        <style dangerouslySetInnerHTML={{ __html: buttonHoverStyles }} />
 
         {/* If in mock mode, add a banner indicating that it's mock data */}
         {useMockData && (
@@ -166,7 +188,7 @@ export default function TherapistProfileModal({
             <p>{error}</p>
             <button
               onClick={onClose}
-              className="mt-4 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+              className="mt-4 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 transition-all duration-300"
             >
               Close
             </button>
@@ -194,14 +216,14 @@ export default function TherapistProfileModal({
                   </div>
                 </div>
                 <div className="flex flex-col gap-2 md:col-span-3 col-span-6">
-                  <h1 className="font-tuppence text-3xl lg:text-4xl font-bold">
+                  <h1 className="text-3xl lg:text-4xl font-medium">
                     {displayTherapist.first_name || "Name Not Available"}{" "}
                     {displayTherapist.last_name || ""}
                   </h1>
                   {/* Add pronouns below the therapist's name */}
-                  {/* {therapist.pronouns && (
-                    <p className="text-sm text-gray-500">{therapist.pronouns}</p>
-                  )} */}
+                  {displayTherapist.pronouns && (
+                    <p className="text-sm text-gray-500">{displayTherapist.pronouns}</p>
+                  )}
                 </div>
                 <div className="md:col-span-2 col-span-6 flex gap-2 mb-6 sm:mb-0 md:justify-end justify-start sm:flex-col-reverse lg:flex-col">
                   {displayTherapist.bio_link && (
@@ -209,7 +231,7 @@ export default function TherapistProfileModal({
                       href={displayTherapist.bio_link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="rounded-full flex items-center justify-center px-4 py-3 text-mblack bg-beige-light hover:bg-beige transition-colors"
+                      className="fill-from-left rounded-full flex items-center justify-center px-4 py-3 text-mblack bg-beige-light transition-all duration-300 transform hover:shadow-sm"
                     >
                       <GlobeIcon className="w-4 h-4 mr-2" />
                       View Website
@@ -220,7 +242,7 @@ export default function TherapistProfileModal({
                       href={displayTherapist.booking_link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="rounded-full flex items-center justify-center px-4 py-3 bg-green text-white hover:bg-green-dark transition-colors"
+                      className="fill-from-left rounded-full flex items-center justify-center px-4 py-3 bg-green text-white transition-all duration-300 transform hover:shadow-sm"
                     >
                       <CalendarIcon className="w-4 h-4 mr-2" />
                       Book Appointment
@@ -235,45 +257,28 @@ export default function TherapistProfileModal({
               <div className="container mx-auto gap-8 grid md:grid-cols-3 sm:grid-cols-1 md:py-14 sm:py-8">
                 <div className="md:col-span-2 sm:col-span-2 gap-8">
                   <div className="flex flex-col gap-2">
-                    <h2 className="font-medium text-xl">About</h2>
-                    <p className="text-mblack">
-                      {displayTherapist.bio || "No bio available"}
-                    </p>
+                    <h2 className="font-medium text-xl">About {displayTherapist.first_name}</h2>
+                    <p className="text-mblack">{displayTherapist.bio || "No bio available"}</p>
 
                     <div className="mt-8 flex flex-col gap-2">
                       <h2 className="font-medium text-xl">Areas of Practice</h2>
-                      <CollapsibleSpecialties
-                        specialties={displayTherapist.specialties || []}
-                      />
+                      <CollapsibleSpecialties specialties={displayTherapist.specialties || []} />
                     </div>
 
                     <div className="mt-8 flex flex-col gap-2">
-                      <h2 className="font-medium text-xl">
-                        Therapeutic Approaches
-                      </h2>
-                      <CollapsibleApproaches
-                        approaches={displayTherapist.approaches || []}
-                      />
+                      <h2 className="font-medium text-xl">Therapeutic Approaches</h2>
+                      <CollapsibleApproaches approaches={displayTherapist.approaches || []} />
                     </div>
                     <div className="mt-8 flex flex-col gap-2">
-                      <TherapistLicenses
-                        therapist={displayTherapist}
-                        variant="modal"
-                      />
+                      <TherapistLicenses therapist={displayTherapist} variant="modal" />
                     </div>
                   </div>
                 </div>
 
                 <div className="md:col-span-1 sm:col-span-2 space-y-8">
-                  <TherapistLocation
-                    therapist={displayTherapist}
-                    variant="modal"
-                  />
+                  <TherapistLocation therapist={displayTherapist} variant="modal" />
                   <TherapistFees therapist={displayTherapist} variant="modal" />
-                  <TherapistQualifications
-                    therapist={displayTherapist}
-                    variant="modal"
-                  />
+                  <TherapistQualifications therapist={displayTherapist} variant="modal" />
                 </div>
               </div>
             </div>
@@ -283,7 +288,7 @@ export default function TherapistProfileModal({
             <p>No therapist data found</p>
             <button
               onClick={onClose}
-              className="mt-4 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
+              className="mt-4 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 transition-all duration-300"
             >
               Close
             </button>
