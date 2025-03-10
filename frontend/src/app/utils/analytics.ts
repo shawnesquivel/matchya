@@ -65,12 +65,23 @@ export const trackEvent = (
   }
 };
 
+// Use debounce to prevent double tracking
+let lastLinkClick = 0;
+
 // Track outbound link clicks (booking/website)
 export const trackOutboundLink = (
   url: string,
   therapistData: TherapistData
 ) => {
   const { id, name, linkType, source } = therapistData;
+  
+  // Simple debounce to prevent double clicks (within 500ms)
+  const now = Date.now();
+  if (now - lastLinkClick < 500) {
+    console.log('Debounced outbound link event', url);
+    return;
+  }
+  lastLinkClick = now;
   
   // Format data for GTM
   const eventData = {
@@ -128,6 +139,8 @@ export const trackModalOpen = (therapistData: TherapistData) => {
 export const trackTherapistProfileView = (therapistData: TherapistData) => {
   const { id, name, source } = therapistData;
   
+  console.log("trackTherapistProfileView called with:", therapistData);
+  
   // Format data for GTM
   const eventData = {
     therapistId: id || 'unknown',
@@ -135,10 +148,16 @@ export const trackTherapistProfileView = (therapistData: TherapistData) => {
     source: source || 'permalink'
   };
 
+  // Check if we're in a browser environment
+  if (typeof window === 'undefined') {
+    console.log('Cannot track profile view: Not in browser environment');
+    return;
+  }
+
   // Push directly to dataLayer with explicit event name
-  if (typeof window !== 'undefined') {
+  try {
     initializeDataLayer();
-    console.log('Pushing profile view:', {
+    console.log('Pushing profile view to dataLayer:', {
       event: 'therapist_profile_view',
       eventData
     });
@@ -146,6 +165,9 @@ export const trackTherapistProfileView = (therapistData: TherapistData) => {
       event: 'therapist_profile_view', // This must match the trigger name in GTM
       eventData
     });
+    console.log('Successfully pushed profile view to dataLayer');
+  } catch (error) {
+    console.error('Error pushing profile view to dataLayer:', error);
   }
   
   trackEvent('therapist_profile', 'view', name || 'unknown therapist', undefined, therapistData);

@@ -9,15 +9,28 @@ interface TherapistData {
 }
 
 export default function TherapistProfileTracker({ therapist }: { therapist: TherapistData }) {
+  console.log("TherapistProfileTracker mounted with data:", therapist);
+
   useEffect(() => {
     // Track the profile view when component mounts
     console.log("Tracking profile view for:", therapist.id);
-    trackTherapistProfileView({
-      id: therapist.id,
-      name: `${therapist.first_name} ${therapist.last_name}`,
-      source: "permalink",
-    });
+
+    // Small timeout to ensure the dataLayer is properly initialized
+    setTimeout(() => {
+      trackTherapistProfileView({
+        id: therapist.id,
+        name: `${therapist.first_name} ${therapist.last_name}`,
+        source: "permalink",
+      });
+      console.log("Profile view tracking completed");
+    }, 500);
+
+    // Cleanup function
+    return () => {
+      console.log("TherapistProfileTracker unmounted");
+    };
   }, [therapist]);
 
-  return null; // This component doesn't render anything, just tracks
+  // Return an empty div instead of null for debugging
+  return <div data-testid="profile-tracker" style={{ display: "none" }} />;
 }

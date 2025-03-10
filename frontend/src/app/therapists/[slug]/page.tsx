@@ -26,10 +26,14 @@ import TherapistQualifications from "@/app/components/TherapistQualifications";
 // import { Checkmark, XMark, Warning } from "@/components/Icons";
 import dynamic from "next/dynamic";
 
-// Dynamically import the tracker with no SSR
+// Ensure we're using a proper client-side only import with no SSR
 const TherapistProfileTracker = dynamic(() => import("../../components/TherapistProfileTracker"), {
   ssr: false,
+  loading: () => <div style={{ display: "none" }}>Loading tracker...</div>,
 });
+
+// Log for debugging the dynamic import
+console.log("TherapistProfileTracker dynamically imported");
 
 // CSS for fill-from-left hover effect
 const buttonHoverStyles = `

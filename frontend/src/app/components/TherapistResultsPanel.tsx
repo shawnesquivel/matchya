@@ -72,11 +72,15 @@ export default function TherapistResultsPanel() {
     const formattedName = therapistId.trim();
     console.log("Formatted name for search:", formattedName);
 
-    // Track modal open event
-    trackModalOpen({
-      id: formattedName,
-      name: formattedName,
-    });
+    // Only track if we're actually changing the state
+    // This prevents double tracking when the component re-renders
+    if (!isModalOpen || selectedTherapistId !== formattedName) {
+      // Track modal open event
+      trackModalOpen({
+        id: formattedName,
+        name: formattedName,
+      });
+    }
 
     setSelectedTherapistId(formattedName);
     setIsModalOpen(true);
