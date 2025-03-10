@@ -6,6 +6,7 @@ import GlobeIcon from "../../components/icons/GlobeIcon";
 import Image from "next/image";
 import TherapistProfileModal from "./TherapistProfileModal";
 import { mockTherapist } from "../utils/mockTherapistData";
+import { trackModalOpen, trackOutboundLink } from "../utils/analytics";
 
 export default function TherapistResultsPanel() {
   const { therapists, isLoading, isSendingChat, filters, useMockData, toggleMockData } =
@@ -70,6 +71,12 @@ export default function TherapistResultsPanel() {
     // Format name in a way that the API can find it
     const formattedName = therapistId.trim();
     console.log("Formatted name for search:", formattedName);
+
+    // Track modal open event
+    trackModalOpen({
+      id: formattedName,
+      name: formattedName,
+    });
 
     setSelectedTherapistId(formattedName);
     setIsModalOpen(true);
@@ -199,7 +206,15 @@ export default function TherapistResultsPanel() {
                           rel="noopener noreferrer"
                           className="w-10 h-10 rounded-lg bg-beige-dark flex items-center justify-center hover:bg-beige-dark transition-colors cursor-pointer z-10"
                           title="Visit website"
-                          onClick={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            trackOutboundLink(therapist.clinic_profile_url, {
+                              id: therapist.id,
+                              name: `${therapist.first_name} ${therapist.last_name}`,
+                              linkType: "website",
+                              source: "results_panel",
+                            });
+                          }}
                         >
                           <GlobeIcon className="text-m-black w-4 h-4" />
                         </a>
@@ -211,7 +226,15 @@ export default function TherapistResultsPanel() {
                           rel="noopener noreferrer"
                           className="w-10 h-10 rounded-lg bg-beige-dark flex items-center justify-center hover:bg-beige-dark transition-colors cursor-pointer z-10"
                           title="Book appointment"
-                          onClick={(e) => e.stopPropagation()}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            trackOutboundLink(therapist.booking_link, {
+                              id: therapist.id,
+                              name: `${therapist.first_name} ${therapist.last_name}`,
+                              linkType: "booking",
+                              source: "results_panel",
+                            });
+                          }}
                         >
                           <CalendarIcon className="text-m-black w-4 h-4" />
                         </a>
@@ -294,7 +317,15 @@ export default function TherapistResultsPanel() {
                               rel="noopener noreferrer"
                               className="w-8 h-8 rounded-lg bg-beige-dark flex items-center justify-center hover:bg-beige-dark transition-colors cursor-pointer z-10"
                               title="Visit website"
-                              onClick={(e) => e.stopPropagation()}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                trackOutboundLink(therapist.clinic_profile_url, {
+                                  id: therapist.id,
+                                  name: `${therapist.first_name} ${therapist.last_name}`,
+                                  linkType: "website",
+                                  source: "results_panel",
+                                });
+                              }}
                             >
                               <GlobeIcon className="text-m-black w-3 h-3" />
                             </a>
@@ -306,7 +337,15 @@ export default function TherapistResultsPanel() {
                               rel="noopener noreferrer"
                               className="w-8 h-8 rounded-lg bg-beige-dark flex items-center justify-center hover:bg-beige-dark transition-colors cursor-pointer z-10"
                               title="Book appointment"
-                              onClick={(e) => e.stopPropagation()}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                trackOutboundLink(therapist.booking_link, {
+                                  id: therapist.id,
+                                  name: `${therapist.first_name} ${therapist.last_name}`,
+                                  linkType: "booking",
+                                  source: "results_panel",
+                                });
+                              }}
                             >
                               <CalendarIcon className="text-m-black w-3 h-3" />
                             </a>

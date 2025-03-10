@@ -15,6 +15,7 @@ import Image from "next/image";
 import { getSafeImageUrl } from "../utils/imageHelpers";
 import GlobeIcon from "../../components/icons/GlobeIcon";
 import CalendarIcon from "../../components/icons/CalendarIcon";
+import { trackOutboundLink } from "../utils/analytics";
 
 // CSS for fill-from-left hover effect
 const buttonHoverStyles = `
@@ -226,12 +227,20 @@ export default function TherapistProfileModal({
                   )}
                 </div>
                 <div className="md:col-span-2 col-span-6 flex gap-2 mb-6 sm:mb-0 md:justify-end justify-start sm:flex-col-reverse lg:flex-col">
-                  {displayTherapist.bio_link && (
+                  {displayTherapist.clinic_profile_url && (
                     <a
-                      href={displayTherapist.bio_link}
+                      href={displayTherapist.clinic_profile_url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="fill-from-left rounded-full flex items-center justify-center px-4 py-3 text-mblack bg-beige-light transition-all duration-300 transform hover:shadow-sm"
+                      onClick={() =>
+                        trackOutboundLink(displayTherapist.clinic_profile_url, {
+                          id: displayTherapist.id,
+                          name: `${displayTherapist.first_name} ${displayTherapist.last_name}`,
+                          linkType: "website",
+                          source: "modal",
+                        })
+                      }
                     >
                       <GlobeIcon className="w-4 h-4 mr-2" />
                       View Website
@@ -243,6 +252,14 @@ export default function TherapistProfileModal({
                       target="_blank"
                       rel="noopener noreferrer"
                       className="fill-from-left rounded-full flex items-center justify-center px-4 py-3 bg-green text-white transition-all duration-300 transform hover:shadow-sm"
+                      onClick={() =>
+                        trackOutboundLink(displayTherapist.booking_link, {
+                          id: displayTherapist.id,
+                          name: `${displayTherapist.first_name} ${displayTherapist.last_name}`,
+                          linkType: "booking",
+                          source: "modal",
+                        })
+                      }
                     >
                       <CalendarIcon className="w-4 h-4 mr-2" />
                       Book Appointment
