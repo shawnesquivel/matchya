@@ -180,7 +180,7 @@ export default function TherapistResultsPanel() {
                         {therapist.first_name} {therapist.last_name}
                       </h3>
                       <div className="flex items-center text-grey-medium mt-1">
-                        <span className=" text-mblack text-xs">
+                        <span className="text-mblack text-xs">
                           {therapist.pronouns || "Pronouns Unavailable"}
                         </span>
                         <span className="mx-2 text-beige-dark text-xs">|</span>
@@ -238,7 +238,7 @@ export default function TherapistResultsPanel() {
                       {therapist.areas_of_focus.slice(0, 6).map((area) => (
                         <span
                           key={area}
-                          className="bg-beige-light text-mblack px-3 py-1 rounded-full text-xs"
+                          className="bg-beige-dark text-mblack px-3 py-1 rounded-full text-xs"
                         >
                           {area}
                         </span>
@@ -315,11 +315,15 @@ export default function TherapistResultsPanel() {
                       </div>
 
                       {/* Name and location below the image */}
-                      <div className="mb-2">
-                        <h3 className="font-medium text-lg text-mblack">
+                      <div className="mb-2 flex flex-col gap-1">
+                        <h3 className="font-medium text-xl text-mblack">
                           {therapist.first_name} {therapist.last_name}
                         </h3>
-                        <div className="text-grey-medium">
+                        <div className="flex items-center text-grey-medium mt-1">
+                          <span className="text-mblack text-xs">
+                            {therapist.pronouns || "Pronouns Unavailable"}
+                          </span>
+                          <span className="mx-2 text-beige-dark text-xs">|</span>
                           <span className="text-mblack text-xs">
                             {therapist.clinic_city && therapist.clinic_province
                               ? `${therapist.clinic_city}, ${therapist.clinic_province}`
@@ -347,7 +351,7 @@ export default function TherapistResultsPanel() {
                           {therapist.areas_of_focus.slice(0, 3).map((area) => (
                             <span
                               key={area}
-                              className="bg-beige-light text-mblack px-2 py-0.5 rounded-full text-xs"
+                              className="bg-beige-dark text-mblack px-2 py-0.5 rounded-full text-xs"
                             >
                               {area}
                             </span>
