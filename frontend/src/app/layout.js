@@ -21,10 +21,29 @@ export default function RootLayout({ children }) {
             async
             src="https://js.stripe.com/v3/pricing-table.js"
           ></script>
+          {/* Google Tag Manager */}
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+              new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+              j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+              'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+              })(window,document,'script','dataLayer','GTM-NWJVRJF5');`
+            }}
+          />
+          {/* End Google Tag Manager */}
         </head>
         <body
           className={`max-h-screen h-screen flex flex-col ${aspekta.className}`}
         >
+          {/* Google Tag Manager (noscript) */}
+          <noscript
+            dangerouslySetInnerHTML={{
+              __html: `<iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NWJVRJF5"
+              height="0" width="0" style="display:none;visibility:hidden"></iframe>`
+            }}
+          />
+          {/* End Google Tag Manager (noscript) */}
           <main className="h-full flex flex-col">{children}</main>
           <Analytics />
         </body>
