@@ -154,7 +154,7 @@ export default function FilterPanel() {
           Reset
         </button>
       </div>
-      <div className="space-y-2 mb-8">
+      {/* <div className="space-y-2 mb-8">
         <h3>Request Stats</h3>
         <p className="text-sm">
           Total Requests: {requestCount}, Last Request: {lastRequestTimeStr}
@@ -168,7 +168,7 @@ export default function FilterPanel() {
           Format: {filters.format?.join(", ")}, Sexuality:{" "}
           {filters.sexuality?.join(", ")}
         </p>
-      </div>
+      </div> */}
 
       {/* Loading indicator */}
       {isTherapistLoading && (
