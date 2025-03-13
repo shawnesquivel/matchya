@@ -110,9 +110,9 @@ create table therapists (
   
   -- Professional Details
   education text[] not null default '{}' 
-    check (array_length(education, 1) <= 4),  -- max 4 entries
+    check (array_length(education, 1) <= 20),  -- max 20 entries
   certifications text[] not null default '{}'
-    check (array_length(certifications, 1) <= 4),
+    check (array_length(certifications, 1) <= 20),  -- max 20 entries
   approaches text[] not null default '{}',
   areas_of_focus text[] not null default '{}',
   languages text[] not null default '{}',
