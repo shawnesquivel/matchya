@@ -239,7 +239,7 @@ function therapistReducer(state, action) {
       return {
         ...state,
         therapists: action.payload.therapists,
-        filters: { ...state.filters, ...action.payload.filters },
+        filters: action.payload.filters,
       };
 
     case ACTIONS.SET_LOADING_STATE:
@@ -365,7 +365,7 @@ export function TherapistProvider({ children }) {
               Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
             },
             body: JSON.stringify({
-              currentFilters: { ...state.filters, ...update.filters },
+              currentFilters: update.filters,
               triggerSource: "FORM",
               filterOnly: true,
             }),
