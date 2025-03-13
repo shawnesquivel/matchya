@@ -88,7 +88,8 @@ export default function ChatPanel() {
 
           {error && <p className="text-red-500 mt-2">{error}</p>}
 
-          <div className="mt-4">
+          {/* Test Queries */}
+          {/* <div className="mt-4">
             <p className="text-sm text-gray-500 mb-2">Try asking:</p>
             <div className="flex flex-wrap gap-2">
               <p
@@ -124,7 +125,7 @@ export default function ChatPanel() {
                 "Looking for a female therapist that can speak thai."
               </p>
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
