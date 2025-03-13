@@ -18,32 +18,24 @@ export async function initEmbeddingModel() {
 
     try {
       const openaiApiKey = Deno.env.get("OPENAI_API_KEY");
-
       if (!openaiApiKey) {
         throw new Error("OPENAI_API_KEY environment variable not set");
       }
-
       openaiClient = new OpenAI({
         apiKey: openaiApiKey,
       });
-
       isClientInitialized = true;
-
       const initTime = performance.now() - clientStartTime;
-      console.log(
-        "[Embeddings] OpenAI client initialization completed in",
-        initTime,
-        "ms"
-      );
-
       perf.endEvent("client:initialization", {
         model: "text-embedding-3-small",
         initTimeMs: initTime,
       });
       perf.complete();
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("[Embeddings] Failed to initialize OpenAI client:", error);
-      perf.endEvent("client:initialization", { error: error.message });
+      perf.endEvent("client:initialization", {
+        error: error instanceof Error ? error.message : String(error),
+      });
       perf.complete();
       throw error;
     }
@@ -67,7 +59,7 @@ export async function generateEmbedding(text: string) {
   try {
     console.log(
       "[Embeddings] Generating embedding for text:",
-      text.substring(0, 50) + "..."
+      text.substring(0, 50) + "...",
     );
 
     const embeddingResponse = await client.embeddings.create({
@@ -77,12 +69,6 @@ export async function generateEmbedding(text: string) {
     });
 
     const embedding = embeddingResponse.data[0].embedding;
-    console.log(
-      "[Embeddings] Generated embedding dimensions:",
-      embedding.length
-    );
-
-    // Convert array to Postgres vector format
     const vectorString = `[${embedding.join(",")}]`;
 
     perf.endEvent("embedding:generate", {
@@ -95,9 +81,11 @@ export async function generateEmbedding(text: string) {
       array: embedding,
       pgVector: vectorString,
     };
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("[Embeddings] Error generating embedding:", error);
-    perf.endEvent("embedding:generate", { error: error.message });
+    perf.endEvent("embedding:generate", {
+      error: error instanceof Error ? error.message : String(error),
+    });
     perf.complete();
     throw error;
   }

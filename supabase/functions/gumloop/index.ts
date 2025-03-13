@@ -1,10 +1,12 @@
+// deno-lint-ignore-file no-explicit-any
 // Follow this setup guide to integrate the Deno language server with your editor:
 // https://deno.land/manual/getting_started/setup_your_environment
 // This enables autocomplete, go to definition, etc.
 
 // Setup type definitions for built-in Supabase Runtime APIs
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "@supabase/supabase-js";
+// import { createClient } from "@supabase/supabase-js";
+import { createClient } from "jsr:@supabase/supabase-js";
 
 console.log("Gumloop webhook handler started!");
 
@@ -65,6 +67,9 @@ interface TherapistLicense {
   expiry_date?: string; // ISO date string
 }
 
+//  Warning:
+// When modifying these, check the definition in the migrations/create_therapists_table.sql
+// Also check the recommended types in Gumloop S1.
 const VALID_SEXUALITY_TYPES = [
   "straight",
   "gay",
@@ -105,7 +110,9 @@ const VALID_FAITH_TYPES = [
 
 const VALID_PRONOUNS_TYPES = [
   "she/her",
+  "she/they",
   "he/him",
+  "he/they",
   "they/them",
   "ze/zir",
   "prefer_not_to_say",
@@ -226,52 +233,61 @@ function parseFees(feeStrings: string[]): TherapistFee[] {
   const fees: TherapistFee[] = [];
 
   for (const feeString of feeStrings) {
-    try {
-      let feeObj: any;
+    // Skip empty strings
+    if (!feeString || feeString.trim() === "") {
+      console.warn("Skipping empty fee string");
+      continue;
+    }
 
-      // Try to clean markdown formatting if present
+    let feeObj: any;
+    try {
+      // Clean any markdown formatting from the string
       const cleanFeeString = cleanMarkdownFormatting(feeString) || feeString;
 
+      // Try to parse the fee JSON
       try {
         feeObj = JSON.parse(cleanFeeString);
-      } catch (e) {
-        console.warn(`Failed to parse fee JSON: ${e.message}`);
+      } catch (e: unknown) {
+        console.warn(`Failed to parse fee JSON: ${(e as Error).message}`);
+        console.warn(`Problematic fee string: ${cleanFeeString}`);
         continue;
       }
 
-      // Basic validation
-      if (typeof feeObj !== "object") {
-        console.warn(`Fee is not an object: ${feeString}`);
+      // Validate required fields
+      if (
+        !feeObj.session_category ||
+        !feeObj.session_type ||
+        !feeObj.delivery_method ||
+        feeObj.duration_minutes === undefined ||
+        feeObj.price === undefined
+      ) {
+        console.warn(
+          `Fee missing required fields: ${JSON.stringify(feeObj)}`,
+        );
         continue;
       }
 
-      // Convert duration to number
-      if (feeObj.duration_minutes) {
-        feeObj.duration_minutes = Number(feeObj.duration_minutes);
-        if (isNaN(feeObj.duration_minutes)) {
-          console.warn(`Invalid duration_minutes: ${feeObj.duration_minutes}`);
-          feeObj.duration_minutes = 0;
-        }
-      } else {
-        // Set default value for duration_minutes if it's missing or empty
-        feeObj.duration_minutes = 0;
-      }
+      // Create the fee object
+      const fee: TherapistFee = {
+        session_category: String(feeObj.session_category),
+        session_type: String(feeObj.session_type),
+        delivery_method: String(feeObj.delivery_method) as
+          | "in_person"
+          | "virtual"
+          | "hybrid",
+        duration_minutes: Number(feeObj.duration_minutes),
+        price: Number(feeObj.price),
+        currency: feeObj.currency ? String(feeObj.currency) : "CAD",
+      };
 
-      // Convert price to number
-      if (feeObj.price !== undefined && feeObj.price !== null) {
-        feeObj.price = Number(feeObj.price);
-        if (isNaN(feeObj.price)) {
-          console.warn(`Invalid price: ${feeObj.price}`);
-          feeObj.price = 0;
-        }
-      } else {
-        // Set default value for price if it's missing or empty
-        feeObj.price = 0;
-      }
-
-      fees.push(feeObj as TherapistFee);
-    } catch (e) {
-      console.warn(`Failed to parse fee: ${feeString}`, e);
+      // Add to the array
+      fees.push(fee);
+    } catch (error: unknown) {
+      console.warn(
+        `Error processing fee: ${(error as Error).message}. Fee data: ${
+          JSON.stringify(feeObj || feeString)
+        }`,
+      );
     }
   }
 
@@ -324,6 +340,7 @@ function ensureArray(value: any): string[] {
 }
 
 // Function to validate arrays
+// deno-lint-ignore no-explicit-any
 function validateArray(data: any, key: string): string[] {
   if (!data[key]) return [];
 
@@ -420,11 +437,76 @@ function cleanUrl(url: string | null | undefined): string | null {
   return url;
 }
 
+// Helper function to find closest match in a list of valid values
+function findClosestMatch(value: string, validValues: string[]): string | null {
+  if (!value) return null;
+
+  // Convert to uppercase for comparison
+  const upperValue = value.toUpperCase();
+
+  // Direct match after uppercase conversion
+  const directMatch = validValues.find((v) => v.toUpperCase() === upperValue);
+  if (directMatch) return directMatch;
+
+  // Check for substring matches
+  for (const validValue of validValues) {
+    if (
+      upperValue.includes(validValue.toUpperCase()) ||
+      validValue.toUpperCase().includes(upperValue)
+    ) {
+      return validValue;
+    }
+  }
+
+  return null;
+}
+
+// Check if a therapist with the same name already exists
+async function checkForExistingTherapist(
+  supabase: any,
+  firstName: string,
+  lastName: string,
+  logFn: (message: string) => void,
+): Promise<{ exists: boolean; therapist?: any; error?: any }> {
+  try {
+    const { data: existingTherapists, error: searchError } = await supabase
+      .from("therapists")
+      .select("id, first_name, last_name")
+      .eq("first_name", firstName)
+      .eq("last_name", lastName)
+      .limit(1);
+
+    if (searchError) {
+      logFn(
+        `[ERROR] Error checking for existing therapist: ${searchError.message}`,
+      );
+      return { exists: false, error: searchError };
+    }
+
+    if (existingTherapists && existingTherapists.length > 0) {
+      logFn(
+        `[WARN] Therapist ${firstName} ${lastName} already exists with ID: ${
+          existingTherapists[0].id
+        }`,
+      );
+      return { exists: true, therapist: existingTherapists[0] };
+    }
+
+    return { exists: false };
+  } catch (error) {
+    logFn(
+      `[ERROR] Unexpected error in duplicate check: ${
+        (error as Error).message
+      }`,
+    );
+    return { exists: false, error };
+  }
+}
+
 Deno.serve(async (req) => {
   // Hardcoded Values
   const clinic_country = "CA";
   const clinic_province = "BC";
-  const clinic_city = "Vancouver";
   const warnings: string[] = [];
   const logs: string[] = [];
 
@@ -436,7 +518,6 @@ Deno.serve(async (req) => {
   try {
     // Initialize the Supabase client
     const supabase = createSupabaseClient();
-    log("Supabase client initialized");
 
     // Check if request method is POST
     if (req.method !== "POST") {
@@ -454,19 +535,17 @@ Deno.serve(async (req) => {
 
     // Get the raw text regardless of content type
     const textData = await req.text();
-    log(`Received text data, length: ${textData.length}`);
-    log(`Text content sample: ${textData.substring(0, 200)}`);
 
     // Parse the incoming JSON data
     let payload;
     try {
       payload = JSON.parse(textData);
       log(`Payload structure: ${Object.keys(payload).join(", ")}`);
-    } catch (e) {
+    } catch (e: unknown) {
       return new Response(
         JSON.stringify({
           error: "Invalid JSON",
-          message: e.message,
+          message: (e as Error).message,
         }),
         {
           status: 400,
@@ -478,7 +557,7 @@ Deno.serve(async (req) => {
     // Check payload structure and extract data accordingly
     let profileData: Record<string, any> = {};
     let fees: TherapistFee[] = [];
-    let license: TherapistLicense | null = null;
+    const licenses: TherapistLicense[] = [];
     let profileImgUrl: string | null = null;
     let clinicProfileUrl: string | null = null;
     let clinicBookingUrl: string | null = null;
@@ -487,15 +566,13 @@ Deno.serve(async (req) => {
     if (payload.profile && typeof payload.profile === "string") {
       try {
         // Try to parse profile as JSON if it's a string that contains JSON
-        let cleanProfile = cleanMarkdownFormatting(payload.profile) ||
+        const cleanProfile = cleanMarkdownFormatting(payload.profile) ||
           payload.profile;
         const parsedProfile = JSON.parse(cleanProfile);
         profileData = parsedProfile;
-        log("Successfully parsed profile JSON string");
       } catch (e) {
         // If it's not JSON, try to parse it as YAML-like text
         profileData = parseProfileText(payload.profile);
-        log("Parsed profile text in YAML-like format");
       }
     } else if (
       typeof payload.profile === "object" && payload.profile !== null
@@ -503,7 +580,6 @@ Deno.serve(async (req) => {
       profileData = payload.profile;
       log("Using profile object from payload");
     } else if (payload.therapist) {
-      // Handle the old expected structure
       profileData = payload.therapist;
       log("Using therapist object from payload");
     } else {
@@ -531,50 +607,132 @@ Deno.serve(async (req) => {
     // Extract profile image URL
     if (payload.profile_img_url) {
       profileImgUrl = cleanUrl(payload.profile_img_url);
-      log("Found profile image URL in payload root");
     } else if (profileData.profile_img_url) {
       profileImgUrl = cleanUrl(profileData.profile_img_url);
-      log("Found profile image URL in profile data");
+    } else {
+      profileImgUrl = null;
     }
 
     // Extract clinic profile URL
     if (payload.clinic_profile_url) {
       clinicProfileUrl = cleanUrl(payload.clinic_profile_url);
-      log("Found clinic profile URL in payload root");
     } else if (profileData.clinic_profile_url) {
       clinicProfileUrl = cleanUrl(profileData.clinic_profile_url);
-      log("Found clinic profile URL in profile data");
     }
 
     // Extract clinic booking URL
     if (payload.clinic_booking_url) {
       clinicBookingUrl = cleanUrl(payload.clinic_booking_url);
-      log("Found clinic booking URL in payload root");
     } else if (profileData.clinic_booking_url) {
       clinicBookingUrl = cleanUrl(profileData.clinic_booking_url);
-      log("Found clinic booking URL in profile data");
     }
 
-    // Extract license data
-    if (payload.license) {
-      try {
-        if (typeof payload.license === "string") {
-          // Clean any markdown formatting
-          const cleanLicense = cleanMarkdownFormatting(payload.license);
-          license = JSON.parse(cleanLicense || payload.license);
-          log("Parsed license from JSON string");
-        } else if (typeof payload.license === "object") {
-          license = payload.license as TherapistLicense;
-          log("Found license object in payload root");
+    // Extract and process licenses data
+    if (payload.licenses && Array.isArray(payload.licenses)) {
+      log(`Processing ${payload.licenses.length} licenses from payload`);
+
+      for (const licenseItem of payload.licenses) {
+        try {
+          let parsedLicense: TherapistLicense;
+
+          if (typeof licenseItem === "string") {
+            // Clean any markdown formatting and parse
+            const cleanLicense = cleanMarkdownFormatting(licenseItem);
+            parsedLicense = JSON.parse(cleanLicense || licenseItem);
+          } else if (typeof licenseItem === "object") {
+            parsedLicense = licenseItem as TherapistLicense;
+          } else {
+            const errorMsg = `Invalid license data type: ${typeof licenseItem}`;
+            log(`${errorMsg} - Value: ${JSON.stringify(licenseItem)}`);
+            warnings.push(errorMsg);
+            continue;
+          }
+
+          // Add default state if missing - typically BC for Canadian therapists
+          if (!parsedLicense.state) {
+            const warningMsg =
+              `License missing required 'state' field, defaulting to 'BC'. License: ${
+                JSON.stringify(parsedLicense)
+              }`;
+            log(`Warning: ${warningMsg}`);
+            warnings.push(warningMsg);
+            parsedLicense.state = "BC";
+          }
+
+          // Validate license fields after applying defaults
+          if (!parsedLicense.license_number || !parsedLicense.title) {
+            const errorMsg =
+              "License missing other required fields (after state defaulting)";
+            log(`${errorMsg} - License: ${JSON.stringify(parsedLicense)}`);
+            warnings.push(errorMsg);
+            continue;
+          }
+
+          // Process license data (remove # from license number if present)
+          parsedLicense.license_number = String(parsedLicense.license_number)
+            .replace(/^#/, "");
+
+          // Check if license number has at least 5 digits
+          const digitsOnly = parsedLicense.license_number.replace(/\D/g, "");
+          if (digitsOnly.length < 3) {
+            const DEFAULT_LICENSE_NUMBER = "00000";
+            const warningMsg =
+              `Replaced license number ${parsedLicense.license_number} with placeholder: ${DEFAULT_LICENSE_NUMBER}`;
+            log(`Warning: ${warningMsg}`);
+            warnings.push(warningMsg);
+
+            // Set placeholder number
+            parsedLicense.license_number = DEFAULT_LICENSE_NUMBER;
+          }
+
+          // Validate and clean license data - skip if title is not in allowed list
+          if (
+            parsedLicense.title &&
+            !VALID_LICENSE_TITLES.includes(parsedLicense.title)
+          ) {
+            const errorMsg = `Invalid license title: ${parsedLicense.title}`;
+            log(
+              `Warning: ${errorMsg} - License: ${
+                JSON.stringify(parsedLicense)
+              }`,
+            );
+            warnings.push(errorMsg);
+            continue;
+          }
+
+          // Validate license state/jurisdiction
+          if (
+            parsedLicense.state &&
+            !VALID_JURISDICTIONS.includes(parsedLicense.state)
+          ) {
+            const errorMsg =
+              `Invalid license jurisdiction: ${parsedLicense.state}`;
+            log(
+              `Warning: ${errorMsg} - License: ${
+                JSON.stringify(parsedLicense)
+              }`,
+            );
+            // Try to find a close match or default to BC
+            parsedLicense.state =
+              findClosestMatch(parsedLicense.state, VALID_JURISDICTIONS) ||
+              "BC";
+          }
+
+          licenses.push(parsedLicense);
+          log(
+            `Successfully processed license: ${parsedLicense.license_number}`,
+          );
+        } catch (e: unknown) {
+          const errorMsg = `Error parsing license: ${(e as Error).message}`;
+          log(`${errorMsg} - Raw license data: ${JSON.stringify(licenseItem)}`);
+          warnings.push(errorMsg);
         }
-      } catch (e) {
-        log(`Error parsing license: ${e.message}`);
-        warnings.push(`Could not parse license data: ${e.message}`);
       }
-    } else if (
+    } // Fallback for profile data with license fields (for backward compatibility)
+    else if (
       profileData.license_number && profileData.title && profileData.state
     ) {
-      license = {
+      const profileLicense: TherapistLicense = {
         license_number: String(profileData.license_number).replace(/^#/, ""), // Remove leading # if present
         title: String(profileData.title),
         state: String(profileData.state),
@@ -585,29 +743,40 @@ Deno.serve(async (req) => {
           ? String(profileData.expiry_date)
           : undefined,
       };
-      log("Extracted license data from profile text");
-    }
 
-    // Validate license data if present
-    if (license) {
-      // Validate license title
-      if (license.title && !VALID_LICENSE_TITLES.includes(license.title)) {
-        warnings.push(`Invalid license title: ${license.title}`);
-        log(`Warning: Invalid license title: ${license.title}`);
-        // Try to find a close match
-        license.title = findClosestMatch(license.title, VALID_LICENSE_TITLES) ||
-          license.title;
-      }
-
-      // Validate license state/jurisdiction
-      if (license.state && !VALID_JURISDICTIONS.includes(license.state)) {
-        warnings.push(`Invalid license jurisdiction: ${license.state}`);
-        log(`Warning: Invalid license jurisdiction: ${license.state}`);
-        // Try to find a close match or default to BC
-        license.state = findClosestMatch(license.state, VALID_JURISDICTIONS) ||
+      // Check if license number has at least 5 digits
+      const digitsOnly = profileLicense.license_number.replace(/\D/g, "");
+      if (digitsOnly.length < 5) {
+        const warningMsg =
+          `License number too short (needs at least 5 digits): ${profileLicense.license_number}`;
+        warnings.push(warningMsg);
+        log(`Warning: ${warningMsg}`);
+        // Skip adding this license
+      } // Validate and clean license data
+      else if (
+        profileLicense.title &&
+        !VALID_LICENSE_TITLES.includes(profileLicense.title)
+      ) {
+        warnings.push(`Invalid license title: ${profileLicense.title}`);
+        log(`Warning: Invalid license title: ${profileLicense.title}`);
+        // Skip adding this license
+      } else if (
+        profileLicense.state &&
+        !VALID_JURISDICTIONS.includes(profileLicense.state)
+      ) {
+        warnings.push(`Invalid license jurisdiction: ${profileLicense.state}`);
+        log(`Warning: Invalid license jurisdiction: ${profileLicense.state}`);
+        profileLicense.state =
+          findClosestMatch(profileLicense.state, VALID_JURISDICTIONS) ||
           "BC";
+        licenses.push(profileLicense);
+      } else {
+        // Only add the license if it passed all
+        licenses.push(profileLicense);
       }
     }
+
+    log(`Total licenses to process: ${licenses.length}`);
 
     // Extract and ensure areas_of_focus and certifications are arrays
     const education = processEducationField(profileData.education);
@@ -619,15 +788,7 @@ Deno.serve(async (req) => {
 
     // Handle approaches - the database expects a string array, not an object
     let approaches = processApproachesField(profileData.approaches);
-    log(`Processed approaches field: ${JSON.stringify(approaches)}`);
-    log(`Original approaches data type: ${typeof profileData.approaches}`);
-    if (typeof profileData.approaches === "object") {
-      log(
-        `Original approaches structure: ${
-          JSON.stringify(profileData.approaches)
-        }`,
-      );
-    }
+    log(`Processed approaches field: ${approaches.length} items`);
 
     // Ensure approaches is definitely a string array
     if (!Array.isArray(approaches)) {
@@ -657,7 +818,7 @@ Deno.serve(async (req) => {
     );
 
     // Clean and validate singular enum values
-    let pronounsValue = profileData.pronouns
+    const pronounsValue = profileData.pronouns
       ? String(profileData.pronouns)
       : null;
     const pronouns = validateEnumValue(pronounsValue, VALID_PRONOUNS_TYPES);
@@ -709,7 +870,7 @@ Deno.serve(async (req) => {
     });
 
     if (missingKeys.length > 0) {
-      log(`Missing required keys: ${missingKeys.join(", ")}`);
+      log(`[ERROR] Missing required keys: ${missingKeys.join(", ")}`);
       return new Response(
         JSON.stringify({
           success: false,
@@ -724,7 +885,38 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Prepare therapist data for insertion
+    // Check if a therapist with the same name already exists
+    const duplicateCheck = await checkForExistingTherapist(
+      supabase,
+      profileData.first_name,
+      profileData.last_name,
+      log,
+    );
+
+    if (duplicateCheck.error) {
+      // Log but continue if there was an error checking
+      warnings.push(
+        `Error checking for duplicates: ${duplicateCheck.error.message}`,
+      );
+    } else if (duplicateCheck.exists) {
+      // Return error response if duplicate exists
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Duplicate therapist",
+          message:
+            `A therapist with the name ${profileData.first_name} ${profileData.last_name} already exists.`,
+          existing_id: duplicateCheck.therapist.id,
+          logs: logs,
+          warnings: warnings,
+        }),
+        {
+          status: 409, // Conflict status code
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
+
     const therapistData = {
       first_name: profileData.first_name,
       middle_name: profileData.middle_name || null,
@@ -740,7 +932,7 @@ Deno.serve(async (req) => {
       bio: bio || null,
       clinic_name: profileData.clinic_name,
       clinic_street: profileData.clinic_street || null,
-      clinic_city: profileData.clinic_city || clinic_city,
+      clinic_city: profileData.clinic_city || "Vancouver",
       clinic_postal_code: profileData.clinic_postal_code || null,
       clinic_province: profileData.clinic_province || clinic_province,
       clinic_country: profileData.clinic_country || clinic_country,
@@ -750,16 +942,17 @@ Deno.serve(async (req) => {
       availability: availability,
       education: education,
       certifications: certifications,
-      approaches: approaches, // Verified to be a string array
+      approaches: approaches,
       areas_of_focus: areasOfFocus,
       languages: languages,
+      creation_log: JSON.stringify({
+        timestamp: new Date().toISOString(),
+        logs: logs,
+        warnings: warnings,
+        source: "gumloop_edge_function",
+      }),
     };
 
-    log("Prepared therapist data for insertion");
-    log(`Therapist data: ${JSON.stringify(therapistData, null, 2)}`);
-
-    // Insert therapist record to get an ID
-    log("Starting therapist insertion...");
     const { data: therapistResult, error: therapistError } = await supabase
       .from("therapists")
       .insert(therapistData)
@@ -767,7 +960,52 @@ Deno.serve(async (req) => {
       .single();
 
     if (therapistError) {
-      log(`Error inserting therapist: ${therapistError.message}`);
+      log(
+        `[insert-error] ${profileData.first_name} ${profileData.last_name}: ${therapistError.message}`,
+      );
+
+      try {
+        const errorLogData = {
+          first_name: profileData.first_name || "Unknown",
+          last_name: profileData.last_name || "Unknown",
+          gender: "error_placeholder",
+          clinic_name: "Error record",
+          availability: "online",
+          creation_log: JSON.stringify({
+            timestamp: new Date().toISOString(),
+            error: "Database error during therapist insertion",
+            error_message: therapistError.message,
+            error_details: therapistError,
+            data_attempted: therapistData,
+            logs: logs,
+            warnings: warnings,
+            source: "gumloop_edge_function_error",
+          }),
+        };
+
+        const { data: errorLogResult, error: errorLogError } = await supabase
+          .from("therapists")
+          .insert(errorLogData)
+          .select("id");
+
+        if (errorLogError) {
+          log(
+            `[insert-error-log] ${profileData.first_name} ${profileData.last_name}: ${errorLogError.message}`,
+          );
+        } else {
+          log(
+            `[insert-error-log] Created error log entry for ${profileData.first_name} ${profileData.last_name} with ID: ${
+              errorLogResult[0].id
+            }`,
+          );
+        }
+      } catch (logError: unknown) {
+        log(
+          `Exception while creating error log: ${(logError as Error).message}`,
+        );
+      }
+
+      // Return the original error response
       return new Response(
         JSON.stringify({
           success: false,
@@ -775,6 +1013,11 @@ Deno.serve(async (req) => {
           message: therapistError.message,
           details: therapistError,
           data_attempted: therapistData,
+          length_certifications: therapistData.certifications.length,
+          length_approaches: therapistData.approaches.length,
+          length_areas_of_focus: therapistData.areas_of_focus.length,
+          length_languages: therapistData.languages.length,
+          length_education: therapistData.education.length,
           logs: logs,
         }),
         {
@@ -788,39 +1031,68 @@ Deno.serve(async (req) => {
     log(`Successfully inserted therapist with ID: ${therapistId}`);
 
     // Insert license data if available
-    let licenseResult = null;
-    if (license) {
-      log("Starting license insertion...");
-      log(`License data: ${JSON.stringify(license, null, 2)}`);
+    const licenseResults = [];
+    log(`Starting license insertion for ${licenses.length} licenses...`);
+    if (licenses.length > 0) {
+      log(`Starting license insertion for ${licenses.length} licenses...`);
+      log(`raw licenses: ${JSON.stringify(licenses)}`);
 
-      const licenseData = {
-        therapist_id: therapistId,
-        license_number: license.license_number,
-        state: license.state,
-        title: license.title,
-        issuing_body: license.issuing_body || null,
-        expiry_date: license.expiry_date || null,
-      };
+      for (const license of licenses) {
+        const licenseData = {
+          therapist_id: therapistId,
+          license_number: license.license_number,
+          state: license.state,
+          title: license.title,
+          issuing_body: license.issuing_body || null,
+          expiry_date: license.expiry_date || null,
+        };
 
-      const { data: licenseInsertResult, error: licenseError } = await supabase
-        .from("therapist_licenses")
-        .insert(licenseData)
-        .select("id")
-        .single();
+        log(`Inserting license data: ${JSON.stringify(licenseData)}`);
 
-      if (licenseError) {
-        log(`Error inserting license: ${licenseError.message}`);
-        warnings.push(`License insertion failed: ${licenseError.message}`);
-      } else {
-        licenseResult = licenseInsertResult;
-        log(`Successfully inserted license with ID: ${licenseInsertResult.id}`);
+        const { data: licenseInsertResult, error: licenseError } =
+          await supabase
+            .from("therapist_licenses")
+            .insert(licenseData)
+            .select("id")
+            .single();
+
+        if (licenseError) {
+          const errorMsg =
+            `License insertion failed: ${licenseError.message} for license: ${
+              JSON.stringify(licenseData)
+            }`;
+          log(`Error inserting license: ${errorMsg}`);
+          warnings.push(errorMsg);
+        } else {
+          licenseResults.push(licenseInsertResult);
+          log(
+            `Successfully inserted license with ID: ${licenseInsertResult.id}`,
+          );
+        }
       }
     } else {
+      log(
+        "No license data to insert or all licenses were filtered out during validation",
+      );
       log("No license data to insert");
+      // Add a warning if we expected license data but none was provided
+      if (
+        payload.licenses !== undefined &&
+        (!Array.isArray(payload.licenses) || payload.licenses.length === 0)
+      ) {
+        const warningMsg =
+          "License data was expected but none was provided or processable";
+        log(
+          `Warning: ${warningMsg} - Payload licenses: ${
+            JSON.stringify(payload.licenses)
+          }`,
+        );
+        warnings.push(warningMsg);
+      }
     }
 
     // Insert fee data if available
-    let feeResults = [];
+    const feeResults = [];
     if (fees.length > 0) {
       log(`Starting fee insertion for ${fees.length} fees...`);
 
@@ -829,16 +1101,24 @@ Deno.serve(async (req) => {
           fee.session_category &&
           !VALID_SESSION_CATEGORIES.includes(fee.session_category)
         ) {
-          warnings.push(`Invalid session_category: ${fee.session_category}`);
-          log(`Warning: Invalid session_category: ${fee.session_category}`);
+          const errorMsg =
+            `Invalid session_category: ${fee.session_category} for fee: ${
+              JSON.stringify(fee)
+            }`;
+          warnings.push(errorMsg);
+          log(`[fee] warning: ${errorMsg}`);
           continue;
         }
 
         if (
           fee.session_type && !VALID_SESSION_TYPES.includes(fee.session_type)
         ) {
-          warnings.push(`Invalid session_type: ${fee.session_type}`);
-          log(`Warning: Invalid session_type: ${fee.session_type}`);
+          const errorMsg =
+            `Invalid session_type: ${fee.session_type} for fee: ${
+              JSON.stringify(fee)
+            }.`;
+          warnings.push(errorMsg);
+          log(`[fee] warning: ${errorMsg}`);
           continue;
         }
 
@@ -846,8 +1126,12 @@ Deno.serve(async (req) => {
           fee.delivery_method &&
           !VALID_DELIVERY_METHODS.includes(fee.delivery_method)
         ) {
-          warnings.push(`Invalid delivery_method: ${fee.delivery_method}`);
-          log(`Warning: Invalid delivery_method: ${fee.delivery_method}`);
+          const errorMsg =
+            `Invalid delivery_method: ${fee.delivery_method}. Full fee: ${
+              JSON.stringify(fee)
+            }`;
+          warnings.push(errorMsg);
+          log(`Warning: ${errorMsg} - Fee: ${JSON.stringify(fee)}`);
           continue;
         }
 
@@ -861,8 +1145,6 @@ Deno.serve(async (req) => {
           currency: fee.currency || "CAD", // Default to CAD
         };
 
-        log(`Fee data: ${JSON.stringify(feeData, null, 2)}`);
-
         const { data: feeInsertResult, error: feeError } = await supabase
           .from("therapist_fees")
           .insert(feeData)
@@ -873,59 +1155,36 @@ Deno.serve(async (req) => {
           warnings.push(`Fee insertion failed: ${feeError.message}`);
         } else if (feeInsertResult) {
           feeResults.push(feeInsertResult);
-          log(`Successfully inserted fee with ID: ${feeInsertResult[0].id}`);
         }
       }
     } else {
-      log("No fee data to insert");
+      log(
+        "No fee data to insert for therapist: " + therapistId + " " +
+          profileData.first_name + " " + profileData.last_name,
+      );
     }
 
-    // Build response data
+    // Prepare successful response
+    log("Preparing successful response");
     const responseData = {
       therapist_id: therapistId,
-      profile: {
-        first_name: profileData.first_name,
-        middle_name: profileData.middle_name || null,
-        last_name: profileData.last_name,
-        pronouns: pronouns,
-        gender: gender,
-        sexuality: sexuality,
-        ethnicity: ethnicity,
-        faith: faith,
-        profile_img_url: profileImgUrl,
-        clinic_profile_url: clinicProfileUrl,
-        clinic_booking_url: clinicBookingUrl,
-        bio: bio || null,
-        clinic_name: profileData.clinic_name,
-        clinic_street: profileData.clinic_street || null,
-        clinic_city: profileData.clinic_city || clinic_city,
-        clinic_postal_code: profileData.clinic_postal_code || null,
-        clinic_province: profileData.clinic_province || clinic_province,
-        clinic_country: profileData.clinic_country || clinic_country,
-        therapist_email: profileData.therapist_email || null,
-        therapist_phone: profileData.therapist_phone || null,
-        availability: availability,
-        education: education,
-        certifications: certifications,
-        approaches: approaches,
-        areas_of_focus: areasOfFocus,
-        languages: languages,
-      },
+      profile_image_url: profileImgUrl,
+      clinic_profile_url: clinicProfileUrl,
+      clinic_booking_url: clinicBookingUrl,
       fees_inserted: feeResults.length,
-      license_inserted: licenseResult !== null,
-      warnings: warnings.length > 0 ? warnings : null,
+      license_inserted: licenseResults.length > 0,
+      warnings: warnings, // Always include all warnings
       logs: logs,
     };
-
-    log("Preparing successful response");
 
     // Return the extracted information
     return new Response(
       JSON.stringify({
         success: true,
         data: responseData,
-        message: "Therapist and related data inserted successfully",
-        warnings: warnings.length > 0 ? warnings : null,
+        message:
+          `Success: ${profileData.first_name} ${profileData.last_name} was inserted. ID: ${therapistId}`,
+        warnings: warnings, // Always include the warnings array (even if empty)
       }),
       {
         status: 200,
@@ -935,14 +1194,58 @@ Deno.serve(async (req) => {
   } catch (error) {
     // Handle any unexpected errors
     console.error("Error processing request:", error);
-    logs.push(`Critical error: ${error.message}`);
+    logs.push(`Critical error: ${(error as Error).message}`);
+
+    // Try to create an error log entry in the database
+    try {
+      // Create a minimal valid therapist record with error details
+      const supabase = createSupabaseClient();
+      const errorLogData = {
+        first_name: "Error",
+        last_name: "Record",
+        // For the minimal required fields, provide placeholder values
+        gender: "error_placeholder",
+        clinic_name: "Critical Error Record",
+        availability: "online",
+        creation_log: JSON.stringify({
+          timestamp: new Date().toISOString(),
+          error: "Critical unexpected error in edge function",
+          error_message: (error as Error).message,
+          error_stack: (error as Error).stack,
+          logs: logs,
+          source: "gumloop_edge_function_critical_error",
+        }),
+      };
+
+      console.log("Attempting to create critical error log entry in database");
+      const { data: errorLogResult, error: errorLogError } = await supabase
+        .from("therapists")
+        .insert(errorLogData)
+        .select("id");
+
+      if (errorLogError) {
+        console.error(
+          `Failed to create critical error log entry: ${errorLogError.message}`,
+        );
+      } else {
+        console.log(
+          `Created critical error log entry with ID: ${errorLogResult[0].id}`,
+        );
+      }
+    } catch (logError) {
+      console.error(
+        `Exception while creating critical error log: ${
+          (logError as Error).message
+        }`,
+      );
+    }
 
     return new Response(
       JSON.stringify({
         success: false,
         error: "Internal server error",
-        message: error.message,
-        stack: error.stack,
+        message: (error as Error).message,
+        stack: (error as Error).stack,
         logs: logs,
       }),
       {
@@ -952,23 +1255,6 @@ Deno.serve(async (req) => {
     );
   }
 });
-
-/* To invoke locally:
-
-  1. Run `supabase start` (see: https://supabase.com/docs/reference/cli/supabase-start)
-  2. Make an HTTP request:
-
-  curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/gumloop' \
-    --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpveXBrcml4ZnJ0c3lqY3N5ZWViIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' \
-    --header 'Content-Type: application/json' \
-    --data '{"profile": "{\"first_name\": \"John\", \"last_name\": \"Doe\", \"gender\": \"male\", \"clinic_name\": \"Example Clinic\", \"clinic_street\": \"123 Main St\", \"clinic_city\": \"Vancouver\", \"clinic_postal_code\": \"V6B 2W9\", \"clinic_province\": \"BC\", \"clinic_country\": \"CA\", \"availability\": \"both\"}"}'
-
-  curl -i --location --request POST 'https://joypkrixfrtsyjcsyeeb.supabase.co/functions/v1/gumloop' \
-    --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpveXBrcml4ZnJ0c3lqY3N5ZWViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA4MTYwNDMsImV4cCI6MjA1NjM5MjA0M30.1fpVjC12yqbk0HmfTWFij_3xH_n8vzrnWG7LyY3-Vcs' \
-    --header 'Content-Type: application/json' \
-    --data '{"profile": "{\"first_name\": \"TestFromCurl\", \"last_name\": \"Doe\", \"gender\": \"male\", \"clinic_name\": \"Example Clinic\", \"clinic_street\": \"123 Main St\", \"clinic_city\": \"Vancouver\", \"clinic_postal_code\": \"V6B 2W9\", \"clinic_province\": \"BC\", \"clinic_country\": \"CA\", \"availability\": \"both\"}"}'
-
-*/
 
 // Special processing for education field - tries to intelligently split education items
 function processEducationField(value: any): string[] {
@@ -1050,14 +1336,6 @@ function processApproachesField(value: any): string[] {
     return [];
   }
 
-  if (typeof value === "object" && !Array.isArray(value)) {
-    console.log(`Approaches is an object: ${JSON.stringify(value)}`);
-  } else if (Array.isArray(value)) {
-    console.log(`Approaches is already an array of length ${value.length}`);
-  } else if (typeof value === "string") {
-    console.log(`Approaches is a string: "${value}"`);
-  }
-
   const rawArray = ensureArray(value);
   console.log(`After ensureArray: ${JSON.stringify(rawArray)}`);
 
@@ -1100,26 +1378,19 @@ function processApproachesField(value: any): string[] {
   return result;
 }
 
-// Helper function to find closest match in a list of valid values
-function findClosestMatch(value: string, validValues: string[]): string | null {
-  if (!value) return null;
+/* To invoke locally:
 
-  // Convert to uppercase for comparison
-  const upperValue = value.toUpperCase();
+  1. Run `supabase start` (see: https://supabase.com/docs/reference/cli/supabase-start)
+  2. Make an HTTP request:
 
-  // Direct match after uppercase conversion
-  const directMatch = validValues.find((v) => v.toUpperCase() === upperValue);
-  if (directMatch) return directMatch;
+  curl -i --location --request POST 'http://127.0.0.1:54321/functions/v1/gumloop' \
+    --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpveXBrcml4ZnJ0c3lqY3N5ZWViIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' \
+    --header 'Content-Type: application/json' \
+    --data '{"profile": "{\"first_name\": \"John\", \"last_name\": \"Doe\", \"gender\": \"male\", \"clinic_name\": \"Example Clinic\", \"clinic_street\": \"123 Main St\", \"clinic_city\": \"Vancouver\", \"clinic_postal_code\": \"V6B 2W9\", \"clinic_province\": \"BC\", \"clinic_country\": \"CA\", \"availability\": \"both\"}"}'
 
-  // Check for substring matches
-  for (const validValue of validValues) {
-    if (
-      upperValue.includes(validValue.toUpperCase()) ||
-      validValue.toUpperCase().includes(upperValue)
-    ) {
-      return validValue;
-    }
-  }
+  curl -i --location --request POST 'https://joypkrixfrtsyjcsyeeb.supabase.co/functions/v1/gumloop' \
+    --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpveXBrcml4ZnJ0c3lqY3N5ZWViIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA4MTYwNDMsImV4cCI6MjA1NjM5MjA0M30.1fpVjC12yqbk0HmfTWFij_3xH_n8vzrnWG7LyY3-Vcs' \
+    --header 'Content-Type: application/json' \
+    --data '{"profile": "{\"first_name\": \"TestFromCurl\", \"last_name\": \"Doe\", \"gender\": \"male\", \"clinic_name\": \"Example Clinic\", \"clinic_street\": \"123 Main St\", \"clinic_city\": \"Vancouver\", \"clinic_postal_code\": \"V6B 2W9\", \"clinic_province\": \"BC\", \"clinic_country\": \"CA\", \"availability\": \"both\"}"}'
 
-  return null;
-}
+*/

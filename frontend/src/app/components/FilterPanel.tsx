@@ -1,15 +1,14 @@
-'use client';
-import React, { useState, useEffect } from 'react';
-import { useTherapist } from '../contexts/TherapistContext';
+"use client";
+import React, { useState, useEffect } from "react";
+import { useTherapist } from "../contexts/TherapistContext";
 
 export default function FilterPanel() {
   const {
     filters,
-    updateFilters,
+    updateTherapists,
     isLoading,
     lastRequestTime,
     requestCount,
-    resetFilters,
     isFormDisabled,
     isTherapistLoading,
     isChatLoading,
@@ -17,40 +16,47 @@ export default function FilterPanel() {
 
   // Local state for price inputs
   const [localPrices, setLocalPrices] = useState({
-    initial: filters.max_price_initial || '',
-    subsequent: filters.max_price_subsequent || '',
+    initial: filters.max_price_initial || "",
+    subsequent: filters.max_price_subsequent || "",
   });
 
   // Update local prices when filters change
   useEffect(() => {
     setLocalPrices({
-      initial: filters.max_price_initial || '',
-      subsequent: filters.max_price_subsequent || '',
+      initial: filters.max_price_initial || "",
+      subsequent: filters.max_price_subsequent || "",
     });
   }, [filters.max_price_initial, filters.max_price_subsequent]);
 
   // Toggle gender filter
   const toggleGender = (value) => {
-    updateFilters({
-      gender: filters.gender === value ? null : value,
+    if (isFormDisabled) return;
+    updateTherapists({
+      type: "DIRECT",
+      filters: { gender: filters.gender === value ? null : value },
     });
   };
 
   // Toggle array-based filters
   const toggleArrayFilter = (key, value) => {
-    if (!filters[key]) {
-      updateFilters({ [key]: [value] });
-      return;
-    }
+    if (isFormDisabled) return;
 
-    if (filters[key].includes(value)) {
+    let newValues;
+    if (!filters[key]) {
+      newValues = [value];
+    } else if (filters[key].includes(value)) {
       // Remove value if already selected
-      const newValues = filters[key].filter((v) => v !== value);
-      updateFilters({ [key]: newValues.length > 0 ? newValues : null });
+      newValues = filters[key].filter((v) => v !== value);
+      if (newValues.length === 0) newValues = null;
     } else {
       // Add value if not already selected
-      updateFilters({ [key]: [...filters[key], value] });
+      newValues = [...filters[key], value];
     }
+
+    updateTherapists({
+      type: "DIRECT",
+      filters: { [key]: newValues },
+    });
   };
 
   // Handle local price changes
@@ -64,47 +70,58 @@ export default function FilterPanel() {
 
   // Only update context when user is done typing (on blur)
   const handlePriceBlur = (field) => {
-    if (isFormDisabled) return; // Don't update if form is disabled
+    if (isFormDisabled) return;
 
     const value = localPrices[field];
-    const numValue = value === '' ? null : Number(value);
+    const numValue = value === "" ? null : Number(value);
 
-    if (field === 'initial') {
-      updateFilters({ max_price_initial: numValue });
+    if (field === "initial") {
+      updateTherapists({
+        type: "DIRECT",
+        filters: { max_price_initial: numValue },
+      });
     } else {
-      updateFilters({ max_price_subsequent: numValue });
+      updateTherapists({
+        type: "DIRECT",
+        filters: { max_price_subsequent: numValue },
+      });
     }
   };
 
   // Handle gender change with disabled check
   const handleGenderChange = (e) => {
     if (isFormDisabled) return; // Don't update if form is disabled
-    updateFilters({ gender: e.target.value || null });
+    updateTherapists({ gender: e.target.value || null });
   };
 
   // Handle availability change with disabled check
   const handleAvailabilityChange = (e) => {
     if (isFormDisabled) return; // Don't update if form is disabled
-    updateFilters({ availability: e.target.value || null });
+    updateTherapists({ availability: e.target.value || null });
   };
 
   // Handle reset with disabled check
   const handleReset = () => {
-    if (isFormDisabled) return; // Don't reset if form is disabled
-    resetFilters();
+    if (isFormDisabled) return;
+    updateTherapists({
+      type: "DIRECT",
+      filters: {
+        gender: null,
+        sexuality: null,
+        ethnicity: null,
+        faith: null,
+        max_price_initial: null,
+        max_price_subsequent: null,
+        availability: null,
+        format: null,
+      },
+    });
   };
 
   // Format timestamp for display
   const lastRequestTimeStr = lastRequestTime
     ? new Date(lastRequestTime).toLocaleTimeString()
-    : 'None';
-
-  // Debug loading states
-  console.log('[FilterPanel] Rendering with states:', {
-    isFormDisabled,
-    isTherapistLoading,
-    isChatLoading,
-  });
+    : "None";
 
   // Apply a disabled overlay if the form is disabled
   const formOverlay = isFormDisabled ? (
@@ -129,7 +146,7 @@ export default function FilterPanel() {
         <button
           onClick={handleReset}
           className={`text-sm text-blue-500 hover:text-blue-700 ${
-            isFormDisabled ? 'opacity-50 cursor-not-allowed' : ''
+            isFormDisabled ? "opacity-50 cursor-not-allowed" : ""
           }`}
           disabled={isFormDisabled}
           aria-disabled={isFormDisabled}
@@ -137,19 +154,21 @@ export default function FilterPanel() {
           Reset
         </button>
       </div>
-      {/* <div className="space-y-2 mb-8">
+      <div className="space-y-2 mb-8">
         <h3>Request Stats</h3>
         <p className="text-sm">
           Total Requests: {requestCount}, Last Request: {lastRequestTimeStr}
         </p>
         <h3>State (Debugging)</h3>
         <p className="text-sm">
-          Ethnicity: {filters.ethnicity?.join(', ')}, Gender: {filters.gender}, Faith:{' '}
-          {filters.faith?.join(', ')}, Max Initial Price: {filters.max_price_initial}, Max
-          Subsequent Price: {filters.max_price_subsequent}, Availability: {filters.availability},
-          Format: {filters.format?.join(', ')}, Sexuality: {filters.sexuality?.join(', ')}
+          Ethnicity: {filters.ethnicity?.join(", ")}, Gender: {filters.gender},
+          Faith: {filters.faith?.join(", ")}, Max Initial Price:{" "}
+          {filters.max_price_initial}, Max Subsequent Price:{" "}
+          {filters.max_price_subsequent}, Availability: {filters.availability},
+          Format: {filters.format?.join(", ")}, Sexuality:{" "}
+          {filters.sexuality?.join(", ")}
         </p>
-      </div> */}
+      </div>
 
       {/* Loading indicator */}
       {isTherapistLoading && (
@@ -161,11 +180,16 @@ export default function FilterPanel() {
 
       {/* Add Pricing Section with PriceDisplay */}
       <div className="mb-6">
-        <h3 className="text-sm mb-3 text-grey-medium font-medium">Price Range</h3>
+        <h3 className="text-sm mb-3 text-grey-medium font-medium">
+          Price Range
+        </h3>
 
         {/* Initial Session Price */}
         <div className="mb-4">
-          <label htmlFor="initial-price" className="block text-base mb-1 text-grey-medium">
+          <label
+            htmlFor="initial-price"
+            className="block text-base mb-1 text-grey-medium"
+          >
             Max Initial Session Price
           </label>
           <div className="rounded-md border border-grey-light p-2 flex justify-between items-center">
@@ -177,8 +201,8 @@ export default function FilterPanel() {
                 step="5"
                 className="w-full bg-transparent border-none focus:ring-0 text-base text-grey-extraDark"
                 value={localPrices.initial}
-                onChange={(e) => handlePriceChange(e, 'initial')}
-                onBlur={() => handlePriceBlur('initial')}
+                onChange={(e) => handlePriceChange(e, "initial")}
+                onBlur={() => handlePriceBlur("initial")}
                 placeholder="No limit"
                 disabled={isFormDisabled}
               />
@@ -192,7 +216,10 @@ export default function FilterPanel() {
 
         {/* Subsequent Session Price */}
         <div>
-          <label htmlFor="subsequent-price" className="block text-base mb-1 text-grey-medium">
+          <label
+            htmlFor="subsequent-price"
+            className="block text-base mb-1 text-grey-medium"
+          >
             Max Subsequent Session Price
           </label>
           <div className="rounded-md border border-grey-light p-2 flex justify-between items-center">
@@ -204,8 +231,8 @@ export default function FilterPanel() {
                 step="5"
                 className="w-full bg-transparent border-none focus:ring-0 text-base text-grey-extraDark"
                 value={localPrices.subsequent}
-                onChange={(e) => handlePriceChange(e, 'subsequent')}
-                onBlur={() => handlePriceBlur('subsequent')}
+                onChange={(e) => handlePriceChange(e, "subsequent")}
+                onBlur={() => handlePriceBlur("subsequent")}
                 placeholder="No limit"
                 disabled={isFormDisabled}
               />
@@ -222,16 +249,18 @@ export default function FilterPanel() {
       <div className="mb-6">
         <h3 className="text-sm mb-3 text-grey-medium font-medium">Gender</h3>
         <div className="flex flex-wrap gap-2">
-          {['male', 'female', 'non_binary'].map((gender) => (
+          {["male", "female", "non_binary"].map((gender) => (
             <button
               key={gender}
               className={`px-2 py-1 rounded-md border text-grey-medium border-beige-dark font-base hover:bg-beige-extralight hover:shadow-sm focus:ring-2 focus:ring-green-light ${
-                filters.gender === gender ? 'bg-white border-green-extralight border-2' : ''
+                filters.gender === gender
+                  ? "bg-white border-green-extralight border-2"
+                  : ""
               }`}
               onClick={() => toggleGender(gender)}
             >
-              {gender === 'non_binary'
-                ? 'Non-Binary'
+              {gender === "non_binary"
+                ? "Non-Binary"
                 : gender.charAt(0).toUpperCase() + gender.slice(1)}
             </button>
           ))}
@@ -240,21 +269,29 @@ export default function FilterPanel() {
 
       {/* Delivery Method */}
       <div className="mb-6">
-        <h3 className="text-sm mb-3 text-grey-medium font-medium">Delivery Method</h3>
+        <h3 className="text-sm mb-3 text-grey-medium font-medium">
+          Delivery Method
+        </h3>
         <div className="flex flex-wrap gap-2">
-          {['in_person', 'online'].map((method) => (
+          {["in_person", "online"].map((method) => (
             <button
               key={method}
               className={`px-2 py-1 rounded-md border text-grey-medium border-beige-dark font-base hover:bg-beige-extralight hover:shadow-sm focus:ring-2 focus:ring-green-light ${
-                filters.availability === method ? 'bg-white border-green-extralight border-2' : ''
+                filters.availability === method
+                  ? "bg-white border-green-extralight border-2"
+                  : ""
               }`}
               onClick={() =>
-                updateFilters({
-                  availability: filters.availability === method ? null : method,
+                updateTherapists({
+                  type: "DIRECT",
+                  filters: {
+                    availability:
+                      filters.availability === method ? null : method,
+                  },
                 })
               }
             >
-              {method === 'in_person' ? 'In Person' : 'Online'}
+              {method === "in_person" ? "In Person" : "Online"}
             </button>
           ))}
         </div>
@@ -262,15 +299,19 @@ export default function FilterPanel() {
 
       {/* Therapy Format */}
       <div className="mb-6">
-        <h3 className="text-sm mb-3 text-grey-medium font-medium">Therapy Format</h3>
+        <h3 className="text-sm mb-3 text-grey-medium font-medium">
+          Therapy Format
+        </h3>
         <div className="flex flex-wrap gap-2">
-          {['individual', 'couples', 'family'].map((format) => (
+          {["individual", "couples", "family"].map((format) => (
             <button
               key={format}
               className={`px-2 py-1 rounded-md border text-grey-medium border-beige-dark font-base hover:bg-beige-extralight hover:shadow-sm focus:ring-2 focus:ring-green-light ${
-                filters.format?.includes(format) ? 'bg-white border-green-extralight border-2' : ''
+                filters.format?.includes(format)
+                  ? "bg-white border-green-extralight border-2"
+                  : ""
               }`}
-              onClick={() => toggleArrayFilter('format', format)}
+              onClick={() => toggleArrayFilter("format", format)}
             >
               {format.charAt(0).toUpperCase() + format.slice(1)}
             </button>
@@ -282,21 +323,27 @@ export default function FilterPanel() {
       <div className="mb-6">
         <h3 className="text-sm mb-3 text-grey-medium font-medium">Ethnicity</h3>
         <div className="flex flex-wrap gap-2">
-          {['asian', 'black', 'indigenous', 'latino', 'middle_eastern', 'white'].map(
-            (ethnicity) => (
-              <button
-                key={ethnicity}
-                className={`px-2 py-1 rounded-md border text-grey-medium border-beige-dark font-base hover:bg-beige-extralight hover:shadow-sm focus:ring-2 focus:ring-green-light ${
-                  filters.ethnicity?.includes(ethnicity)
-                    ? 'bg-white border-green-extralight border-2'
-                    : ''
-                }`}
-                onClick={() => toggleArrayFilter('ethnicity', ethnicity)}
-              >
-                {ethnicity.charAt(0).toUpperCase() + ethnicity.slice(1).replace('_', ' ')}
-              </button>
-            )
-          )}
+          {[
+            "asian",
+            "black",
+            "indigenous",
+            "latino",
+            "middle_eastern",
+            "white",
+          ].map((ethnicity) => (
+            <button
+              key={ethnicity}
+              className={`px-2 py-1 rounded-md border text-grey-medium border-beige-dark font-base hover:bg-beige-extralight hover:shadow-sm focus:ring-2 focus:ring-green-light ${
+                filters.ethnicity?.includes(ethnicity)
+                  ? "bg-white border-green-extralight border-2"
+                  : ""
+              }`}
+              onClick={() => toggleArrayFilter("ethnicity", ethnicity)}
+            >
+              {ethnicity.charAt(0).toUpperCase() +
+                ethnicity.slice(1).replace("_", " ")}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -304,19 +351,21 @@ export default function FilterPanel() {
       <div className="mb-6">
         <h3 className="text-sm mb-3 text-grey-medium font-medium">Sexuality</h3>
         <div className="flex flex-wrap gap-2">
-          {['straight', 'gay', 'lesbian', 'bisexual', 'queer', 'asexual'].map((sexuality) => (
-            <button
-              key={sexuality}
-              className={`px-2 py-1 rounded-md border text-grey-medium border-beige-dark font-base hover:bg-beige-extralight hover:shadow-sm focus:ring-2 focus:ring-green-light ${
-                filters.sexuality?.includes(sexuality)
-                  ? 'bg-white border-green-extralight border-2'
-                  : ''
-              }`}
-              onClick={() => toggleArrayFilter('sexuality', sexuality)}
-            >
-              {sexuality.charAt(0).toUpperCase() + sexuality.slice(1)}
-            </button>
-          ))}
+          {["straight", "gay", "lesbian", "bisexual", "queer", "asexual"].map(
+            (sexuality) => (
+              <button
+                key={sexuality}
+                className={`px-2 py-1 rounded-md border text-grey-medium border-beige-dark font-base hover:bg-beige-extralight hover:shadow-sm focus:ring-2 focus:ring-green-light ${
+                  filters.sexuality?.includes(sexuality)
+                    ? "bg-white border-green-extralight border-2"
+                    : ""
+                }`}
+                onClick={() => toggleArrayFilter("sexuality", sexuality)}
+              >
+                {sexuality.charAt(0).toUpperCase() + sexuality.slice(1)}
+              </button>
+            )
+          )}
         </div>
       </div>
 
@@ -324,19 +373,27 @@ export default function FilterPanel() {
       <div className="mb-6">
         <h3 className="text-sm mb-3 text-grey-medium font-medium">Faith</h3>
         <div className="flex flex-wrap gap-2">
-          {['christian', 'muslim', 'jewish', 'hindu', 'buddhist', 'sikh', 'atheist'].map(
-            (faith) => (
-              <button
-                key={faith}
-                className={`px-2 py-1 rounded-md border text-grey-medium border-beige-dark font-base hover:bg-beige-extralight hover:shadow-sm focus:ring-2 focus:ring-green-light ${
-                  filters.faith?.includes(faith) ? 'bg-white border-green-extralight border-2' : ''
-                }`}
-                onClick={() => toggleArrayFilter('faith', faith)}
-              >
-                {faith.charAt(0).toUpperCase() + faith.slice(1)}
-              </button>
-            )
-          )}
+          {[
+            "christian",
+            "muslim",
+            "jewish",
+            "hindu",
+            "buddhist",
+            "sikh",
+            "atheist",
+          ].map((faith) => (
+            <button
+              key={faith}
+              className={`px-2 py-1 rounded-md border text-grey-medium border-beige-dark font-base hover:bg-beige-extralight hover:shadow-sm focus:ring-2 focus:ring-green-light ${
+                filters.faith?.includes(faith)
+                  ? "bg-white border-green-extralight border-2"
+                  : ""
+              }`}
+              onClick={() => toggleArrayFilter("faith", faith)}
+            >
+              {faith.charAt(0).toUpperCase() + faith.slice(1)}
+            </button>
+          ))}
         </div>
       </div>
     </div>

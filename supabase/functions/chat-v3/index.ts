@@ -31,6 +31,7 @@ Focus on explaining the RELEVANCE of each match to each NEED:
 - Any standout qualities that make them a particularly good fit
 
 Be concise and focus on matching rationale rather than listing all details.
+Ask inviting questions so that the user can share more about their needs.
 `;
 
 // Handle OPTIONS requests for CORS
@@ -55,7 +56,7 @@ Deno.serve(async (req) => {
       "[chat-v3]: Received messages:",
       messages?.length || 0,
       "last message:",
-      messages?.length > 0 ? messages[messages.length - 1].content : "none"
+      messages?.length > 0 ? messages[messages.length - 1].content : "none",
     );
 
     // Safely handle matchedTherapists
@@ -73,7 +74,7 @@ Deno.serve(async (req) => {
         {
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        },
       );
     }
 
@@ -84,23 +85,73 @@ Deno.serve(async (req) => {
     if (therapists.length > 0) {
       fullPrompt += "\n\nHere are the matched therapists:\n";
       therapists.forEach((therapist, index) => {
-        fullPrompt += `\n${index + 1}. ${therapist.first_name} ${
-          therapist.last_name
-        }`;
+        fullPrompt += `\n${
+          index + 1
+        }. ${therapist.first_name} ${therapist.last_name}`;
+
+        // Basic demographics
+        if (therapist.pronouns) fullPrompt += ` (${therapist.pronouns})`;
         if (therapist.gender) fullPrompt += `, ${therapist.gender}`;
-        if (therapist.ethnicity) fullPrompt += `, ${therapist.ethnicity}`;
+        if (therapist.ethnicity && therapist.ethnicity.length) {
+          fullPrompt += `, ${therapist.ethnicity.join("/")}`;
+        }
+
+        // Practical information
+        fullPrompt += `\nAvailability: ${
+          therapist.availability || "Not specified"
+        }`;
+        fullPrompt += `\nLanguages: ${
+          therapist.languages?.join(", ") || "English"
+        }`;
+
+        // Financial information
+        if (therapist.initial_price) {
+          fullPrompt += `\nInitial session: ${therapist.initial_price}`;
+        }
+        if (therapist.subsequent_price) {
+          fullPrompt += `, Follow-up: ${therapist.subsequent_price}`;
+        }
+
+        // Professional information
         fullPrompt += `\nSpecialties: ${
           therapist.areas_of_focus?.join(", ") || "Not specified"
-        }\n`;
-        fullPrompt += `Bio: ${therapist.bio || "No bio available"}\n`;
+        }`;
+        if (therapist.approaches) {
+          // Handle approaches being either an array or an object with arrays inside
+          let approachesList = [];
+          if (Array.isArray(therapist.approaches)) {
+            approachesList = therapist.approaches;
+          } else if (typeof therapist.approaches === "object") {
+            // Extract approaches from object structure like {long_term: [...], short_term: [...]}
+            Object.values(therapist.approaches).forEach((arr) => {
+              if (Array.isArray(arr)) approachesList.push(...arr);
+            });
+          }
+          if (approachesList.length > 0) {
+            fullPrompt += `\nApproaches: ${approachesList.join(", ")}`;
+          }
+        }
+
+        // Educational background
+        if (therapist.education && therapist.education.length) {
+          fullPrompt += `\nEducation: ${therapist.education.join("; ")}`;
+        }
+
+        // Bio information
+        fullPrompt += `\nBio: ${
+          therapist.bio || therapist.ai_summary || "No bio available"
+        }`;
+        fullPrompt += "\n";
       });
 
       fullPrompt +=
-        "\nPlease help the user understand which therapist might be the best match for their needs.";
+        "\n\nPlease explain which therapist(s) might be the best match for the user's specific needs, focusing on how their expertise and background align with what the user is looking for.";
     } else {
       fullPrompt +=
         "\n\nNo therapists were found matching the user's criteria. Please explain this and suggest broadening their search.";
     }
+
+    console.log("fullPrompt", fullPrompt);
 
     // Prepare the chat completion request
     perf.startEvent("llm:openai");
@@ -164,7 +215,7 @@ Deno.serve(async (req) => {
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      },
     );
   } catch (error) {
     console.error("[chat-v3]: Error:", error);
@@ -179,7 +230,7 @@ Deno.serve(async (req) => {
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      },
     );
   }
 });

@@ -1,3 +1,4 @@
+// deno-lint-ignore-file no-explicit-any
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "@supabase/supabase-js";
 
@@ -5,6 +6,7 @@ const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
 
 console.log("Profile Search: Ready to serve requests");
@@ -30,7 +32,7 @@ Deno.serve(async (req) => {
           headers: { Authorization: req.headers.get("Authorization")! },
         },
         auth: { persistSession: false },
-      }
+      },
     );
 
     console.log(`Using the SUPABASE URL: ${Deno.env.get("SUPABASE_URL")}`);
@@ -47,12 +49,12 @@ Deno.serve(async (req) => {
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 400,
-        }
+        },
       );
     }
 
     console.log(
-      `[profile-search] Searching for therapist with name: ${searchName}`
+      `[profile-search] Searching for therapist with name: ${searchName}`,
     );
 
     // Split the name into parts for more flexible searching
@@ -61,7 +63,7 @@ Deno.serve(async (req) => {
     const lastName = nameParts.length > 1 ? nameParts.slice(1).join(" ") : "";
 
     console.log(
-      `[profile-search] Parsed name - First: "${firstName}", Last: "${lastName}"`
+      `[profile-search] Parsed name - First: "${firstName}", Last: "${lastName}"`,
     );
 
     // Build the query based on the available name parts
@@ -74,12 +76,12 @@ Deno.serve(async (req) => {
     if (nameParts.length > 1) {
       // If we have first and last name, try to match both
       query = query.or(
-        `first_name.ilike.%${firstName}%,last_name.ilike.%${lastName}%`
+        `first_name.ilike.%${firstName}%,last_name.ilike.%${lastName}%`,
       );
     } else {
       // If we just have one name, search in both first and last name
       query = query.or(
-        `first_name.ilike.%${firstName}%,last_name.ilike.%${firstName}%`
+        `first_name.ilike.%${firstName}%,last_name.ilike.%${firstName}%`,
       );
     }
 
@@ -102,7 +104,7 @@ Deno.serve(async (req) => {
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 404,
-        }
+        },
       );
     }
 
@@ -110,14 +112,13 @@ Deno.serve(async (req) => {
     const therapist = therapistResults[0];
 
     console.log(
-      `[profile-search] Found therapist: ${therapist.first_name} ${therapist.last_name}`
+      `[profile-search] Found therapist: ${therapist.first_name} ${therapist.last_name}`,
     );
 
     // Get the therapist's title from licenses if available
-    const therapistTitle =
-      therapist.licenses && therapist.licenses.length > 0
-        ? therapist.licenses[0].title
-        : "Therapist";
+    const therapistTitle = therapist.licenses && therapist.licenses.length > 0
+      ? therapist.licenses[0].title
+      : "Therapist";
 
     // Process fees - no longer mapping to old structure since we're adapting the frontend
     const therapistFees = therapist.fees || [];
@@ -183,7 +184,7 @@ Deno.serve(async (req) => {
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
-      }
+      },
     );
   } catch (error) {
     console.error("[profile-search] Error:", error);
@@ -199,7 +200,7 @@ Deno.serve(async (req) => {
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 500,
-      }
+      },
     );
   }
 });

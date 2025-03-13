@@ -5,6 +5,83 @@ Passes raw text to the Gumloop edge function
 Never change the main block.
 """
 def main(text, params):
+    """Processes input text from Web Scraping Node, and sends it to the Gumloop edge function, ensuring the data is in the correct format."""
+
+    """
+    Test Object – Contains 2 licenses, 2 fees, and a profile image URL
+    {
+    "profile": {
+        "first_name": "Test2Licenses",
+        "middle_name": null,
+        "last_name": "Langen",
+        "pronouns": "she/her",
+        "gender": "female",
+        "sexuality": "prefer_not_to_say",
+        "ethnicity": "white",
+        "faith": "prefer_not_to_say",
+        "bio": "Hi! My name is Laura and I am an RCC at Peak. I was born and raised in Saskatoon where I completed my business degree which supported me in my years of leadership and business development with value aligned companies. Although I loved my work, my personal experiences with mental health and witnessing the need for quality mental health care led me to go back to school and dedicate my career to mental health. I personally have gone through my own mental health challenges and know what it is like to be in the dark and thinking things will not get better. I am here to tell you they can and although life can be hard, it can be really beautiful too.",
+        "clinic_name": "Peak Resilience Counselling",
+        "clinic_street": "Unit 601-808 Nelson St.",
+        "clinic_city": "Vancouver",
+        "clinic_postal_code": "V6Z 2H2",
+        "clinic_province": "BC",
+        "clinic_country": "CA",
+        "clinic_profile_url": "https://www.peak-resilience.com/counsellors/laura-langen",
+        "clinic_booking_url": "https://peak-resilience.janeapp.com/",
+        "therapist_email": "hello@elementaltherapy.ca",
+        "availability": "both",
+        "education": [
+        "Bachelor of Science at UBC in biopsychology, Master of Counselling degree from City University of Canada"
+        ],
+        "certifications": [
+        "Registered Clinical Counsellor #20828, Registered with CVAP as a counsellor"
+        ],
+        "approaches": ["Acceptance and Commitment Therapy (ACT)", "Cognitive Behavioural Therapy (CBT)", "Eye Movement Desensitization and Reprocessing (EMDR)"],
+        "areas_of_focus": [
+        "ADHD, Anxiety, Boundary Setting, Break-Ups, Burnout, Career, Childhood Trauma, Communication Skills, Dating, Depression, Dissociation, Emotional Regulation and Anger, Goal Setting, Grief and Loss, Identity, Life Meaning and Purpose, Life Transitions, Motivation, Nervous System Regulation, Neurodivergence, Perfectionism, PTSD / Complex PTSD, Relationship Issues, Self Worth and Personal Growth, Self-Esteem, Sex Therapy, Shame, Stress Management and Stress Reduction, Trauma"
+        ],
+        "languages": ["English"]
+    },
+    "fees": [
+        {
+        "session_type": "individual",
+        "duration_minutes": 50,
+        "delivery_method": "virtual",
+        "price": 150,
+        "currency": "CAD",
+        "session_category": "initial"
+        },
+        {
+        "session_type": "individual",
+        "duration_minutes": 50,
+        "delivery_method": "in_person",
+        "price": 175,
+        "currency": "CAD",
+        "session_category": "subsequent"
+        }
+    ],
+    "profile_img_url": "https://www.peak-resilience.com/wp-content/uploads/2024/02/IMG_2916-1024x678.jpg",
+    "clinic_profile_url": "https://www.peak-resilience.com/counsellors/laura-langen",
+    "clinic_booking_url": "https://peak-resilience.janeapp.com/",
+    "licenses": [
+        {
+        "license_number": "999999999",
+        "title": "RCC",
+        "state": "BC",
+        "issuing_body": "BCACC",
+        "expiry_date": null
+        },
+        {
+        "license_number": "999999999",
+        "title": "RSW",
+        "state": "ON",
+        "issuing_body": "OCSWSSW",
+        "expiry_date": "2025-12-31"
+        }
+    ]
+    }
+
+    """
     import requests
     import json
 
@@ -29,7 +106,7 @@ def main(text, params):
 
             missing_keys = []
             expected_keys = ['profile']  # Only "profile" is strictly required
-            optional_keys = ['fees', 'profile_img_url', 'license', 'clinic_profile_url', 'clinic_booking_url']
+            optional_keys = ['fees', 'profile_img_url', 'licenses', 'clinic_profile_url', 'clinic_booking_url']
             
             for key in expected_keys:
                 if key not in json_data:
@@ -62,11 +139,23 @@ def main(text, params):
                     "message": "The 'profile' field must be a string or object"
                 })
             
-            # Convert license to string if it's an object
-            if isinstance(json_data.get('license'), dict):
-                print("STEP 2.5: License is an object, converting to JSON string")
-                json_data['license'] = json.dumps(json_data['license'])
-                print("STEP 2.5.1: Successfully converted license to string")
+            # Handle licenses array
+            if isinstance(json_data.get('licenses'), list):
+                print(f"STEP 2.5: Processing {len(json_data['licenses'])} license items")
+                string_licenses = []
+                for i, license in enumerate(json_data['licenses']):
+                    if isinstance(license, dict):
+                        # Ensure each license has a state field, default to BC if missing
+                        if 'state' not in license or not license['state']:
+                            print(f"STEP 2.5.{i}: Adding default state 'BC' to license: {license}")
+                            license['state'] = 'BC'
+                        string_licenses.append(json.dumps(license))
+                    else:
+                        # For string licenses, we can't easily modify them, so we pass them as-is
+                        # The TypeScript handler will handle defaulting
+                        string_licenses.append(license)
+                json_data['licenses'] = string_licenses
+                print(f"STEP 2.5.1: Processed all licenses, now have {len(string_licenses)} license strings")
             
             # Convert fees array to array of strings if needed
             if 'fees' in json_data and isinstance(json_data['fees'], list):
@@ -116,8 +205,25 @@ def main(text, params):
         
         if response.status_code >= 400:
             print(f"STEP 4.1: Error response body: {response.text[:200]}")
+            try:
+                # Try to parse the error details from the response body
+                error_data = response.json()
+                return json.dumps({
+                    "success": False,
+                    "error": "Server error",
+                    "status_code": response.status_code,
+                    "details": error_data  # Include the full error details from the server
+                })
+            except:
+                # If can't parse JSON, return the raw error text
+                return json.dumps({
+                    "success": False,
+                    "error": "Server error",
+                    "status_code": response.status_code,
+                    "message": response.text[:500]  # Include up to 500 chars of the error message
+                })
         
-        # Raise exception for bad status codes
+        # Raise exception for bad status codes (this will never be reached for 400+ status codes)
         response.raise_for_status()
 
         # Return the response as a string
@@ -143,7 +249,7 @@ def main(text, params):
 test="""
 {
   "profile": {
-    "first_name": "Laura",
+    "first_name": "Test2Licenses",
     "middle_name": null,
     "last_name": "Langen",
     "pronouns": "she/her",
@@ -195,13 +301,22 @@ test="""
   "profile_img_url": "https://www.peak-resilience.com/wp-content/uploads/2024/02/IMG_2916-1024x678.jpg",
   "clinic_profile_url": "https://www.peak-resilience.com/counsellors/laura-langen",
   "clinic_booking_url": "https://peak-resilience.janeapp.com/",
-  "license": {
-    "license_number": "20480",
-    "title": "RCC",
-    "state": "BC",
-    "issuing_body": "BCACC",
-    "expiry_date": null
-  }
+  "licenses": [
+    {
+      "license_number": "999999999",
+      "title": "RCC",
+      "state": "BC",
+      "issuing_body": "BCACC",
+      "expiry_date": null
+    },
+    {
+      "license_number": "999999999",
+      "title": "RSW",
+      "state": "ON",
+      "issuing_body": "OCSWSSW",
+      "expiry_date": "2025-12-31"
+    }
+  ]
 }
 """
 

@@ -17,6 +17,7 @@ const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
 type DetermineUserMessageIntentResponse = {
   isTherapistRequest: boolean;
   answer: string;
+  explanation: string;
 };
 
 type DetermineUserMessageIntentContext = {
@@ -27,7 +28,14 @@ type DetermineUserMessageIntentContext = {
     last_name: string;
   }[];
 };
-
+interface TherapistFee {
+  session_type: string;
+  session_category: string;
+  delivery_method: string;
+  duration_minutes: number;
+  price: number;
+  currency: string;
+}
 type TherapistMatch = {
   id: string;
   first_name: string;
@@ -62,6 +70,7 @@ type TherapistMatch = {
   clinic_phone: string | null;
   education: string[];
   certifications: string[];
+  fees: TherapistFee[];
   licenses: {
     id: string;
     license_number: string;
@@ -71,7 +80,6 @@ type TherapistMatch = {
     expiry_date: string | null;
     is_verified: boolean;
   }[];
-  therapist_licenses?: any[];
 };
 
 export const corsHeaders = {
@@ -100,7 +108,7 @@ Deno.serve(async (req) => {
         {
           status: 500,
           headers: { "Content-Type": "application/json" },
-        }
+        },
       );
     }
 
@@ -119,7 +127,6 @@ Deno.serve(async (req) => {
     } = await req.json();
 
     console.log("[therapist-matches] Request received from", { triggerSource });
-    console.log("[therapist-matches]", { currentFilters });
 
     // -------------------------
     // HANDLE FILTER-ONLY REQUESTS
@@ -131,12 +138,12 @@ Deno.serve(async (req) => {
 
       // Check if we have any active filters
       const hasActiveFilters = Object.values(currentFilters || {}).some(
-        (v) => v !== null && (Array.isArray(v) ? v.length > 0 : true)
+        (v) => v !== null && (Array.isArray(v) ? v.length > 0 : true),
       );
 
       if (!hasActiveFilters) {
         console.log(
-          "[therapist-matches] No active filters, returning empty result"
+          "[therapist-matches] No active filters, returning empty result",
         );
         return new Response(
           JSON.stringify({
@@ -145,21 +152,16 @@ Deno.serve(async (req) => {
           }),
           {
             headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
+          },
         );
       }
-
-      // Build the query with proper joins for price filters
-      const hasPriceFilter =
-        currentFilters?.max_price_initial ||
-        currentFilters?.max_price_subsequent;
 
       let query = supabase.from("therapists").select(`
         id,
         first_name,
         middle_name,
         last_name,
-        pronouns,
+        pronouns::text,
         bio,
         gender,
         ethnicity,
@@ -227,58 +229,134 @@ Deno.serve(async (req) => {
       perf.startEvent("database:filterQuery");
       const { data: therapists, error } = await query.limit(10);
 
+      // Debug logging to help identify issues
+      console.log("[therapist-matches] Query completed");
       if (error) {
         perf.endEvent("database:filterQuery", {
           error: error.message,
         });
-        console.error("[therapist-matches] Database query error:", error);
-        throw new Error(`Database query error: ${error.message}`);
+        console.error("[therapist-matches] Query error:", error);
+        return new Response(
+          JSON.stringify({
+            error: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code,
+            query: "SELECT from therapists with filters", // Simple query description
+            filters: currentFilters || {},
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
       }
 
       perf.endEvent("database:filterQuery", {
-        resultCount: therapists.length,
+        resultCount: therapists?.length || 0,
       });
 
-      if (therapists.length === 0) {
+      // Safely check therapists exists before logging
+      console.log(
+        `[therapist-matches] Found ${therapists?.length || 0} therapists`,
+      );
+      if (therapists && therapists.length > 0) {
+        console.log("[therapist-matches] First therapist sample:", {
+          id: therapists[0].id,
+          name: `${therapists[0].first_name} ${therapists[0].last_name}`,
+          pronouns: therapists[0].pronouns,
+          pronouns_type: typeof therapists[0].pronouns,
+        });
+      } else {
+        console.log(
+          "[therapist-matches] No therapists data returned or empty array",
+        );
+      }
+
+      if (!therapists || therapists.length === 0) {
         console.log("[therapist-matches] No therapists found by filters");
         return new Response(
-          JSON.stringify({ therapists: [], extractedFilters: currentFilters }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          JSON.stringify({
+            therapists: [],
+            extractedFilters: currentFilters,
+            filters_applied: JSON.stringify(currentFilters || {}),
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
 
       // Format the therapists to include price information
+      console.log("[therapist-matches] Beginning to format therapists");
+
+      // Safe check that therapists is an array before mapping
+      if (!Array.isArray(therapists)) {
+        console.error(
+          "[therapist-matches] therapists is not an array:",
+          therapists,
+        );
+        return new Response(
+          JSON.stringify({
+            error: "Therapists data is not an array",
+            therapists: [],
+            extractedFilters: currentFilters,
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+
+      // Add some debugging information before mapping
+      therapists.forEach((therapist, index) => {
+        if (therapist) {
+          console.log(`[therapist-matches] Therapist ${index} info:`, {
+            id: therapist.id,
+            has_fees: Array.isArray(therapist.therapist_fees),
+            has_licenses: Array.isArray(therapist.therapist_licenses),
+          });
+        } else {
+          console.log(
+            `[therapist-matches] Therapist ${index} is null or undefined`,
+          );
+        }
+      });
+
       const formattedTherapists = therapists.map(
-        ({ therapist_fees, therapist_licenses, ...t }: any) => {
+        ({ fees, licenses, ...t }: TherapistMatch) => {
           return {
             ...t,
-            fees: therapist_fees ? therapist_fees.map(fee => ({
-              session_type: fee.session_type,
-              session_category: fee.session_category,
-              delivery_method: fee.delivery_method,
-              duration_minutes: fee.duration_minutes,
-              price: fee.price,
-              currency: fee.currency
-            })) : [],
-            initial_price: therapist_fees?.find(
-              (f) => f.session_category === "initial"
-            )?.price,
-            subsequent_price: therapist_fees?.find(
-              (f) => f.session_category === "subsequent"
-            )?.price,
-            licenses: therapist_licenses || [],
+            fees: Array.isArray(fees)
+              ? fees.map((fee: TherapistFee) => ({
+                session_type: fee.session_type,
+                session_category: fee.session_category,
+                delivery_method: fee.delivery_method,
+                duration_minutes: fee.duration_minutes,
+                price: fee.price,
+                currency: fee.currency,
+              }))
+              : [],
+            initial_price: Array.isArray(fees)
+              ? fees.find(
+                (f: TherapistFee) => f.session_category === "initial",
+              )?.price
+              : null,
+            subsequent_price: Array.isArray(fees)
+              ? fees.find(
+                (f: TherapistFee) => f.session_category === "subsequent",
+              )?.price
+              : null,
+            licenses: Array.isArray(licenses) ? licenses : [],
           };
-        }
+        },
       );
+
+      console.log(
+        `[therapist-matches] Successfully formatted ${formattedTherapists.length} therapists`,
+      );
+
+      console.log(formattedTherapists[0]);
 
       return new Response(
         JSON.stringify({
-          therapists: formattedTherapists || [],
+          therapists: formattedTherapists,
           extractedFilters: currentFilters,
         }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
@@ -286,7 +364,7 @@ Deno.serve(async (req) => {
     // CHAT-BASED MATCHING WITH EMBEDDINGS
     // -------------------------
     console.log(
-      "[therapist-matches] Processing chat-based request with embeddings"
+      "[therapist-matches] Processing chat-based request with embeddings",
     );
 
     // Check if we have a message to process
@@ -294,7 +372,7 @@ Deno.serve(async (req) => {
 
     if (!userMessage) {
       console.log(
-        "[therapist-matches] No user message found for embedding generation"
+        "[therapist-matches] No user message found for embedding generation",
       );
       return new Response(
         JSON.stringify({
@@ -303,8 +381,8 @@ Deno.serve(async (req) => {
         }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 400
-        }
+          status: 400,
+        },
       );
     }
 
@@ -323,17 +401,18 @@ Deno.serve(async (req) => {
       userMessage,
       {
         isFirstMessage,
-        currentTherapists: messages.map((m) => ({
+        currentTherapists: messages.map((
+          m: { id: string; first_name: string; last_name: string },
+        ) => ({
           id: m.id,
           first_name: m.first_name,
           last_name: m.last_name,
         })),
-      }
+      },
     );
 
     console.log(
-      "is the user asking for a therapist?",
-      isUserAskingForTherapist
+      { isUserAskingForTherapist },
     );
 
     if (isUserAskingForTherapist.isTherapistRequest) {
@@ -343,31 +422,58 @@ Deno.serve(async (req) => {
       const params = await determineMatchTherapistParameters(
         userMessage,
         currentFilters,
-        triggerSource
+        triggerSource,
       );
 
-      // Pass the queries to DB function, now with embedding
-      console.log("params", params);
+      // Handle the max_price_initial parameter properly
+      console.log("params.max_price_initial", params.max_price_initial);
 
+      const effectiveMaxPrice = params.max_price_initial === 0
+        ? null
+        : (params.max_price_initial && params.max_price_initial > 0
+          ? params.max_price_initial
+          : null);
+
+      console.log("effectiveMaxPrice", effectiveMaxPrice);
       // DB: Get Therapists - now with embedding parameter
       perf.startEvent("database:semanticSearch");
+
       const { data: therapists, error: matchError } = await supabase
         .rpc("match_therapists", {
           query_embedding: embedding,
-          match_threshold: 0.1,
+          match_threshold: 0.05,
           gender_filter: params.gender_filter,
           sexuality_filter: params.sexuality_filter,
           ethnicity_filter: params.ethnicity_filter,
           faith_filter: params.faith_filter,
-          max_price_initial:
-            params.max_price_initial > 0 ? params.max_price_initial : null,
+          max_price_initial: effectiveMaxPrice,
           availability_filter: params.availability_filter,
         })
-        .limit(10);
-      console.log(therapists, matchError);
-      console.log("ethnciity", therapists[0]?.ethnicity);
+        .limit(5);
 
-      console.log(`Found ${therapists?.length} therapists`);
+      // Detailed filter parameter logging
+      console.log("Search criteria details:", {
+        ethnicity_filter: params.ethnicity_filter,
+        gender_filter: params.gender_filter,
+        sexuality_filter: params.sexuality_filter,
+        faith_filter: params.faith_filter,
+        max_price_initial: params.max_price_initial > 0
+          ? params.max_price_initial
+          : null,
+        availability_filter: params.availability_filter,
+      });
+
+      console.log({ therapists });
+      console.log({ matchError });
+
+      // Safe access to array elements
+      if (therapists && therapists.length > 0) {
+        console.log("First therapist ethnicity:", therapists[0].ethnicity);
+      } else {
+        console.log("No therapists found matching criteria");
+      }
+
+      console.log(`Found ${therapists?.length || 0} therapists`);
 
       if (matchError) {
         perf.endEvent("database:semanticSearch", { error: matchError.message });
@@ -380,18 +486,11 @@ Deno.serve(async (req) => {
           {
             status: 500,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
-          }
+          },
         );
       }
       perf.endEvent("database:semanticSearch", {
         resultCount: therapists?.length,
-      });
-
-      console.log("[therapist-matches] First therapist sample data:", {
-        id: therapists?.[0]?.id,
-        name: `${therapists?.[0]?.first_name} ${therapists?.[0]?.last_name}`,
-        profile_img_url: therapists?.[0]?.profile_img_url,
-        video_intro_link: therapists?.[0]?.video_intro_link,
       });
 
       // Create response with therapists and current filters
@@ -405,43 +504,42 @@ Deno.serve(async (req) => {
       };
 
       const response = {
-        therapists:
-          therapists?.map((t: TherapistMatch) => ({
-            id: t.id,
-            first_name: t.first_name,
-            middle_name: t.middle_name,
-            last_name: t.last_name,
-            pronouns: t.pronouns,
-            ethnicity: t.ethnicity,
-            gender: t.gender,
-            sexuality: t.sexuality,
-            faith: t.faith,
-            initial_price: t.initial_price,
-            subsequent_price: t.subsequent_price,
-            availability: t.availability,
-            languages: t.languages,
-            areas_of_focus: t.areas_of_focus,
-            approaches: t.approaches,
-            similarity: t.similarity,
-            ai_summary: t.ai_summary,
-            bio: t.bio,
-            profile_img_url: t.profile_img_url,
-            video_intro_link: t.video_intro_link,
-            clinic_profile_url: t.clinic_profile_url,
-            clinic_booking_url: t.clinic_booking_url,
-            therapist_email: t.therapist_email,
-            therapist_phone: t.therapist_phone,
-            clinic_name: t.clinic_name,
-            clinic_street: t.clinic_street,
-            clinic_city: t.clinic_city,
-            clinic_province: t.clinic_province,
-            clinic_postal_code: t.clinic_postal_code,
-            clinic_country: t.clinic_country,
-            clinic_phone: t.clinic_phone,
-            education: t.education,
-            certifications: t.certifications,
-            licenses: t.therapist_licenses || [],
-          })) || [],
+        therapists: therapists?.map((t: TherapistMatch) => ({
+          id: t.id,
+          first_name: t.first_name,
+          middle_name: t.middle_name,
+          last_name: t.last_name,
+          pronouns: t.pronouns,
+          ethnicity: t.ethnicity,
+          gender: t.gender,
+          sexuality: t.sexuality,
+          faith: t.faith,
+          initial_price: t.initial_price,
+          subsequent_price: t.subsequent_price,
+          availability: t.availability,
+          languages: t.languages,
+          areas_of_focus: t.areas_of_focus,
+          approaches: t.approaches,
+          similarity: t.similarity,
+          ai_summary: t.ai_summary,
+          bio: t.bio,
+          profile_img_url: t.profile_img_url,
+          video_intro_link: t.video_intro_link,
+          clinic_profile_url: t.clinic_profile_url,
+          clinic_booking_url: t.clinic_booking_url,
+          therapist_email: t.therapist_email,
+          therapist_phone: t.therapist_phone,
+          clinic_name: t.clinic_name,
+          clinic_street: t.clinic_street,
+          clinic_city: t.clinic_city,
+          clinic_province: t.clinic_province,
+          clinic_postal_code: t.clinic_postal_code,
+          clinic_country: t.clinic_country,
+          clinic_phone: t.clinic_phone,
+          education: t.education,
+          certifications: t.certifications,
+          licenses: t.licenses || [],
+        })) || [],
         filters: {
           gender: params.gender_filter || null,
           sexuality: params.sexuality_filter || null,
@@ -462,11 +560,11 @@ Deno.serve(async (req) => {
       if (therapists && therapists.length > 0) {
         console.log(
           "[therapist-matches] Response sample - first therapist fields:",
-          Object.keys(therapists[0])
+          Object.keys(therapists[0]),
         );
         console.log(
           "[therapist-matches] First therapist profile_img_url:",
-          therapists[0].profile_img_url
+          therapists[0].profile_img_url,
         );
       }
 
@@ -491,27 +589,31 @@ Deno.serve(async (req) => {
         }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
+        },
       );
     }
-  } catch (error) {
-    console.error(`[therapist-matches] Error: ${error.message}`);
+  } catch (error: unknown) {
+    console.error(
+      `[therapist-matches] Error: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
     perf.complete();
     return new Response(
       JSON.stringify({
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         therapists: [],
       }),
       {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      },
     );
   }
 });
 const determineUserMessageIntent = async (
   userMessage: string,
-  context: DetermineUserMessageIntentContext
+  context: DetermineUserMessageIntentContext,
 ): Promise<DetermineUserMessageIntentResponse> => {
   const perf = createPerformanceTracker("intent-detection");
 
@@ -522,29 +624,31 @@ const determineUserMessageIntent = async (
   const formattedMessage = [
     {
       role: "system",
-      content: `You are analyzing user messages in a therapy matching platform. Your goal is to identify when users are expressing preferences for therapists.
-  
+      content:
+        `You are a receptionist. Your goal is to identify when users are expressing preferences for therapists or just chatting.
   ${
-    context.currentTherapists && context.currentTherapists.length > 0
-      ? `
+          context.currentTherapists && context.currentTherapists.length > 0
+            ? `
   The user is currently viewing these therapists:
-  ${context.currentTherapists
-    .map((t) => `- ${t.first_name} ${t.last_name}`)
-    .join("\n")}
+  ${
+              context.currentTherapists
+                .map((t) => `- ${t.first_name} ${t.last_name}`)
+                .join("\n")
+            }
   `
-      : ""
-  }
+            : ""
+        }
   
   ${
-    context.isFirstMessage
-      ? `
+          context.isFirstMessage
+            ? `
   For first messages, be more likely to interpret as a therapist request if they mention:
   - Any preferences or needs
   - Seeking help or therapy
   - Personal situations
   `
-      : ""
-  }
+            : ""
+        }
   
   Consider a message as a therapist request if it mentions any subtle hints about the following:
   - demographic preferences (gender, ethnicity, age, etc.)
@@ -552,11 +656,10 @@ const determineUserMessageIntent = async (
   - availability or location preferences
   - price/cost preferences
   - Questions about specific types of therapists
-  - Any indication they're looking for or want to find a therapist
-  - specific issues they want help with
+  - specific issues they're struggling with
   
   
-  Example therapist requests:
+  Example therapist requests could be vague or incomplete sentences.
   - "prefer pacific islanders"
   - "looking for someone under $150"
   - "need help with anxiety"
@@ -567,7 +670,10 @@ const determineUserMessageIntent = async (
   Only classify as NOT a therapist request if the message is:
   - A general question about therapy concepts (e.g. "What is CBT?")
   - Small talk or greetings
-  - Direct questions about the platform/service`,
+  - Direct questions about the platform/service
+  
+  Don't pre-amble, just extract preferences concisely.
+  `,
     },
     {
       role: "user",
@@ -576,7 +682,8 @@ const determineUserMessageIntent = async (
   ];
 
   console.log(
-    `[determineUserMessageIntent]: Analyzing message: "${userMessage}"`
+    `[determineUserMessageIntent]`,
+    { userMessage },
   );
 
   const ClassifyUserIntent = z.object({
@@ -586,17 +693,15 @@ const determineUserMessageIntent = async (
 
   perf.startEvent("llm:intentAnalysis");
   try {
-    console.log("[determineUserMessageIntent]: Calling OpenAI API");
     const completion = await openai.beta.chat.completions.parse({
       model: "gpt-4o-mini",
       messages: formattedMessage,
       response_format: zodResponseFormat(ClassifyUserIntent, "answer"),
     });
 
-    console.log("[determineUserMessageIntent]: Received response from OpenAI");
     console.log(
       "[determineUserMessageIntent]: Parsed response:",
-      JSON.stringify(completion.choices[0].message.parsed)
+      JSON.stringify(completion.choices[0].message.parsed),
     );
 
     perf.endEvent("llm:intentAnalysis", {
@@ -609,20 +714,21 @@ const determineUserMessageIntent = async (
     perf.complete();
 
     return completion.choices[0].message.parsed;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("[determineUserMessageIntent] Error:", error);
     console.error(
       "[determineUserMessageIntent] Error details:",
-      error.response?.data || error.message
+      error instanceof Error ? error.message : String(error),
     );
-    perf.endEvent("llm:intentAnalysis", { error: error.message });
+    perf.endEvent("llm:intentAnalysis", {
+      error: error instanceof Error ? error.message : String(error),
+    });
     perf.complete();
-
-    // Provide a fallback response instead of throwing
     return {
-      isTherapistRequest: true, // Default to true for user messages that look like therapist requests
+      isTherapistRequest: true,
       explanation:
         "Error in analysis, defaulting to therapist request based on message content",
+      answer: "",
     };
   }
 };
@@ -637,7 +743,7 @@ const determineMatchTherapistParameters = async (
     max_price_initial: number | null;
     availability: string | null;
   },
-  triggerSource: "CHAT" | "FORM" = "CHAT"
+  triggerSource: "CHAT" | "FORM" = "CHAT",
 ): Promise<z.infer<typeof FilterParams>> => {
   const perf = createPerformanceTracker("parameter-detection");
 
@@ -694,10 +800,11 @@ const determineMatchTherapistParameters = async (
 
   // Log the user message for debugging
   console.log(
-    `[determineMatchTherapistParameters] User message: "${userMessage}"`
+    `[determineMatchTherapistParameters] User message: "${userMessage}"`,
   );
 
-  const systemContent = `You are an expert at extracting therapist preferences from user messages.
+  const systemContent =
+    `You are an expert at extracting therapist preferences from user messages.
 Your task is to carefully analyze the message and identify ANY mentions of therapist preferences.
 
 Please extract the following if mentioned:
@@ -708,41 +815,49 @@ Please extract the following if mentioned:
 - price limit as a maximum hourly rate number
 - availability (online, in_person, both)
 
-IMPORTANT: For price limits, set max_price_initial to NULL when no price preference is mentioned.
-DO NOT set price to 0 as this will exclude all therapists. Only set a numeric price when the user specifically mentions a price limit.
+IMPORTANT PRICE INSTRUCTIONS:
+- Only set max_price_initial to a specific number if the user explicitly mentions a price limit (e.g. "$100", "under 150", etc.)
+- ALWAYS set max_price_initial to NULL (not 0) when the user doesn't mention any price preference
+- DO NOT default to 0 - this will exclude all therapists with prices
+- NULL means "no price limit" - the correct default when price isn't mentioned
 
 Be attentive to both explicit and implicit preferences. For example:
 - "looking for a female therapist" → gender_filter: "female"
 - "I'd prefer someone who is LGBT friendly" → Consider sexuality filters
 - "Need someone who understands Asian culture" → ethnicity_filter: ["asian"]
 - "I can only afford $100 per hour" → max_price_initial: 100
+- No mention of price → max_price_initial: null (NOT 0)
 
 ${
-  currentFilters && triggerSource === "FORM"
-    ? `
+      currentFilters && triggerSource === "FORM"
+        ? `
 Current active filters (HIGH PRIORITY - keep these unless explicitly changed):
-${Object.entries(currentFilters)
-  .filter(([_, value]) => value !== null)
-  .map(
-    ([key, value]) =>
-      `- ${key}: ${Array.isArray(value) ? value.join(", ") : value}`
-  )
-  .join("\n")}
+${
+          Object.entries(currentFilters)
+            .filter(([_, value]) => value !== null)
+            .map(
+              ([key, value]) =>
+                `- ${key}: ${Array.isArray(value) ? value.join(", ") : value}`,
+            )
+            .join("\n")
+        }
 `
-    : currentFilters && triggerSource === "CHAT"
-    ? `Current form filters (LOW PRIORITY - only use if chat doesn't specify preferences):
-${Object.entries(currentFilters)
-  .filter(([_, value]) => value !== null)
-  .map(
-    ([key, value]) =>
-      `- ${key}: ${Array.isArray(value) ? value.join(", ") : value}`
-  )
-  .join("\n")}
+        : currentFilters && triggerSource === "CHAT"
+        ? `Current form filters (LOW PRIORITY - only use if chat doesn't specify preferences):
+${
+          Object.entries(currentFilters)
+            .filter(([_, value]) => value !== null)
+            .map(
+              ([key, value]) =>
+                `- ${key}: ${Array.isArray(value) ? value.join(", ") : value}`,
+            )
+            .join("\n")
+        }
 
 Prioritize any preferences mentioned in the chat over these form filters.
 `
-    : ""
-}
+        : ""
+    }
 
 Include reasoning for the extracted preferences and explain any ambiguity in the message.`;
 
@@ -770,38 +885,42 @@ Include reasoning for the extracted preferences and explain any ambiguity in the
     perf.endEvent("llm:parameterExtraction", {
       model: "gpt-4o-mini",
       messageLength: userMessage.length,
-      filterCount:
-        Object.values(result).filter(
-          (v) => v !== null && (Array.isArray(v) ? v.length > 0 : true)
-        ).length - 1, // Subtract one to exclude reasoning which isn't a filter
+      filterCount: Object.values(result).filter(
+        (v) => v !== null && (Array.isArray(v) ? v.length > 0 : true),
+      ).length - 1, // Subtract one to exclude reasoning which isn't a filter
     });
     perf.complete();
 
     console.log(
-      `[determineMatchTherapistParameters] Completion: ${JSON.stringify(
-        result
-      )}`
+      `[determineMatchTherapistParameters] Completion: ${
+        JSON.stringify(
+          result,
+        )
+      }`,
     );
 
     // If FORM trigger, merge the AI results with current filters, prioritizing current filters
     if (triggerSource === "FORM" && currentFilters) {
       return {
         ...result,
-        gender_filter: (currentFilters.gender as any) ?? result.gender_filter,
+        gender_filter: (currentFilters.gender as string) ??
+          result.gender_filter,
         sexuality_filter: currentFilters.sexuality ?? result.sexuality_filter,
         ethnicity_filter: currentFilters.ethnicity ?? result.ethnicity_filter,
         faith_filter: currentFilters.faith ?? result.faith_filter,
-        max_price_initial:
-          currentFilters.max_price_initial ?? result.max_price_initial,
-        availability_filter:
-          (currentFilters.availability as any) ?? result.availability_filter,
+        max_price_initial: currentFilters.max_price_initial ??
+          result.max_price_initial,
+        availability_filter: (currentFilters.availability as string) ??
+          result.availability_filter,
       };
     }
 
     return result;
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("[determineMatchTherapistParameters] Error:", error);
-    perf.endEvent("llm:parameterExtraction", { error: error.message });
+    perf.endEvent("llm:parameterExtraction", {
+      error: error instanceof Error ? error.toString() : String(error),
+    });
     perf.complete();
     throw error;
   }

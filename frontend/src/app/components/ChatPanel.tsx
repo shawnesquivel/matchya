@@ -5,41 +5,28 @@ import ChatMessages from "./ChatMessages";
 import ArrowIcon from "./ArrowIcon";
 
 export default function ChatPanel() {
-  const { messages, handleChatSubmission, isSendingChat, error } =
-    useTherapist();
+  const { messages, updateTherapists, isSendingChat, error } = useTherapist();
 
   const [input, setInput] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
   const messagesEndRef = useRef(null);
 
   const handleSubmit = async (e) => {
+    /** Reset input and send message */
     e.preventDefault();
     if (!input.trim()) return;
-
-    // Store the input value before clearing it
     const message = input;
-
-    // Clear the input immediately
     setInput("");
-
-    // Reset the textarea height to its minimum
     const textarea = e.target.querySelector("textarea");
     if (textarea) {
       textarea.style.height = "40px";
       setIsExpanded(false);
     }
-
-    // Then send the message
-    await handleChatSubmission(message);
+    await updateTherapists({ type: "CHAT", message });
   };
 
   const handleInputChange = (e) => {
     setInput(e.target.value);
-  };
-
-  // Handle example query click
-  const handleExampleClick = (text) => {
-    setInput(text);
   };
 
   // Scroll to bottom when messages change
@@ -47,18 +34,18 @@ export default function ChatPanel() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  const handleExampleClick = (text) => {
+    setInput(text);
+  };
+
   return (
     <div className="flex-grow flex flex-col h-full p-4 bg-beige overflow-hidden border border-grey-dark">
-      {/* <div className="p-4 border-b">
-        <h2 className="text-lg font-semibold">Chat with a Therapist Finder</h2>
-      </div> */}
       <div className=" bg-white rounded-lg w-full h-full flex flex-col border border-grey-dark">
         <ChatMessages
           messages={messages}
           isLoadingMessages={false}
           loadingNewMsg={isSendingChat}
           onButtonClick={() => {}}
-          // By setting this to 6, we bypass the questionnaire.
           questionStage={6}
         />
         <div ref={messagesEndRef} />
@@ -101,39 +88,43 @@ export default function ChatPanel() {
 
           {error && <p className="text-red-500 mt-2">{error}</p>}
 
-          {/* <div className="mt-4">
-          <p className="text-sm text-gray-500 mb-2">Try asking:</p>
-          <div className="flex flex-wrap gap-2">
-            <p
-              onClick={() =>
-                handleExampleClick(
-                  'Looking for a female therapist with experience in asian backgrounds.'
-                )
-              }
-              className="text-sm cursor-pointer border p-2 rounded-md hover:bg-gray-100"
-            >
-              "Looking for a female therapist with experience in asian backgrounds."
-            </p>
-            <p
-              onClick={() =>
-                handleExampleClick(
-                  'Looking for a female therapist with experience in black backgrounds.'
-                )
-              }
-              className="text-sm cursor-pointer border p-2 rounded-md hover:bg-gray-100"
-            >
-              "Looking for a female therapist with experience in black backgrounds."
-            </p>
-            <p
-              onClick={() =>
-                handleExampleClick('Looking for a female therapist that can speak thai.')
-              }
-              className="text-sm cursor-pointer border p-2 rounded-md hover:bg-gray-100"
-            >
-              "Looking for a female therapist that can speak thai."
-            </p>
+          <div className="mt-4">
+            <p className="text-sm text-gray-500 mb-2">Try asking:</p>
+            <div className="flex flex-wrap gap-2">
+              <p
+                onClick={() =>
+                  handleExampleClick(
+                    "Looking for a female therapist with experience in asian backgrounds."
+                  )
+                }
+                className="text-sm cursor-pointer border p-2 rounded-md hover:bg-gray-100"
+              >
+                "Looking for a female therapist with experience in asian
+                backgrounds."
+              </p>
+              <p
+                onClick={() =>
+                  handleExampleClick(
+                    "Looking for a female therapist with experience in black backgrounds."
+                  )
+                }
+                className="text-sm cursor-pointer border p-2 rounded-md hover:bg-gray-100"
+              >
+                "Looking for a female therapist with experience in black
+                backgrounds."
+              </p>
+              <p
+                onClick={() =>
+                  handleExampleClick(
+                    "Looking for a female therapist that can speak thai."
+                  )
+                }
+                className="text-sm cursor-pointer border p-2 rounded-md hover:bg-gray-100"
+              >
+                "Looking for a female therapist that can speak thai."
+              </p>
+            </div>
           </div>
-        </div> */}
         </div>
       </div>
     </div>

@@ -105,11 +105,23 @@ const initialState = {
 // Create context
 const TherapistContext = createContext(null);
 
-// Action types
+// New unified update types
+type DirectFilterUpdate = {
+  type: "DIRECT";
+  filters: Partial<TherapistFilters>;
+};
+
+type ChatBasedUpdate = {
+  type: "CHAT";
+  message: string;
+};
+
+type TherapistUpdate = DirectFilterUpdate | ChatBasedUpdate;
+
+// Add new action types
 const ACTIONS = {
   SET_LOADING: "SET_LOADING",
   SET_ERROR: "SET_ERROR",
-  UPDATE_FILTERS: "UPDATE_FILTERS",
   ADD_MESSAGE: "ADD_MESSAGE",
   SET_MESSAGES: "SET_MESSAGES",
   SET_THERAPISTS: "SET_THERAPISTS",
@@ -123,6 +135,9 @@ const ACTIONS = {
   SET_CHAT_LOADING: "SET_CHAT_LOADING",
   SET_FORM_DISABLED: "SET_FORM_DISABLED",
   TOGGLE_MOCK_DATA: "TOGGLE_MOCK_DATA",
+  UPDATE_CHAT_RESULTS: "UPDATE_CHAT_RESULTS",
+  UPDATE_FILTER_RESULTS: "UPDATE_FILTER_RESULTS",
+  SET_LOADING_STATE: "SET_LOADING_STATE",
 };
 
 // Reducer function
@@ -138,12 +153,6 @@ function therapistReducer(state, action) {
 
     case ACTIONS.SET_ERROR:
       return { ...state, error: action.payload };
-
-    case ACTIONS.UPDATE_FILTERS:
-      return {
-        ...state,
-        filters: { ...state.filters, ...action.payload },
-      };
 
     case ACTIONS.ADD_MESSAGE:
       return {
@@ -215,6 +224,33 @@ function therapistReducer(state, action) {
           action.payload !== undefined ? action.payload : !state.useMockData,
       };
 
+    case ACTIONS.UPDATE_CHAT_RESULTS:
+      return {
+        ...state,
+        therapists: action.payload.therapists,
+        filters: { ...state.filters, ...action.payload.filters },
+        messages: [
+          ...state.messages,
+          { role: "user", content: action.payload.message },
+        ],
+      };
+
+    case ACTIONS.UPDATE_FILTER_RESULTS:
+      return {
+        ...state,
+        therapists: action.payload.therapists,
+        filters: { ...state.filters, ...action.payload.filters },
+      };
+
+    case ACTIONS.SET_LOADING_STATE:
+      return {
+        ...state,
+        isLoading: action.payload,
+        isTherapistLoading: action.payload,
+        isChatLoading: action.payload,
+        isFormDisabled: action.payload,
+      };
+
     default:
       return state;
   }
@@ -225,59 +261,14 @@ export function TherapistProvider({ children }) {
   const [state, dispatch] = useReducer(therapistReducer, initialState);
   const supabase = createClientComponentClient();
 
-  // Simplify the updateFilters function
-  const updateFilters = (newFilters: Partial<TherapistFilters>) => {
-    console.log("[Context] Updating filters:", newFilters);
-
-    // Just dispatch the update directly
-    dispatch({
-      type: ACTIONS.UPDATE_FILTERS,
-      payload: {
-        ...state.filters,
-        ...newFilters,
-      },
-    });
-  };
-
-  // Function to add a message
   const addMessage = (message) => {
-    // FLOW STEP 2: When a chat message is sent, it's added to the messages array
-    console.log("[Context] Adding message:", message);
     dispatch({ type: ACTIONS.ADD_MESSAGE, payload: message });
   };
 
-  // Function to set error
-  const setError = (error) => {
-    dispatch({ type: ACTIONS.SET_ERROR, payload: error });
-  };
-
-  // Function to reset chat
   const resetChat = () => {
     dispatch({ type: ACTIONS.RESET_CHAT });
   };
 
-  // Function to generate embeddings
-  const generateEmbedding = async (text) => {
-    try {
-      const response = await fetch("/api/generate-embedding", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to generate embedding");
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error("Embedding error:", error);
-      setError(error.toString());
-      return null;
-    }
-  };
-
-  // Add this utility function near the other helper functions
   const deduplicateTherapists = (therapists: Therapist[]): Therapist[] => {
     if (!therapists || !therapists.length) return [];
     return Array.from(
@@ -285,256 +276,129 @@ export function TherapistProvider({ children }) {
     );
   };
 
-  // Function to handle chat submission
-  const handleChatSubmission = async (text) => {
+  // New unified update function
+  const updateTherapists = async (update: TherapistUpdate) => {
     try {
-      console.log("[Context] 🚀 Starting chat submission");
+      dispatch({ type: ACTIONS.SET_LOADING_STATE, payload: true });
 
-      // Immediately disable form and set loading states
-      dispatch({ type: ACTIONS.SET_FORM_DISABLED, payload: true });
-      dispatch({ type: ACTIONS.SET_SENDING_CHAT, payload: true });
-      dispatch({ type: ACTIONS.SET_THERAPIST_LOADING, payload: true });
-      dispatch({ type: ACTIONS.SET_CHAT_LOADING, payload: true });
-
-      // Add user message immediately
-      const userMessage = {
-        id: Date.now().toString(),
-        role: "user",
-        content: text,
-      };
-      dispatch({ type: ACTIONS.ADD_MESSAGE, payload: userMessage });
-      console.log("[Context] ✅ Added user message to state");
-
-      // STEP 1: Call therapist-matches to get related therapists
-      console.log("[Context] 🔍 Calling therapist-matches API");
-
-      const responseBody = JSON.stringify({
-        currentFilters: state.filters,
-        triggerSource: "CHAT",
-        messages: state.messages,
-        lastUserMessage: text,
-        filterOnly: false,
-      });
-
-      console.log(
-        "[Context.handleChatSubmission]: messages",
-        state.messages,
-        typeof state.messages,
-        "body",
-        responseBody
-      );
-
-      const matchResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/therapist-matches`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
-          },
-          body: responseBody,
-        }
-      );
-
-      if (!matchResponse.ok) {
-        throw new Error(
-          `Failed to get therapist matches: ${matchResponse.status} ${matchResponse.statusText}`
+      if (update.type === "CHAT") {
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/therapist-matches`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+            },
+            body: JSON.stringify({
+              messages: [
+                ...state.messages,
+                { role: "user", content: update.message },
+              ],
+              currentFilters: state.filters,
+              triggerSource: "CHAT",
+              lastUserMessage: update.message,
+              filterOnly: false,
+            }),
+          }
         );
-      }
 
-      const matchData = await matchResponse.json();
-      console.log(
-        "[Context] ✅ Received therapist matches:",
-        matchData.therapists?.length || 0
-      );
+        const matchData = await response.json();
 
-      // Update therapist results and filters
-      if (matchData.therapists && Array.isArray(matchData.therapists)) {
-        // Deduplicate therapists before updating state
-        const uniqueTherapists = deduplicateTherapists(matchData.therapists);
-
-        if (matchData.extractedFilters) {
-          console.log("[Context] 📊 Setting combined therapists and filters");
+        if (matchData.therapists && Array.isArray(matchData.therapists)) {
+          const uniqueTherapists = deduplicateTherapists(matchData.therapists);
           dispatch({
-            type: ACTIONS.SET_FILTERS_AND_THERAPISTS,
+            type: ACTIONS.UPDATE_CHAT_RESULTS,
             payload: {
               therapists: uniqueTherapists,
-              filters: matchData.extractedFilters,
+              filters: matchData.extractedFilters || {},
+              message: update.message,
             },
           });
-        } else {
-          console.log("[Context] 📊 Setting only therapists");
+        }
+
+        // Process chat response
+        const chatResponse = await fetch(
+          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/chat-v3`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+            },
+            body: JSON.stringify({
+              chatId: null,
+              messages: [
+                ...state.messages,
+                { role: "user", content: update.message },
+              ],
+              matchedTherapists: matchData.therapists || [],
+            }),
+          }
+        );
+
+        if (!chatResponse.ok) {
+          throw new Error(
+            `Failed to get chat response: ${chatResponse.status}`
+          );
+        }
+
+        const chatData = await chatResponse.json();
+        if (chatData.message) {
           dispatch({
-            type: ACTIONS.SET_THERAPISTS,
-            payload: uniqueTherapists,
+            type: ACTIONS.ADD_MESSAGE,
+            payload: {
+              id: (Date.now() + 1).toString(),
+              role: "assistant",
+              content: chatData.message,
+            },
+          });
+        }
+      } else {
+        // Direct filter flow
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/therapist-matches`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+            },
+            body: JSON.stringify({
+              currentFilters: { ...state.filters, ...update.filters },
+              triggerSource: "FORM",
+              filterOnly: true,
+            }),
+          }
+        );
+
+        const data = await response.json();
+
+        if (data?.therapists) {
+          const uniqueTherapists = deduplicateTherapists(data.therapists);
+          dispatch({
+            type: ACTIONS.UPDATE_FILTER_RESULTS,
+            payload: {
+              therapists: uniqueTherapists,
+              filters: update.filters,
+            },
           });
         }
       }
 
-      // Mark therapist loading as complete, but keep form disabled
-      dispatch({ type: ACTIONS.SET_THERAPIST_LOADING, payload: false });
-      console.log(
-        "[Context] ✅ Therapist loading complete, form still disabled"
-      );
-
-      // STEP 2: Call chat-v3 to get AI response
-      console.log("[Context] 💬 Calling chat-v3 API");
-      const chatResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/chat-v3`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({
-            chatId: null, // We're not using persistent chats yet
-            messages: [...state.messages, userMessage],
-            matchedTherapists: matchData.therapists || [],
-          }),
-        }
-      );
-
-      if (!chatResponse.ok) {
-        throw new Error(
-          `Failed to get chat response: ${chatResponse.status} ${chatResponse.statusText}`
-        );
-      }
-
-      const chatData = await chatResponse.json();
-      console.log("[Context] ✅ Received chat response");
-
-      // Add assistant message
-      if (chatData.message) {
-        dispatch({
-          type: ACTIONS.ADD_MESSAGE,
-          payload: {
-            id: (Date.now() + 1).toString(),
-            role: "assistant",
-            content: chatData.message,
-          },
-        });
-        console.log("[Context] ✅ Added assistant message to state");
-      }
-
-      // Update request stats
       dispatch({
         type: ACTIONS.SET_LAST_REQUEST_TIME,
         payload: new Date().toISOString(),
       });
       dispatch({ type: ACTIONS.INCREMENT_REQUEST_COUNT });
-
-      if (chatData?.therapists && chatData.therapists.length > 0) {
-        // Deduplicate therapists before updating state
-        const uniqueTherapists = deduplicateTherapists(chatData.therapists);
-
-        dispatch({
-          type: ACTIONS.SET_THERAPISTS,
-          payload: uniqueTherapists,
-        });
-      }
-
-      return true;
     } catch (error) {
-      console.error("[Context] ❌ Error in chat submission:", error);
+      console.error("[updateTherapists] Error:", error);
       dispatch({ type: ACTIONS.SET_ERROR, payload: error.toString() });
-      return false;
     } finally {
-      // Always clear all loading states when done
-      console.log(
-        "[Context] 🏁 Chat submission complete, resetting all loading states"
-      );
-      dispatch({ type: ACTIONS.SET_SENDING_CHAT, payload: false });
-      dispatch({ type: ACTIONS.SET_CHAT_LOADING, payload: false });
-      dispatch({ type: ACTIONS.SET_FORM_DISABLED, payload: false });
+      dispatch({ type: ACTIONS.SET_LOADING_STATE, payload: false });
     }
   };
 
-  // Function to fetch therapists based on current filters only
-  const fetchFilteredTherapists = async () => {
-    try {
-      console.log("[Context] 🔍 Starting therapist filtering");
-
-      // Set loading state
-      dispatch({ type: ACTIONS.SET_THERAPIST_LOADING, payload: true });
-      dispatch({ type: ACTIONS.SET_FORM_DISABLED, payload: true });
-
-      console.log(
-        "[Context] 📊 Fetching therapists with filters:",
-        state.filters
-      );
-
-      // Call the API
-      console.log(
-        "therapist-matches using",
-        process.env.NEXT_PUBLIC_SUPABASE_URL
-      );
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/therapist-matches`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
-          },
-          body: JSON.stringify({
-            currentFilters: state.filters,
-            triggerSource: "FORM",
-            filterOnly: true,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(
-          `Failed to fetch therapists: ${response.status} ${response.statusText}`
-        );
-      }
-
-      const data = await response.json();
-      console.log(
-        "[Context] ✅ Received therapists:",
-        data.therapists?.length || 0
-      );
-
-      if (data?.therapists) {
-        // Deduplicate therapists before updating state
-        const uniqueTherapists = deduplicateTherapists(data.therapists);
-
-        dispatch({
-          type: ACTIONS.SET_THERAPISTS,
-          payload: uniqueTherapists,
-        });
-      } else {
-        console.warn(
-          "[Context] ⚠️ No therapists in response or invalid format"
-        );
-        dispatch({ type: ACTIONS.SET_THERAPISTS, payload: [] });
-      }
-
-      // Update request stats
-      dispatch({
-        type: ACTIONS.SET_LAST_REQUEST_TIME,
-        payload: new Date().toISOString(),
-      });
-      dispatch({ type: ACTIONS.INCREMENT_REQUEST_COUNT });
-
-      return true;
-    } catch (error) {
-      console.error("[Context] ❌ Error fetching therapists:", error);
-      dispatch({ type: ACTIONS.SET_ERROR, payload: error.toString() });
-      return false;
-    } finally {
-      // Always clear loading states when done
-      console.log(
-        "[Context] 🏁 Therapist filtering complete, resetting loading states"
-      );
-      dispatch({ type: ACTIONS.SET_THERAPIST_LOADING, payload: false });
-      dispatch({ type: ACTIONS.SET_FORM_DISABLED, payload: false });
-    }
-  };
-
-  // Function to toggle mock data mode
   const toggleMockData = (value?: boolean) => {
     console.log(
       "[Context] Toggling mock data mode:",
@@ -546,27 +410,6 @@ export function TherapistProvider({ children }) {
     });
   };
 
-  // Make sure the filters useEffect doesn't run unnecessarily
-  useEffect(() => {
-    // Skip if we're in the middle of setting up initial state
-    if (state.isLoading) {
-      return;
-    }
-
-    // Skip if filters are at initial state (empty)
-    const isInitialState = Object.values(state.filters).every(
-      (value) => value === null || (Array.isArray(value) && value.length === 0)
-    );
-
-    if (isInitialState && state.therapists.length === 0) {
-      return;
-    }
-
-    console.log("[Context] Filters changed, updating results");
-    fetchFilteredTherapists();
-  }, [state.filters]);
-
-  // Normalize message format
   const normalizeMessage = (msg) => ({
     role: msg.role,
     content: msg.content || (msg.parts?.[0]?.text ?? null),
@@ -576,17 +419,15 @@ export function TherapistProvider({ children }) {
     <TherapistContext.Provider
       value={{
         ...state,
-        updateFilters,
         addMessage,
         resetChat,
-        handleChatSubmission,
-        fetchFilteredTherapists,
+        updateTherapists,
+        toggleMockData,
         normalizeMessage,
         isTherapistLoading: state.isTherapistLoading,
         isChatLoading: state.isChatLoading,
         isFormDisabled: state.isFormDisabled,
         useMockData: state.useMockData,
-        toggleMockData,
       }}
     >
       {children}
