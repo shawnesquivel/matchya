@@ -154,21 +154,6 @@ export default function FilterPanel() {
           Reset
         </button>
       </div>
-      {/* <div className="space-y-2 mb-8">
-        <h3>Request Stats</h3>
-        <p className="text-sm">
-          Total Requests: {requestCount}, Last Request: {lastRequestTimeStr}
-        </p>
-        <h3>State (Debugging)</h3>
-        <p className="text-sm">
-          Ethnicity: {filters.ethnicity?.join(", ")}, Gender: {filters.gender},
-          Faith: {filters.faith?.join(", ")}, Max Initial Price:{" "}
-          {filters.max_price_initial}, Max Subsequent Price:{" "}
-          {filters.max_price_subsequent}, Availability: {filters.availability},
-          Format: {filters.format?.join(", ")}, Sexuality:{" "}
-          {filters.sexuality?.join(", ")}
-        </p>
-      </div> */}
 
       {/* Loading indicator */}
       {isTherapistLoading && (
