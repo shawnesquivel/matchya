@@ -22,7 +22,8 @@ export default function TherapistLicenses({
       ? "border border-grey-dark rounded-lg p-8 flex flex-col gap-6"
       : "border border-grey-dark rounded-lg p-8 flex flex-col gap-6";
 
-  const titleClasses = variant === "modal" ? "font-medium text-xl" : "font-medium mb-2 text-2xl";
+  const titleClasses =
+    variant === "modal" ? "font-medium text-xl" : "font-medium mb-2 text-2xl";
 
   // Component to render verification status with icons
   const VerificationStatus = ({ isVerified }: { isVerified?: boolean }) => {
@@ -31,12 +32,16 @@ export default function TherapistLicenses({
         {isVerified ? (
           <>
             <Checkmark className="text-[#466421]" />
-            <span className="text-sm text-[#466421] font-medium">License Verified</span>
+            <span className="text-sm text-[#466421] font-medium">
+              License Verified
+            </span>
           </>
         ) : (
           <>
             <Warning className="text-[#878787]" />
-            <span className="text-sm text-[#878787] font-medium">Verification Pending</span>
+            <span className="text-sm text-[#878787] font-medium">
+              Verification Pending
+            </span>
           </>
         )}
       </div>
@@ -107,14 +112,14 @@ export default function TherapistLicenses({
               </div>
             ))}
           </div>
-        ) : therapist.experience.some(
+        ) : therapist?.experience?.some(
             (exp) =>
               exp.position.toLowerCase().includes("license") ||
               exp.organization.toLowerCase().includes("license")
           ) ? (
           <div className="">
-            {therapist.experience
-              .filter(
+            {therapist?.experience
+              ?.filter(
                 (exp) =>
                   exp.position.toLowerCase().includes("license") ||
                   exp.organization.toLowerCase().includes("license")
@@ -132,7 +137,9 @@ export default function TherapistLicenses({
                       <h3 className="text-xs">Period</h3>
                       <p className="text-sm">
                         {license.startYear}
-                        {license.endYear ? ` - ${license.endYear}` : " - Present"}
+                        {license.endYear
+                          ? ` - ${license.endYear}`
+                          : " - Present"}
                       </p>
                     </div>
 
@@ -140,18 +147,21 @@ export default function TherapistLicenses({
                       <VerificationStatus isVerified={false} />
                     </div>
                   </div>
-                  {index < therapist.experience.length - 1 && (
+                  {index < therapist?.experience?.length - 1 && (
                     <hr className="border-beige-dark w-3/4 m-8" />
                   )}
                 </div>
               ))}
           </div>
-        ) : therapist.qualifications && therapist.qualifications.length > 0 ? (
+        ) : therapist?.qualifications &&
+          therapist?.qualifications?.length > 0 ? (
           <div className="flex flex-col gap-1">
             <div className="flex flex-col gap-1 pb-2">
-              <h3 className="text-xs font-medium">Professional Qualifications</h3>
+              <h3 className="text-xs font-medium">
+                Professional Qualifications
+              </h3>
               <ul className="list-disc list-inside pl-2">
-                {therapist.qualifications.map((qual, index) => (
+                {therapist?.qualifications?.map((qual, index) => (
                   <li key={index} className="text-sm text-gray-700 mb-1">
                     {qual}
                   </li>
@@ -162,7 +172,9 @@ export default function TherapistLicenses({
           </div>
         ) : (
           <div className="flex flex-col gap-1 pb-2">
-            <span className="text-sm text-grey-extraDark">License information not available</span>
+            <span className="text-sm text-grey-extraDark">
+              License information not available
+            </span>
           </div>
         )}
       </div>
