@@ -103,7 +103,6 @@ async function getTherapist(slug: string): Promise<TherapistProfile | null> {
     return null;
   }
 }
-
 // Generate static paths
 export async function generateStaticParams() {
   console.log("[generateStaticParams] Generating static params");
@@ -112,19 +111,27 @@ export async function generateStaticParams() {
     const allNames: string[] = [];
     let pageToken: string | undefined;
     const PAGE_SIZE = 60; // Smaller batch size for testing
-    let pageCount = 0;
 
     // Fetch all pages
     do {
-      pageCount++;
-      console.log(`[generateStaticParams] Fetching page ${pageCount}`);
-
       const result = await fetchTherapistNames(PAGE_SIZE, pageToken);
-      allNames.push(...result.therapistNames);
+      if (result.therapistNames.length === 0) {
+        console.warn(
+          `[generateStaticParams] No therapist names found for page with token: ${pageToken}`
+        );
+      } else {
+        allNames.push(...result.therapistNames);
+      }
       pageToken = result.nextPageToken;
     } while (pageToken);
 
-    console.log(`[generateStaticParams] Fetched ${allNames.length} therapist names`);
+    if (allNames.length === 0) {
+      console.warn("[generateStaticParams] No therapist names were fetched.");
+    } else {
+      console.log(
+        `[generateStaticParams] Fetched ${allNames.length} therapist names`
+      );
+    }
 
     return allNames.map((name) => ({
       slug: generateProfileSlug(name),
