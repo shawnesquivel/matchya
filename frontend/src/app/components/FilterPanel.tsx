@@ -114,6 +114,7 @@ export default function FilterPanel() {
         max_price_subsequent: null,
         availability: null,
         format: null,
+        areas_of_focus: null,
       },
     });
   };
@@ -310,6 +311,53 @@ export default function FilterPanel() {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Add Areas of Focus Section */}
+      <div className="mb-6">
+        <h3 className="text-sm mb-3 text-grey-medium font-medium">
+          Areas of Focus
+        </h3>
+        <div className="flex flex-wrap gap-2">
+          {[
+            "anxiety",
+            "depression",
+            "trauma",
+            "relationships",
+            "addiction",
+            "grief",
+            "stress",
+            "self_esteem",
+            "family",
+            "anger",
+            "career",
+          ].map((area) => (
+            <button
+              key={area}
+              className={`px-2 py-1 rounded-md border text-grey-medium border-beige-dark font-base hover:bg-beige-extralight hover:shadow-sm focus:ring-2 focus:ring-green-light ${
+                filters.areas_of_focus?.includes(area)
+                  ? "bg-white border-green-extralight border-2"
+                  : ""
+              }`}
+              onClick={() => toggleArrayFilter("areas_of_focus", area)}
+            >
+              {area.replace("_", " ").charAt(0).toUpperCase() +
+                area.replace("_", " ").slice(1)}
+            </button>
+          ))}
+        </div>
+        <button
+          className="text-blue-500 text-sm mt-2 hover:underline"
+          onClick={() => {
+            if (isFormDisabled) return;
+            updateTherapists({
+              type: "DIRECT",
+              filters: { areas_of_focus: null },
+            });
+          }}
+        >
+          Clear areas of focus
+        </button>
       </div>
 
       {/* Add Ethnicity Section */}
