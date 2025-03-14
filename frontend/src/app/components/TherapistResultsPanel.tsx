@@ -9,17 +9,27 @@ import { mockTherapist } from "../utils/mockTherapistData";
 import { trackModalOpen, trackOutboundLink } from "../utils/analytics";
 
 export default function TherapistResultsPanel() {
-  const { therapists, isLoading, isSendingChat, filters, useMockData, toggleMockData } =
-    useTherapist();
+  const {
+    therapists,
+    isLoading,
+    isSendingChat,
+    filters,
+    useMockData,
+    toggleMockData,
+  } = useTherapist();
   // Add state for the modal - initialize with specific therapist ID
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedTherapistId, setSelectedTherapistId] = useState<string | null>(null);
+  const [selectedTherapistId, setSelectedTherapistId] = useState<string | null>(
+    null
+  );
 
   // Handle opening the mock modal when in mock mode
   useEffect(() => {
     if (useMockData && !selectedTherapistId) {
       // Set the mock therapist ID
-      setSelectedTherapistId(`${mockTherapist.first_name} ${mockTherapist.last_name}`);
+      setSelectedTherapistId(
+        `${mockTherapist.first_name} ${mockTherapist.last_name}`
+      );
     }
   }, [useMockData, selectedTherapistId]);
 
@@ -33,11 +43,15 @@ export default function TherapistResultsPanel() {
   // Helper function to deduplicate therapists by ID
   const deduplicateTherapists = (therapists: any[]): any[] => {
     if (!therapists || !therapists.length) return [];
-    return Array.from(new Map(therapists.map((therapist) => [therapist.id, therapist])).values());
+    return Array.from(
+      new Map(therapists.map((therapist) => [therapist.id, therapist])).values()
+    );
   };
 
   // Get therapists to display - either mock data or real data (with deduplication)
-  const displayTherapists = useMockData ? [mockTherapist] : deduplicateTherapists(therapists);
+  const displayTherapists = useMockData
+    ? [mockTherapist]
+    : deduplicateTherapists(therapists);
 
   // Add this useEffect for logging license data
   useEffect(() => {
@@ -53,11 +67,16 @@ export default function TherapistResultsPanel() {
     const activeFilters = [];
 
     if (filters.gender) activeFilters.push(`Gender: ${filters.gender}`);
-    if (filters.ethnicity?.length) activeFilters.push(`Ethnicity: ${filters.ethnicity.join(", ")}`);
-    if (filters.sexuality?.length) activeFilters.push(`Sexuality: ${filters.sexuality.join(", ")}`);
-    if (filters.faith?.length) activeFilters.push(`Faith: ${filters.faith.join(", ")}`);
-    if (filters.max_price_initial) activeFilters.push(`Max price: $${filters.max_price_initial}`);
-    if (filters.availability) activeFilters.push(`Availability: ${filters.availability}`);
+    if (filters.ethnicity?.length)
+      activeFilters.push(`Ethnicity: ${filters.ethnicity.join(", ")}`);
+    if (filters.sexuality?.length)
+      activeFilters.push(`Sexuality: ${filters.sexuality.join(", ")}`);
+    if (filters.faith?.length)
+      activeFilters.push(`Faith: ${filters.faith.join(", ")}`);
+    if (filters.max_price_initial)
+      activeFilters.push(`Max price: $${filters.max_price_initial}`);
+    if (filters.availability)
+      activeFilters.push(`Availability: ${filters.availability}`);
 
     return activeFilters.length > 0
       ? `Current filters: ${activeFilters.join(" • ")}`
@@ -67,22 +86,7 @@ export default function TherapistResultsPanel() {
   // Handle opening the modal with a specific therapist
   const openTherapistModal = (therapistId: string) => {
     console.log("Opening modal for therapist:", therapistId);
-
-    // Format name in a way that the API can find it
-    const formattedName = therapistId.trim();
-    console.log("Formatted name for search:", formattedName);
-
-    // Only track if we're actually changing the state
-    // This prevents double tracking when the component re-renders
-    if (!isModalOpen || selectedTherapistId !== formattedName) {
-      // Track modal open event
-      trackModalOpen({
-        id: formattedName,
-        name: formattedName,
-      });
-    }
-
-    setSelectedTherapistId(formattedName);
+    setSelectedTherapistId(therapistId);
     setIsModalOpen(true);
   };
 
@@ -103,7 +107,9 @@ export default function TherapistResultsPanel() {
   };
 
   // Helper function to truncate bio to first 2 sentences without "Read more" link
-  const truncateBioToTwoSentencesNoReadMore = (text: string | null | undefined): string => {
+  const truncateBioToTwoSentencesNoReadMore = (
+    text: string | null | undefined
+  ): string => {
     if (!text) return "";
 
     // Match sentences ending with period, exclamation point, or question mark
@@ -138,7 +144,9 @@ export default function TherapistResultsPanel() {
             <button
               onClick={() => toggleMockData()}
               className={`mr-4 px-3 py-1 text-xs rounded-md ${
-                useMockData ? "bg-green-medium text-white" : "bg-gray-200 text-gray-800"
+                useMockData
+                  ? "bg-green-medium text-white"
+                  : "bg-gray-200 text-gray-800"
               }`}
               title={useMockData ? "Using mock data" : "Using real data"}
             >
@@ -146,7 +154,8 @@ export default function TherapistResultsPanel() {
             </button>
           )}
           <span className="text-grey-medium px-2 py-1 text-sm">
-            Showing {useMockData ? 1 : displayTherapists?.length || 0} Therapists
+            Showing {useMockData ? 1 : displayTherapists?.length || 0}{" "}
+            Therapists
             {useMockData && " (Mock)"}
           </span>
         </div>
@@ -161,14 +170,14 @@ export default function TherapistResultsPanel() {
           <>
             {/* First 3 therapists (full-width) */}
             <div className="space-y-6 mb-8">
-              <h3 className="text-lg font-medium text-mblack mb-4">Top 3 Matches</h3>
+              <h3 className="text-lg font-medium text-mblack mb-4">
+                Top 3 Matches
+              </h3>
               {displayTherapists.slice(0, 3).map((therapist) => (
                 <div
                   key={therapist.id}
                   className="block bg-beige-extralight border border-grey-light rounded-xl p-6 hover:shadow-sm relative transition-all duration-200 hover:border-beige-dark hover:bg-beige-xxl cursor-pointer"
-                  onClick={() =>
-                    openTherapistModal(`${therapist.first_name} ${therapist.last_name}`)
-                  }
+                  onClick={() => openTherapistModal(therapist.id)}
                 >
                   <div className="flex items-center mb-4">
                     <div className="relative w-24 h-24 rounded-full overflow-hidden mr-4 flex-shrink-0">
@@ -260,23 +269,24 @@ export default function TherapistResultsPanel() {
                   </p>
 
                   {/* Areas of focus tags - up to 6 for top therapists */}
-                  {therapist.areas_of_focus && therapist.areas_of_focus.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {therapist.areas_of_focus.slice(0, 6).map((area) => (
-                        <span
-                          key={area}
-                          className="bg-beige-dark text-mblack px-3 py-1 rounded-full text-xs"
-                        >
-                          {area}
-                        </span>
-                      ))}
-                      {therapist.areas_of_focus.length > 6 && (
-                        <span className="text-gray-500 text-xs flex items-center">
-                          +{therapist.areas_of_focus.length - 6} more
-                        </span>
-                      )}
-                    </div>
-                  )}
+                  {therapist.areas_of_focus &&
+                    therapist.areas_of_focus.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {therapist.areas_of_focus.slice(0, 6).map((area) => (
+                          <span
+                            key={area}
+                            className="bg-beige-dark text-mblack px-3 py-1 rounded-full text-xs"
+                          >
+                            {area}
+                          </span>
+                        ))}
+                        {therapist.areas_of_focus.length > 6 && (
+                          <span className="text-gray-500 text-xs flex items-center">
+                            +{therapist.areas_of_focus.length - 6} more
+                          </span>
+                        )}
+                      </div>
+                    )}
                 </div>
               ))}
             </div>
@@ -292,9 +302,7 @@ export default function TherapistResultsPanel() {
                     <div
                       key={therapist.id}
                       className="block bg-beige-extralight border border-grey-light rounded-xl p-6 hover:shadow-sm relative transition-all duration-200 hover:border-beige-dark hover:bg-beige-xxl cursor-pointer"
-                      onClick={() =>
-                        openTherapistModal(`${therapist.first_name} ${therapist.last_name}`)
-                      }
+                      onClick={() => openTherapistModal(therapist.id)}
                     >
                       {/* Top section with image and action buttons */}
                       <div className="flex justify-between items-start mb-3">
@@ -323,12 +331,15 @@ export default function TherapistResultsPanel() {
                               title="Visit website"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                trackOutboundLink(therapist.clinic_profile_url, {
-                                  id: therapist.id,
-                                  name: `${therapist.first_name} ${therapist.last_name}`,
-                                  linkType: "website",
-                                  source: "results_panel",
-                                });
+                                trackOutboundLink(
+                                  therapist.clinic_profile_url,
+                                  {
+                                    id: therapist.id,
+                                    name: `${therapist.first_name} ${therapist.last_name}`,
+                                    linkType: "website",
+                                    source: "results_panel",
+                                  }
+                                );
                               }}
                             >
                               <GlobeIcon className="text-m-black w-3 h-3" />
@@ -366,7 +377,9 @@ export default function TherapistResultsPanel() {
                           <span className="text-mblack text-xs">
                             {therapist.pronouns || "Pronouns Unavailable"}
                           </span>
-                          <span className="mx-2 text-beige-dark text-xs">|</span>
+                          <span className="mx-2 text-beige-dark text-xs">
+                            |
+                          </span>
                           <span className="text-mblack text-xs">
                             {therapist.clinic_city && therapist.clinic_province
                               ? `${therapist.clinic_city}, ${therapist.clinic_province}`
@@ -389,23 +402,26 @@ export default function TherapistResultsPanel() {
                       </p>
 
                       {/* Areas of focus tags (limit to 3 for the grid view) */}
-                      {therapist.areas_of_focus && therapist.areas_of_focus.length > 0 && (
-                        <div className="flex flex-wrap gap-1">
-                          {therapist.areas_of_focus.slice(0, 3).map((area) => (
-                            <span
-                              key={area}
-                              className="bg-beige-dark text-mblack px-2 py-0.5 rounded-full text-xs"
-                            >
-                              {area}
-                            </span>
-                          ))}
-                          {therapist.areas_of_focus.length > 3 && (
-                            <span className="text-gray-500 text-xs flex items-center">
-                              +{therapist.areas_of_focus.length - 3}
-                            </span>
-                          )}
-                        </div>
-                      )}
+                      {therapist.areas_of_focus &&
+                        therapist.areas_of_focus.length > 0 && (
+                          <div className="flex flex-wrap gap-1">
+                            {therapist.areas_of_focus
+                              .slice(0, 3)
+                              .map((area) => (
+                                <span
+                                  key={area}
+                                  className="bg-beige-dark text-mblack px-2 py-0.5 rounded-full text-xs"
+                                >
+                                  {area}
+                                </span>
+                              ))}
+                            {therapist.areas_of_focus.length > 3 && (
+                              <span className="text-gray-500 text-xs flex items-center">
+                                +{therapist.areas_of_focus.length - 3}
+                              </span>
+                            )}
+                          </div>
+                        )}
                     </div>
                   ))}
                 </div>
@@ -414,17 +430,22 @@ export default function TherapistResultsPanel() {
           </>
         ) : hasUserTakenAction() ? (
           <div className="text-center text-grey-medium py-16 bg-white rounded-xl border border-grey-light p-8">
-            <p className="text-lg font-medium mb-2">No therapists match your current criteria</p>
+            <p className="text-lg font-medium mb-2">
+              No therapists match your current criteria
+            </p>
             <p className="text-base">
-              Try adjusting your filters or describe what you're looking for in the chat.
+              Try adjusting your filters or describe what you're looking for in
+              the chat.
             </p>
           </div>
         ) : (
           <div className="text-center text-grey-medium py-16 bg-white rounded-xl border border-grey-light p-8">
-            <p className="text-lg font-medium mb-2">Ready to find your match?</p>
+            <p className="text-lg font-medium mb-2">
+              Ready to find your match?
+            </p>
             <p className="text-base mb-4">
-              Use the filters on the left to refine your search, or simply describe what you're
-              looking for in the chat.
+              Use the filters on the left to refine your search, or simply
+              describe what you're looking for in the chat.
             </p>
           </div>
         )}
