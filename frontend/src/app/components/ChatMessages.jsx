@@ -1,13 +1,52 @@
 "use client";
-import React, { memo, useEffect, useRef } from "react";
+import React, { memo, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import ReactMarkdown from "react-markdown";
 import styles from "../styles/spinner.module.css";
 import Loader from "./Loader";
 import useTypingEffect from "./useTypingEffect";
 
+// Helper function to split message content at paragraph breaks
+const splitIntoParagraphs = (content) => {
+  if (!content) return [];
+
+  // Split on double line breaks which typically indicate paragraph boundaries
+  // Filter out empty paragraphs
+  return content
+    .split(/\n\s*\n/)
+    .filter((paragraph) => paragraph.trim() !== "");
+};
+
 const MessageItem = memo(
   ({ message, isLast, onButtonClick, questionStage }) => {
+    // If it's an assistant message, check if we need to split it
+    const shouldSplitMessage =
+      message.role === "assistant" && !message.isTyping;
+    const paragraphs = shouldSplitMessage
+      ? splitIntoParagraphs(message.content || "")
+      : [message.content];
+
+    // State to track which paragraphs are visible
+    const [visibleParagraphs, setVisibleParagraphs] = useState([]);
+
+    // Add staggered animation effect
+    useEffect(() => {
+      if (!shouldSplitMessage) {
+        setVisibleParagraphs([0]); // Show the single paragraph immediately
+        return;
+      }
+
+      // Reset visible paragraphs when message changes
+      setVisibleParagraphs([]);
+
+      // Reveal paragraphs one by one with a delay
+      paragraphs.forEach((_, index) => {
+        setTimeout(() => {
+          setVisibleParagraphs((prev) => [...prev, index]);
+        }, index * 750); // 100ms delay between each paragraph
+      });
+    }, [message.content, paragraphs.length, shouldSplitMessage]);
+
     const typedText = useTypingEffect(
       message.content || "",
       message.role === "assistant" && message.isTyping
@@ -17,44 +56,81 @@ const MessageItem = memo(
 
     return (
       <div className={`flex flex-col mb-2 ${isLast ? "flex-grow" : ""}`}>
-        <div
-          className={`bg-beige-extralight flex gap-4 flex-col message p-3 h-fit max-w-full rounded-md text-sm w-fit ${
-            message.role === "user" ? "user" : "assistant"
-          }`}
-        >
-          {message.role === "assistant" && (
-            <div className="rounded flex gap-2 align-center relative overflow-hidden h-fit">
-              <Image
-                src={`/assets/images/matchya.png`}
-                alt={`${message.role}'s profile`}
-                width={32}
-                height={32}
-                className="w-8 h-8 rounded-full assistant"
-                priority
-                unoptimized
-              />
-              <p className="mt-1.5 text-sm">matchya</p>
-            </div>
-          )}
-
-          <div className="flex justify-start align-middle gap-4 w-full h-fit">
-            <p
-              className={`sm:mt-[2px] mt-[unset] max-w-full h-fit ${
-                message.role === "user" ? "user" : "assistant"
+        {shouldSplitMessage ? (
+          // Render multiple message bubbles for the assistant
+          paragraphs.map((paragraph, index) => (
+            <div
+              key={index}
+              className={`mb-2 last:mb-0 transition-opacity duration-200 ease-in-out ${
+                visibleParagraphs.includes(index) ? "opacity-100" : "opacity-0"
               }`}
             >
-              {message.role === "assistant" ? (
-                <div className="assistant">
-                  <ReactMarkdown>{typedText}</ReactMarkdown>
-                </div>
-              ) : (
-                <div className="assistant">
-                  <ReactMarkdown>{message.content}</ReactMarkdown>
+              {index === 0 && (
+                <div className="rounded flex gap-2 align-center relative overflow-hidden h-fit">
+                  <Image
+                    src={`/assets/images/matchya.png`}
+                    alt={`${message.role}'s profile`}
+                    width={32}
+                    height={32}
+                    className="w-8 h-8 rounded-full assistant"
+                    priority
+                    unoptimized
+                  />
+                  <p className="mt-1.5 text-sm">matchya</p>
                 </div>
               )}
-            </p>
+              <div className="bg-beige-extralight flex gap-4 flex-col message p-3 h-fit max-w-full rounded-md text-sm w-fit assistant mt-1">
+                <div className="flex justify-start align-middle gap-4 w-full h-fit">
+                  <p className="sm:mt-[2px] mt-[unset] max-w-full h-fit assistant">
+                    <div className="assistant">
+                      <ReactMarkdown>{paragraph}</ReactMarkdown>
+                    </div>
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          // Regular single bubble for user messages or typing assistant messages
+          <div
+            className={`bg-beige-extralight flex gap-4 flex-col message p-3 h-fit max-w-full rounded-md text-sm w-fit ${
+              message.role === "user" ? "user" : "assistant"
+            }`}
+          >
+            {message.role === "assistant" && (
+              <div className="rounded flex gap-2 align-center relative overflow-hidden h-fit">
+                <Image
+                  src={`/assets/images/matchya.png`}
+                  alt={`${message.role}'s profile`}
+                  width={32}
+                  height={32}
+                  className="w-8 h-8 rounded-full assistant"
+                  priority
+                  unoptimized
+                />
+                <p className="mt-1.5 text-sm">matchya</p>
+              </div>
+            )}
+
+            <div className="flex justify-start align-middle gap-4 w-full h-fit">
+              <p
+                className={`sm:mt-[2px] mt-[unset] max-w-full h-fit ${
+                  message.role === "user" ? "user" : "assistant"
+                }`}
+              >
+                {message.role === "assistant" ? (
+                  <div className="assistant">
+                    <ReactMarkdown>{typedText}</ReactMarkdown>
+                  </div>
+                ) : (
+                  <div className="assistant">
+                    <ReactMarkdown>{message.content}</ReactMarkdown>
+                  </div>
+                )}
+              </p>
+            </div>
           </div>
-        </div>
+        )}
         {message.type === "questionnaire" &&
           message.buttons &&
           questionStage === message.questionIndex && (
