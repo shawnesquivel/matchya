@@ -188,6 +188,24 @@ const ProfileModal = ({ userId, onClose }) => {
                 <p className="md:text-m text-sm">{userData?.location}</p>
               </div>
               <p className="md:text-3xl text-xl">{userData?.name}</p>
+              <div className="flex gap-2 mt-1">
+                {userData?.availability && (
+                  <>
+                    {(userData.availability === "online" ||
+                      userData.availability === "both") && (
+                      <span className="bg-blue-light text-blue-dark px-3 py-1 rounded-full text-xs font-medium">
+                        online
+                      </span>
+                    )}
+                    {(userData.availability === "in_person" ||
+                      userData.availability === "both") && (
+                      <span className="bg-green-light text-green-dark px-3 py-1 rounded-full text-xs font-medium">
+                        in-person
+                      </span>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
           </div>
           <div className="w-full flex sm:gap-14 justify-center gap-4">

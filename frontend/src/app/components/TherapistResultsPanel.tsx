@@ -214,6 +214,21 @@ export default function TherapistResultsPanel() {
                             ? `${therapist.clinic_city}, ${therapist.clinic_province}`
                             : "Location Unavailable"}
                         </span>
+                        <span className="mx-2 text-beige-dark text-xs">•</span>
+                        <div className="flex gap-1">
+                          {therapist.availability === "online" ||
+                          therapist.availability === "both" ? (
+                            <span className="bg-blue-light text-blue-dark px-2 py-0.5 rounded-full text-xs font-medium">
+                              online
+                            </span>
+                          ) : null}
+                          {therapist.availability === "in_person" ||
+                          therapist.availability === "both" ? (
+                            <span className="bg-green-light text-green-dark px-2 py-0.5 rounded-full text-xs font-medium">
+                              in-person
+                            </span>
+                          ) : null}
+                        </div>
                       </div>
                     </div>
                     <div className="ml-auto flex gap-2 mb-auto">
@@ -396,6 +411,23 @@ export default function TherapistResultsPanel() {
                               ? `${therapist.clinic_city}, ${therapist.clinic_province}`
                               : "Location Unavailable"}
                           </span>
+                          <span className="mx-2 text-beige-dark text-xs">
+                            •
+                          </span>
+                          <div className="flex gap-1">
+                            {therapist.availability === "online" ||
+                            therapist.availability === "both" ? (
+                              <span className="bg-blue-light text-blue-dark px-2 py-0.5 rounded-full text-xs font-medium">
+                                online
+                              </span>
+                            ) : null}
+                            {therapist.availability === "in_person" ||
+                            therapist.availability === "both" ? (
+                              <span className="bg-green-light text-green-dark px-2 py-0.5 rounded-full text-xs font-medium">
+                                in-person
+                              </span>
+                            ) : null}
+                          </div>
                         </div>
                       </div>
 
