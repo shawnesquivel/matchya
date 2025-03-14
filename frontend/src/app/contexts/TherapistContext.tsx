@@ -155,8 +155,6 @@ const ACTIONS = {
 
 // Reducer function
 function therapistReducer(state, action) {
-  console.log("[Context Reducer]", action.type, action.payload);
-
   switch (action.type) {
     case ACTIONS.SET_LOADING:
       return { ...state, isLoading: action.payload };
@@ -304,6 +302,22 @@ export function TherapistProvider({ children }) {
     }
   }, []);
 
+  // Add a welcome message after loading history or if no messages exist
+  useEffect(() => {
+    if (!state.isLoadingHistory && state.messages.length === 0) {
+      // Add welcome message that won't be stored in the database
+      dispatch({
+        type: ACTIONS.ADD_MESSAGE,
+        payload: {
+          role: "assistant",
+          content:
+            "Ready to find your match?\n\nUse the filters on the left to refine your search, or simply describe what you're looking for in the chat.",
+          isWelcomeMessage: true, // Flag to identify this as a welcome message
+        },
+      });
+    }
+  }, [state.isLoadingHistory, state.messages.length]);
+
   // Add loadChatHistory function
   const loadChatHistory = async (chatId) => {
     try {
@@ -343,6 +357,9 @@ export function TherapistProvider({ children }) {
           );
 
         dispatch({ type: ACTIONS.SET_MESSAGES, payload: formattedMessages });
+      } else {
+        // If no messages returned, set an empty array to ensure welcome message will show
+        dispatch({ type: ACTIONS.SET_MESSAGES, payload: [] });
       }
     } catch (error) {
       console.error("Error loading chat history:", error);
@@ -350,6 +367,8 @@ export function TherapistProvider({ children }) {
         type: ACTIONS.SET_ERROR,
         payload: "Failed to load chat history",
       });
+      // On error, ensure messages are empty to show welcome message
+      dispatch({ type: ACTIONS.SET_MESSAGES, payload: [] });
     } finally {
       dispatch({ type: ACTIONS.SET_LOADING_HISTORY, payload: false });
     }
@@ -363,6 +382,17 @@ export function TherapistProvider({ children }) {
     const newChatId = generateUniqueID();
     setCookiesChatId(newChatId); // Store in cookie
     dispatch({ type: ACTIONS.RESET_CHAT, payload: { chatId: newChatId } });
+
+    // Add welcome message after reset
+    dispatch({
+      type: ACTIONS.ADD_MESSAGE,
+      payload: {
+        role: "assistant",
+        content:
+          "Ready to find your match?\n\nUse the filters on the left to refine your search, or simply describe what you're looking for in the chat.",
+        isWelcomeMessage: true, // Flag to identify this as a welcome message
+      },
+    });
   };
 
   const deduplicateTherapists = (therapists: Therapist[]): Therapist[] => {
@@ -394,7 +424,8 @@ export function TherapistProvider({ children }) {
             },
             body: JSON.stringify({
               messages: [
-                ...state.messages,
+                // Filter out welcome messages before sending to server
+                ...state.messages.filter((msg) => !msg.isWelcomeMessage),
                 { role: "user", content: update.message },
               ],
               currentFilters: state.filters,
@@ -431,7 +462,8 @@ export function TherapistProvider({ children }) {
             body: JSON.stringify({
               chatId: state.chatId, // Pass the chatId for history storage
               messages: [
-                ...state.messages,
+                // Filter out welcome messages before sending to server
+                ...state.messages.filter((msg) => !msg.isWelcomeMessage),
                 { role: "user", content: update.message },
               ],
               matchedTherapists: matchData.therapists || [],
