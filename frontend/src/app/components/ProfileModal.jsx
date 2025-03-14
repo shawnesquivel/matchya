@@ -21,7 +21,10 @@ const ProfileModal = ({ userId, onClose }) => {
       <div className="absolute bg-gray-800 bg-opacity-10 w-full h-screen flex flex-row justify-end">
         <div className="bg-white md:w-6/12 w-full sm:p-12 p-4 flex flex-col sm:gap-8 gap-4 h-full">
           <div className="flex sm:flex-row flex-col justify-between">
-            <a href="#" className="flex w-full items-center gap-2 text-grey-extraDark">
+            <a
+              href="#"
+              className="flex w-full items-center gap-2 text-grey-extraDark"
+            >
               <div className="w-24 h-6 bg-gray-200 rounded animate-pulse"></div>
             </a>
             <div className="flex sm:gap-3 gap-1 justify-between w-full sm:justify-end">
@@ -38,7 +41,10 @@ const ProfileModal = ({ userId, onClose }) => {
           </div>
           <div className="w-full flex sm:gap-14 justify-center gap-4">
             {["summary", "specialties", "fees"].map((tab, index) => (
-              <div key={index} className="w-24 h-8 bg-gray-200 rounded animate-pulse"></div>
+              <div
+                key={index}
+                className="w-24 h-8 bg-gray-200 rounded animate-pulse"
+              ></div>
             ))}
           </div>
           <div className="w-full h-full overflow-y-scroll">
@@ -193,7 +199,7 @@ const ProfileModal = ({ userId, onClose }) => {
                   <>
                     {(userData.availability === "online" ||
                       userData.availability === "both") && (
-                      <span className="bg-blue-light text-blue-dark px-3 py-1 rounded-full text-xs font-medium">
+                      <span className="bg-blue-light text-blue-800 px-3 py-1 rounded-full text-xs font-semibold border border-blue-dark">
                         online
                       </span>
                     )}
@@ -254,7 +260,9 @@ const ProfileModal = ({ userId, onClose }) => {
               <div className=" flex flex-col gap-8">
                 <div className="flex flex-col gap-2">
                   <p className="uppercase text-xs">About</p>
-                  <p className="lg:text-md text-md leading-tight">{userData?.bio}</p>
+                  <p className="lg:text-md text-md leading-tight">
+                    {userData?.bio}
+                  </p>
                 </div>
               </div>
             </div>
@@ -264,16 +272,22 @@ const ProfileModal = ({ userId, onClose }) => {
               <div className=" flex flex-col gap-8">
                 <div className="flex flex-col gap-2">
                   <p className="uppercase text-xs">Works at</p>
-                  <p className="lg:text-md text-md leading-tight">{userData?.clinic}</p>
+                  <p className="lg:text-md text-md leading-tight">
+                    {userData?.clinic}
+                  </p>
                 </div>
                 <div className="flex flex-col gap-2">
                   <p className="uppercase text-xs">Speaks</p>
-                  <p className="lg:text-md text-md leading-tight">{userData?.languages}</p>
+                  <p className="lg:text-md text-md leading-tight">
+                    {userData?.languages}
+                  </p>
                 </div>
                 <div className="flex flex-col gap-2">
                   <p className="uppercase text-xs">Qualifications</p>
                   <div className="">
-                    <p className="lg:text-md text-md leading-tight">{userData?.qualifications}</p>
+                    <p className="lg:text-md text-md leading-tight">
+                      {userData?.qualifications}
+                    </p>
                   </div>
                 </div>
                 <div className="flex flex-col gap-2">

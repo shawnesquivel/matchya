@@ -33,29 +33,29 @@ const scrollbarStyles = `
 
 // Mobile detection function
 const isMobileDevice = () => {
-  if (typeof window === 'undefined') return false;
+  if (typeof window === "undefined") return false;
   return window.innerWidth < 768; // Common breakpoint for mobile devices
 };
 
 export default function SupaChatContextPage() {
-  const [isFilterExpanded, setIsFilterExpanded] = useState(true);
+  const [isFilterExpanded, setIsFilterExpanded] = useState(false);
   const [isChatExpanded, setIsChatExpanded] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
-  
+
   // Check for mobile device on first render and window resize
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(isMobileDevice());
     };
-    
+
     // Initial check
     checkMobile();
-    
+
     // Add resize listener
-    window.addEventListener('resize', checkMobile);
-    
+    window.addEventListener("resize", checkMobile);
+
     // Cleanup
-    return () => window.removeEventListener('resize', checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
   return (
@@ -63,19 +63,31 @@ export default function SupaChatContextPage() {
       <style jsx global>
         {scrollbarStyles}
       </style>
-      
+
       {/* Mobile Restriction Overlay */}
       {isMobile && (
         <div className="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center p-6 text-center">
           <div className="w-20 h-20 mb-6">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full text-gray-400">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="w-full h-full text-gray-400"
+            >
               <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
               <line x1="12" y1="18" x2="12" y2="18.01"></line>
             </svg>
           </div>
-          <h1 className="text-2xl font-bold mb-3 text-gray-800">Mobile Version Not Available</h1>
+          <h1 className="text-2xl font-bold mb-3 text-gray-800">
+            Mobile Version Not Available
+          </h1>
           <p className="text-gray-600 mb-4">
-            Matchya is currently only available on desktop. Please visit us on a larger screen for the full experience.
+            Matchya is currently only available on desktop. Please visit us on a
+            larger screen for the full experience.
           </p>
           <p className="text-sm text-gray-500">
             We're working on making Matchya available on mobile devices soon.

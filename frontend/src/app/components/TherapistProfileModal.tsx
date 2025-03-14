@@ -1,6 +1,9 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { TherapistProfile, getTherapistProfile } from "../utils/supabaseHelpers";
+import {
+  TherapistProfile,
+  getTherapistProfile,
+} from "../utils/supabaseHelpers";
 import CollapsibleSpecialties from "@/app/components/CollapsibleSpecialties";
 import CollapsibleApproaches from "@/app/components/CollapsibleApproaches";
 import TelehealthStatus from "@/components/TelehealthStatus";
@@ -79,7 +82,6 @@ export default function TherapistProfileModal({
         setTherapist(profile);
 
         if (!profile) {
-          console.error("TherapistProfileModal: No profile found for:", therapistId);
           setError(`No profile found for "${therapistId}"`);
         }
       } catch (err) {
@@ -223,7 +225,9 @@ export default function TherapistProfileModal({
                   </h1>
                   {/* Add pronouns below the therapist's name */}
                   {displayTherapist.pronouns && (
-                    <p className="text-sm text-gray-500">{displayTherapist.pronouns}</p>
+                    <p className="text-sm text-gray-500">
+                      {displayTherapist.pronouns}
+                    </p>
                   )}
                 </div>
                 <div className="md:col-span-2 col-span-6 flex gap-2 mb-6 sm:mb-0 md:justify-end justify-start sm:flex-col-reverse lg:flex-col">
@@ -234,8 +238,6 @@ export default function TherapistProfileModal({
                       rel="noopener noreferrer"
                       className="fill-from-left rounded-full flex items-center justify-center px-4 py-3 text-mblack bg-beige-light transition-all duration-300 transform hover:shadow-sm"
                       onClick={(e) => {
-                        console.log("Website link clicked in modal", displayTherapist.id);
-                        // Prevent the click from bubbling up if needed
                         e.stopPropagation();
                         trackOutboundLink(displayTherapist.clinic_profile_url, {
                           id: displayTherapist.id,
@@ -256,8 +258,6 @@ export default function TherapistProfileModal({
                       rel="noopener noreferrer"
                       className="fill-from-left rounded-full flex items-center justify-center px-4 py-3 bg-green text-white transition-all duration-300 transform hover:shadow-sm"
                       onClick={(e) => {
-                        console.log("Booking link clicked in modal", displayTherapist.id);
-                        // Prevent the click from bubbling up if needed
                         e.stopPropagation();
                         trackOutboundLink(displayTherapist.booking_link, {
                           id: displayTherapist.id,
@@ -280,28 +280,47 @@ export default function TherapistProfileModal({
               <div className="container mx-auto gap-8 grid md:grid-cols-3 sm:grid-cols-1 md:py-14 sm:py-8">
                 <div className="md:col-span-2 sm:col-span-2 gap-8">
                   <div className="flex flex-col gap-2">
-                    <h2 className="font-medium text-xl">About {displayTherapist.first_name}</h2>
-                    <p className="text-mblack">{displayTherapist.bio || "No bio available"}</p>
+                    <h2 className="font-medium text-xl">
+                      About {displayTherapist.first_name}
+                    </h2>
+                    <p className="text-mblack">
+                      {displayTherapist.bio || "No bio available"}
+                    </p>
 
                     <div className="mt-8 flex flex-col gap-2">
                       <h2 className="font-medium text-xl">Areas of Practice</h2>
-                      <CollapsibleSpecialties specialties={displayTherapist.specialties || []} />
+                      <CollapsibleSpecialties
+                        specialties={displayTherapist.specialties || []}
+                      />
                     </div>
 
                     <div className="mt-8 flex flex-col gap-2">
-                      <h2 className="font-medium text-xl">Therapeutic Approaches</h2>
-                      <CollapsibleApproaches approaches={displayTherapist.approaches || []} />
+                      <h2 className="font-medium text-xl">
+                        Therapeutic Approaches
+                      </h2>
+                      <CollapsibleApproaches
+                        approaches={displayTherapist.approaches || []}
+                      />
                     </div>
                     <div className="mt-8 flex flex-col gap-2">
-                      <TherapistLicenses therapist={displayTherapist} variant="modal" />
+                      <TherapistLicenses
+                        therapist={displayTherapist}
+                        variant="modal"
+                      />
                     </div>
                   </div>
                 </div>
 
                 <div className="md:col-span-1 sm:col-span-2 space-y-8">
-                  <TherapistLocation therapist={displayTherapist} variant="modal" />
+                  <TherapistLocation
+                    therapist={displayTherapist}
+                    variant="modal"
+                  />
                   <TherapistFees therapist={displayTherapist} variant="modal" />
-                  <TherapistQualifications therapist={displayTherapist} variant="modal" />
+                  <TherapistQualifications
+                    therapist={displayTherapist}
+                    variant="modal"
+                  />
                 </div>
               </div>
             </div>
