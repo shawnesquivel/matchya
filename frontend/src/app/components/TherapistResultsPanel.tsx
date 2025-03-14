@@ -187,12 +187,17 @@ export default function TherapistResultsPanel() {
                           alt={`${therapist.first_name} ${therapist.last_name}`}
                           fill
                           className="object-cover"
+                          onError={(e) => {
+                            e.currentTarget.src = "/default-pp.png";
+                          }}
                         />
                       ) : (
-                        <div className="w-full h-full bg-beige-dark flex items-center justify-center text-grey-medium">
-                          {therapist.first_name?.[0]}
-                          {therapist.last_name?.[0]}
-                        </div>
+                        <Image
+                          src="/default-pp.png"
+                          alt={`${therapist.first_name} ${therapist.last_name}`}
+                          fill
+                          className="object-cover"
+                        />
                       )}
                     </div>
                     <div>
@@ -313,12 +318,18 @@ export default function TherapistResultsPanel() {
                               alt={`${therapist.first_name} ${therapist.last_name}`}
                               fill
                               className="object-cover"
+                              onError={(e) => {
+                                // When image fails to load, use default profile picture
+                                e.currentTarget.src = "/default-pp.png";
+                              }}
                             />
                           ) : (
-                            <div className="w-full h-full bg-beige-dark flex items-center justify-center text-grey-medium">
-                              {therapist.first_name?.[0]}
-                              {therapist.last_name?.[0]}
-                            </div>
+                            <Image
+                              src="/default-pp.png"
+                              alt={`${therapist.first_name} ${therapist.last_name}`}
+                              fill
+                              className="object-cover"
+                            />
                           )}
                         </div>
                         <div className="flex gap-2">
