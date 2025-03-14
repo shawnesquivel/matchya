@@ -14,7 +14,7 @@ export default function ChatPanel() {
   const handleSubmit = async (e) => {
     /** Reset input and send message */
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() || isSendingChat) return;
     const message = input;
     setInput("");
     const textarea = e.target.querySelector("textarea");

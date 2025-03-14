@@ -138,6 +138,7 @@ const ACTIONS = {
   UPDATE_CHAT_RESULTS: "UPDATE_CHAT_RESULTS",
   UPDATE_FILTER_RESULTS: "UPDATE_FILTER_RESULTS",
   SET_LOADING_STATE: "SET_LOADING_STATE",
+  ADD_USER_MESSAGE: "ADD_USER_MESSAGE",
 };
 
 // Reducer function
@@ -229,10 +230,6 @@ function therapistReducer(state, action) {
         ...state,
         therapists: action.payload.therapists,
         filters: { ...state.filters, ...action.payload.filters },
-        messages: [
-          ...state.messages,
-          { role: "user", content: action.payload.message },
-        ],
       };
 
     case ACTIONS.UPDATE_FILTER_RESULTS:
@@ -249,6 +246,15 @@ function therapistReducer(state, action) {
         isTherapistLoading: action.payload,
         isChatLoading: action.payload,
         isFormDisabled: action.payload,
+      };
+
+    case ACTIONS.ADD_USER_MESSAGE:
+      return {
+        ...state,
+        messages: [
+          ...state.messages,
+          { role: "user", content: action.payload },
+        ],
       };
 
     default:
@@ -282,6 +288,12 @@ export function TherapistProvider({ children }) {
       dispatch({ type: ACTIONS.SET_LOADING_STATE, payload: true });
 
       if (update.type === "CHAT") {
+        // Add user message to state immediately
+        dispatch({
+          type: ACTIONS.ADD_USER_MESSAGE,
+          payload: update.message,
+        });
+
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/therapist-matches`,
           {
@@ -356,6 +368,8 @@ export function TherapistProvider({ children }) {
         }
       } else {
         // Direct filter flow
+        const mergedFilters = { ...state.filters, ...update.filters };
+
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/therapist-matches`,
           {
@@ -365,7 +379,7 @@ export function TherapistProvider({ children }) {
               Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
             },
             body: JSON.stringify({
-              currentFilters: update.filters,
+              currentFilters: mergedFilters,
               triggerSource: "FORM",
               filterOnly: true,
             }),
@@ -380,7 +394,7 @@ export function TherapistProvider({ children }) {
             type: ACTIONS.UPDATE_FILTER_RESULTS,
             payload: {
               therapists: uniqueTherapists,
-              filters: update.filters,
+              filters: mergedFilters,
             },
           });
         }
