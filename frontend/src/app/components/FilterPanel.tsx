@@ -258,7 +258,7 @@ export default function FilterPanel() {
           Delivery Method
         </h3>
         <div className="flex flex-wrap gap-2">
-          {["in_person", "online"].map((method) => (
+          {["online", "in_person"].map((method) => (
             <button
               key={method}
               className={`px-2 py-1 rounded-md border text-grey-medium border-beige-dark font-base hover:bg-beige-extralight hover:shadow-sm focus:ring-2 focus:ring-green-light ${
@@ -266,15 +266,23 @@ export default function FilterPanel() {
                   ? "bg-white border-green-extralight border-2"
                   : ""
               }`}
-              onClick={() =>
-                updateTherapists({
-                  type: "DIRECT",
-                  filters: {
-                    availability:
-                      filters.availability === method ? null : method,
-                  },
-                })
-              }
+              onClick={() => {
+                // Custom filtering logic for availability
+                // When a user clicks a button that's already selected, clear the filter
+                if (filters.availability === method) {
+                  updateTherapists({
+                    type: "DIRECT",
+                    filters: { availability: null },
+                  });
+                } else {
+                  // When a user selects a method, we need to set it so the backend will
+                  // match both that method and "both" therapists
+                  updateTherapists({
+                    type: "DIRECT",
+                    filters: { availability: method },
+                  });
+                }
+              }}
             >
               {method === "in_person" ? "In Person" : "Online"}
             </button>
