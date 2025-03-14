@@ -43,7 +43,7 @@ const MessageItem = memo(
       paragraphs.forEach((_, index) => {
         setTimeout(() => {
           setVisibleParagraphs((prev) => [...prev, index]);
-        }, index * 750); // 100ms delay between each paragraph
+        }, index * 350); // 350ms delay between each paragraph
       });
     }, [message.content, paragraphs.length, shouldSplitMessage]);
 
