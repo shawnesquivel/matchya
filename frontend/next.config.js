@@ -12,17 +12,31 @@ const nextConfig = {
     return config;
   },
   images: {
-    domains: [
-      "assets-jane-cac1-20.janeapp.net",
-      "assets-jane-cac1-21.janeapp.net",
-      "www.peak-resilience.com",
-      "assets-jane-cac1-22.janeapp.net",
-      "assets-jane-cac1-23.janeapp.net",
-      "assets-jane-cac1-24.janeapp.net",
-      "randomuser.me",
-      "images.unsplash.com",
-    ],
     remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "assets-jane-cac1-20.janeapp.net",
+      },
+      {
+        protocol: "https",
+        hostname: "assets-jane-cac1-21.janeapp.net",
+      },
+      {
+        protocol: "https",
+        hostname: "www.peak-resilience.com",
+      },
+      {
+        protocol: "https",
+        hostname: "assets-jane-cac1-22.janeapp.net",
+      },
+      {
+        protocol: "https",
+        hostname: "assets-jane-cac1-23.janeapp.net",
+      },
+      {
+        protocol: "https",
+        hostname: "assets-jane-cac1-24.janeapp.net",
+      },
       {
         protocol: "https",
         hostname: "randomuser.me",
@@ -34,6 +48,26 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "thrivedowntown.com",
+      },
+      {
+        protocol: "https",
+        hostname: "static.wixstatic.com",
+      },
+      {
+        protocol: "https",
+        hostname: "open_space_counselling.ca",
+      },
+      {
+        protocol: "https",
+        hostname: "openspacecounselling.ca",
+      },
+      {
+        protocol: "https",
+        hostname: "skylarkclinic.ca",
+      },
+      {
+        protocol: "https",
+        hostname: "lotustherapy.ca",
       },
     ],
   },
