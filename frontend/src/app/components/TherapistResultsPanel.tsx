@@ -218,7 +218,7 @@ export default function TherapistResultsPanel() {
                         <div className="flex gap-1">
                           {therapist.availability === "online" ||
                           therapist.availability === "both" ? (
-                            <span className="bg-blue-light text-blue-dark px-2 py-0.5 rounded-full text-xs font-medium">
+                            <span className="bg-blue-light text-blue-800 px-2 py-0.5 rounded-full text-xs font-semibold border border-blue-dark">
                               online
                             </span>
                           ) : null}
@@ -417,7 +417,7 @@ export default function TherapistResultsPanel() {
                           <div className="flex gap-1">
                             {therapist.availability === "online" ||
                             therapist.availability === "both" ? (
-                              <span className="bg-blue-light text-blue-dark px-2 py-0.5 rounded-full text-xs font-medium">
+                              <span className="bg-blue-light text-blue-800 px-2 py-0.5 rounded-full text-xs font-semibold border border-blue-dark">
                                 online
                               </span>
                             ) : null}

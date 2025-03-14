@@ -66,7 +66,7 @@ export interface TherapistProfile {
   last_name: string;
   title?: string;
   bio: string;
-  specialties: string[];
+  areas_of_focus: string[];
   education: string[];
   experience: Array<{
     position: string;
@@ -276,7 +276,7 @@ export function mapSupabaseToTherapistProfile(
     last_name: profile.last_name,
     title: profile.title,
     bio: profile.bio || "",
-    specialties: profile.areas_of_focus || [],
+    areas_of_focus: profile.areas_of_focus || [],
     education: profile.education || [], // Keep as string array directly from database
     experience: createDefaultExperience(),
     languages: profile.languages || [],

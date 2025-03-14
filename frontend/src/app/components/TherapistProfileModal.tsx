@@ -68,7 +68,6 @@ export default function TherapistProfileModal({
 
       // If we're in mock mode, use the mock data
       if (useMockData) {
-        console.log("TherapistProfileModal: Using mock data");
         setTherapist(mockTherapistProfile);
         return;
       }
@@ -78,14 +77,12 @@ export default function TherapistProfileModal({
 
       try {
         const profile = await getTherapistProfile(therapistId);
-        console.log("TherapistProfileModal: Fetch result:", profile);
         setTherapist(profile);
 
         if (!profile) {
           setError(`No profile found for "${therapistId}"`);
         }
       } catch (err) {
-        console.error("TherapistProfileModal: Error fetching therapist:", err);
         setError(`Failed to load therapist profile: ${err.message}`);
       } finally {
         setLoading(false);
@@ -290,7 +287,7 @@ export default function TherapistProfileModal({
                     <div className="mt-8 flex flex-col gap-2">
                       <h2 className="font-medium text-xl">Areas of Practice</h2>
                       <CollapsibleSpecialties
-                        specialties={displayTherapist.specialties || []}
+                        specialties={displayTherapist.areas_of_focus || []}
                       />
                     </div>
 
