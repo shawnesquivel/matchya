@@ -1,6 +1,13 @@
 "use client";
 import React, { createContext, useContext, useReducer, useEffect } from "react";
 import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+// Add imports for cookie management
+import {
+  getChatID,
+  setCookiesChatId,
+  clearChatIDCookie,
+  generateUniqueID,
+} from "../utils/chatHelpers";
 
 // Define filter types
 interface TherapistFilters {
@@ -66,8 +73,8 @@ export interface Therapist {
 
 // Initial state
 const initialState = {
-  // Chat state
-  chatId: crypto.randomUUID(),
+  // Chat state - use getChatID() first, fallback to UUID
+  chatId: getChatID() || crypto.randomUUID(),
   messages: [],
 
   // Filter state (matching database schema)
@@ -100,6 +107,9 @@ const initialState = {
   isTherapistLoading: false,
   isChatLoading: false,
   isFormDisabled: false,
+
+  // New flag for tracking history loading state
+  isLoadingHistory: false,
 };
 
 // Create context
@@ -139,6 +149,8 @@ const ACTIONS = {
   UPDATE_FILTER_RESULTS: "UPDATE_FILTER_RESULTS",
   SET_LOADING_STATE: "SET_LOADING_STATE",
   ADD_USER_MESSAGE: "ADD_USER_MESSAGE",
+  SET_LOADING_HISTORY: "SET_LOADING_HISTORY",
+  SET_CHAT_ID: "SET_CHAT_ID",
 };
 
 // Reducer function
@@ -170,7 +182,7 @@ function therapistReducer(state, action) {
     case ACTIONS.RESET_CHAT:
       return {
         ...initialState,
-        chatId: crypto.randomUUID(),
+        chatId: action.payload?.chatId || crypto.randomUUID(),
         requestCount: state.requestCount,
       };
 
@@ -257,6 +269,18 @@ function therapistReducer(state, action) {
         ],
       };
 
+    case ACTIONS.SET_LOADING_HISTORY:
+      return {
+        ...state,
+        isLoadingHistory: action.payload,
+      };
+
+    case ACTIONS.SET_CHAT_ID:
+      return {
+        ...state,
+        chatId: action.payload,
+      };
+
     default:
       return state;
   }
@@ -267,12 +291,71 @@ export function TherapistProvider({ children }) {
   const [state, dispatch] = useReducer(therapistReducer, initialState);
   const supabase = createClientComponentClient();
 
+  // Initialize chat ID and load history on mount
+  useEffect(() => {
+    // If we have a chatId in state but not in cookies, set it
+    if (state.chatId && !getChatID()) {
+      setCookiesChatId(state.chatId);
+    }
+
+    // If we have a chatId, load history
+    if (state.chatId) {
+      loadChatHistory(state.chatId);
+    }
+  }, []);
+
+  // Add loadChatHistory function
+  const loadChatHistory = async (chatId) => {
+    try {
+      dispatch({ type: ACTIONS.SET_LOADING_HISTORY, payload: true });
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/get-chat-history`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({ chatId }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Failed to load chat history: ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.messages && Array.isArray(data.messages)) {
+        // Convert to the expected format
+        const formattedMessages = data.messages.map((msg) => ({
+          role: msg.source === "USER" ? "user" : "assistant",
+          content: msg.message,
+          id: msg.id.toString(),
+        }));
+
+        dispatch({ type: ACTIONS.SET_MESSAGES, payload: formattedMessages });
+      }
+    } catch (error) {
+      console.error("Error loading chat history:", error);
+      dispatch({
+        type: ACTIONS.SET_ERROR,
+        payload: "Failed to load chat history",
+      });
+    } finally {
+      dispatch({ type: ACTIONS.SET_LOADING_HISTORY, payload: false });
+    }
+  };
+
   const addMessage = (message) => {
     dispatch({ type: ACTIONS.ADD_MESSAGE, payload: message });
   };
 
   const resetChat = () => {
-    dispatch({ type: ACTIONS.RESET_CHAT });
+    const newChatId = generateUniqueID();
+    setCookiesChatId(newChatId); // Store in cookie
+    dispatch({ type: ACTIONS.RESET_CHAT, payload: { chatId: newChatId } });
   };
 
   const deduplicateTherapists = (therapists: Therapist[]): Therapist[] => {
@@ -329,7 +412,7 @@ export function TherapistProvider({ children }) {
           });
         }
 
-        // Process chat response
+        // Process chat response - pass chatId to enable history storage
         const chatResponse = await fetch(
           `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/chat-v3`,
           {
@@ -339,7 +422,7 @@ export function TherapistProvider({ children }) {
               Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
             },
             body: JSON.stringify({
-              chatId: null,
+              chatId: state.chatId, // Pass the chatId for history storage
               messages: [
                 ...state.messages,
                 { role: "user", content: update.message },
@@ -442,6 +525,8 @@ export function TherapistProvider({ children }) {
         isChatLoading: state.isChatLoading,
         isFormDisabled: state.isFormDisabled,
         useMockData: state.useMockData,
+        isLoadingHistory: state.isLoadingHistory,
+        loadChatHistory,
       }}
     >
       {children}

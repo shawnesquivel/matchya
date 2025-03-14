@@ -35,7 +35,7 @@ Ask inviting questions so that the user can share more about their needs.
 `;
 
 // Handle OPTIONS requests for CORS
-function handleCors(req) {
+function handleCors(req: Request) {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -188,13 +188,57 @@ Deno.serve(async (req) => {
     });
     const assistantMessage = result.choices[0].message.content;
 
-    // Save the conversation to the database if chatId is provided
+    // Save the user message to the database if chatId is provided
+    if (chatId && messages && messages.length > 0) {
+      const userMessage = messages[messages.length - 1];
+
+      if (userMessage.role === "user") {
+        perf.startEvent("database:saveUserMessage");
+        const { error: userMsgError } = await supabase.from("chat_history")
+          .insert({
+            chat_id: chatId,
+            message: userMessage.content,
+            source: "USER",
+            user_id: null, // Since all users are anonymous for now
+            metadata: matchedTherapists && matchedTherapists.length > 0
+              ? {
+                matchedTherapistIds: matchedTherapists.map((t: any) => t.id),
+                therapistCount: matchedTherapists.length,
+                timestamp: new Date().toISOString(),
+              }
+              : {},
+          });
+
+        if (userMsgError) {
+          console.error(
+            "[chat-v3]: Error saving user message to database:",
+            userMsgError,
+          );
+        }
+        perf.endEvent("database:saveUserMessage");
+      }
+    }
+
+    // Save the assistant message to the database if chatId is provided
     if (chatId) {
       perf.startEvent("database:saveMessage");
-      const { error } = await supabase.from("chat_messages").insert({
+      const { error } = await supabase.from("chat_history").insert({
         chat_id: chatId,
-        role: "assistant",
-        content: assistantMessage,
+        message: assistantMessage,
+        source: "OPENAI",
+        user_id: null, // Since all users are anonymous for now
+        model: CHAT_V3_LLM_PROVIDER,
+        metadata: matchedTherapists && matchedTherapists.length > 0
+          ? {
+            matchedTherapistIds: matchedTherapists.map((t: any) => t.id),
+            therapistCount: matchedTherapists.length,
+            tokensUsed: result.usage?.total_tokens,
+            timestamp: new Date().toISOString(),
+          }
+          : {
+            tokensUsed: result.usage?.total_tokens,
+            timestamp: new Date().toISOString(),
+          },
       });
 
       if (error) {
@@ -217,13 +261,15 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       },
     );
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("[chat-v3]: Error:", error);
-    perf.endEvent("llm:openai", { error: error.message }, true);
+    perf.endEvent("llm:openai", {
+      error: error instanceof Error ? error.message : String(error),
+    });
     perf.complete();
     return new Response(
       JSON.stringify({
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         message:
           "I encountered an error while processing your request. Please try again.",
       }),

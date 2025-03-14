@@ -5,7 +5,8 @@ import ChatMessages from "./ChatMessages";
 import ArrowIcon from "./ArrowIcon";
 
 export default function ChatPanel() {
-  const { messages, updateTherapists, isSendingChat, error } = useTherapist();
+  const { messages, updateTherapists, isSendingChat, error, isLoadingHistory } =
+    useTherapist();
 
   const [input, setInput] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
@@ -43,7 +44,7 @@ export default function ChatPanel() {
       <div className=" bg-white rounded-lg w-full h-full flex flex-col border border-grey-dark">
         <ChatMessages
           messages={messages}
-          isLoadingMessages={false}
+          isLoadingMessages={isLoadingHistory}
           loadingNewMsg={isSendingChat}
           onButtonClick={() => {}}
           questionStage={6}

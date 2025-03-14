@@ -169,7 +169,6 @@ export async function fetchTherapistProfile(
     }
 
     const data = await response.json();
-    console.log("Profile search API response:", data);
 
     if (!data.data) {
       console.error("No data returned from profile search API");
