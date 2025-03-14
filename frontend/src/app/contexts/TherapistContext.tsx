@@ -329,11 +329,18 @@ export function TherapistProvider({ children }) {
 
       if (data.messages && Array.isArray(data.messages)) {
         // Convert to the expected format
-        const formattedMessages = data.messages.map((msg) => ({
-          role: msg.source === "USER" ? "user" : "assistant",
-          content: msg.message,
-          id: msg.id.toString(),
-        }));
+        const formattedMessages = data.messages
+          .map((msg) => ({
+            role: msg.source === "USER" ? "user" : "assistant",
+            content: msg.message,
+            id: msg.id.toString(),
+            timestamp: msg.created_at, // Keep timestamp for sorting
+          }))
+          // Ensure messages are in chronological order
+          .sort(
+            (a, b) =>
+              new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+          );
 
         dispatch({ type: ACTIONS.SET_MESSAGES, payload: formattedMessages });
       }
