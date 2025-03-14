@@ -209,7 +209,17 @@ Deno.serve(async (req) => {
       }
 
       if (currentFilters?.availability) {
-        query = query.eq("availability", currentFilters.availability);
+        // Update the availability filter to also match "both" when a specific method is selected
+        if (
+          currentFilters.availability === "online" ||
+          currentFilters.availability === "in_person"
+        ) {
+          query = query.or(
+            `availability.eq.${currentFilters.availability},availability.eq.both`,
+          );
+        } else {
+          query = query.eq("availability", currentFilters.availability);
+        }
       }
 
       // Handle price filters with proper session category filtering
