@@ -5,8 +5,14 @@ import ChatMessages from "./ChatMessages";
 import ArrowIcon from "./ArrowIcon";
 
 export default function ChatPanel() {
-  const { messages, updateTherapists, isSendingChat, error, isLoadingHistory } =
-    useTherapist();
+  const {
+    messages,
+    updateTherapists,
+    isSendingChat,
+    error,
+    isLoadingHistory,
+    resetChat,
+  } = useTherapist();
 
   const [input, setInput] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
@@ -39,9 +45,24 @@ export default function ChatPanel() {
     setInput(text);
   };
 
+  const handleResetChat = () => {
+    resetChat();
+  };
+
   return (
     <div className="flex-grow flex flex-col h-full p-4 bg-beige overflow-hidden border border-grey-dark">
-      <div className=" bg-white rounded-lg w-full h-full flex flex-col border border-grey-dark">
+      <div className="bg-white rounded-lg w-full h-full flex flex-col border border-grey-dark">
+        {/* Header with reset button */}
+        <div className="flex justify-end items-center p-3 border-b border-grey-light">
+          <button
+            onClick={handleResetChat}
+            className="text-sm text-grey-medium hover:text-grey-dark px-3 py-1 rounded-md border border-grey-light hover:bg-beige-extralight transition-colors"
+            title="Start a new conversation"
+          >
+            New Chat
+          </button>
+        </div>
+
         <ChatMessages
           messages={messages}
           isLoadingMessages={isLoadingHistory}
