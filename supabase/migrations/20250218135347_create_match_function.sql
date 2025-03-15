@@ -6,7 +6,8 @@ create or replace function match_therapists(
   ethnicity_filter ethnicity_type[] default null,
   faith_filter faith_type[] default null,
   max_price_initial float default null,
-  availability_filter text default null
+  availability_filter text default null,
+  areas_of_focus_filter text[] default null
 ) returns table (
   id uuid,                -- Column 1
   first_name text,        -- Column 2
@@ -116,6 +117,26 @@ begin
     and (faith_filter is null or t.faith && faith_filter)
     and (max_price_initial is null or tf_initial.price <= max_price_initial)
     and (availability_filter is null or t.availability = availability_filter)
+    and (
+      areas_of_focus_filter is null 
+      or 
+      (
+        case when areas_of_focus_filter is not null then
+          exists (
+            select 1
+            from unnest(t.areas_of_focus) as t_area,
+                 unnest(areas_of_focus_filter) as f_area
+            where 
+              lower(t_area) like '%' || lower(f_area) || '%'
+              or 
+              t_area = f_area
+              or
+              t_area = initcap(f_area)
+          )
+        else true
+        end
+      )
+    )
   order by similarity desc;
 end;
 $$;

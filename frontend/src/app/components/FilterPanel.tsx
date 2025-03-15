@@ -320,17 +320,20 @@ export default function FilterPanel() {
         </h3>
         <div className="flex flex-wrap gap-2">
           {[
-            "anxiety",
-            "depression",
-            "trauma",
-            "relationships",
-            "addiction",
-            "grief",
-            "stress",
-            "self_esteem",
-            "family",
-            "anger",
-            "career",
+            "Anxiety",
+            "Depression",
+            "ADHD",
+            "Trauma",
+            "Relationships",
+            "Addiction",
+            "Grief",
+            "Stress",
+            "Self-esteem",
+            "Family",
+            "Anger",
+            "Career",
+            "Sexuality",
+            "LGBTQ",
           ].map((area) => (
             <button
               key={area}
@@ -341,8 +344,7 @@ export default function FilterPanel() {
               }`}
               onClick={() => toggleArrayFilter("areas_of_focus", area)}
             >
-              {area.replace("_", " ").charAt(0).toUpperCase() +
-                area.replace("_", " ").slice(1)}
+              {area}
             </button>
           ))}
         </div>

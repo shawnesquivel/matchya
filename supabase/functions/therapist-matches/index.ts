@@ -222,6 +222,26 @@ Deno.serve(async (req) => {
         }
       }
 
+      // Handle areas of focus filter - this needs to be custom SQL since we're using soft matching
+      if (
+        currentFilters?.areas_of_focus &&
+        currentFilters.areas_of_focus.length > 0
+      ) {
+        // Convert filter terms to uppercase for case-insensitive matching
+        // Note: PostgreSQL array operators are case-sensitive
+        const capitalizedAreas = currentFilters.areas_of_focus.map((
+          area: string,
+        ) => area.charAt(0).toUpperCase() + area.slice(1));
+
+        console.log(
+          "[therapist-matches] Using capitalized areas:",
+          capitalizedAreas,
+        );
+
+        // Use array overlap with properly capitalized terms
+        query = query.overlaps("areas_of_focus", capitalizedAreas);
+      }
+
       // Handle price filters with proper session category filtering
       if (currentFilters?.max_price_initial) {
         query = query
@@ -458,6 +478,7 @@ Deno.serve(async (req) => {
           faith_filter: params.faith_filter,
           max_price_initial: effectiveMaxPrice,
           availability_filter: params.availability_filter,
+          areas_of_focus_filter: params.areas_of_focus_filter,
         })
         .limit(5);
 
@@ -471,6 +492,7 @@ Deno.serve(async (req) => {
           ? params.max_price_initial
           : null,
         availability_filter: params.availability_filter,
+        areas_of_focus_filter: params.areas_of_focus_filter,
       });
 
       console.log({ therapists });
@@ -511,6 +533,7 @@ Deno.serve(async (req) => {
         faith: params.faith_filter,
         max_price_initial: params.max_price_initial,
         availability: params.availability_filter,
+        areas_of_focus: params.areas_of_focus_filter,
       };
 
       const response = {
@@ -557,6 +580,7 @@ Deno.serve(async (req) => {
           faith: params.faith_filter || null,
           max_price_initial: params.max_price_initial || null,
           availability: params.availability_filter || null,
+          areas_of_focus: params.areas_of_focus_filter || null,
         },
         context: {
           triggerSource,
@@ -595,6 +619,7 @@ Deno.serve(async (req) => {
             faith: null,
             max_price_initial: null,
             availability: null,
+            areas_of_focus: null,
           },
         }),
         {
@@ -752,6 +777,7 @@ const determineMatchTherapistParameters = async (
     faith: string[] | null;
     max_price_initial: number | null;
     availability: string | null;
+    areas_of_focus: string[] | null;
   },
   triggerSource: "CHAT" | "FORM" = "CHAT",
 ): Promise<z.infer<typeof FilterParams>> => {
@@ -805,6 +831,7 @@ const determineMatchTherapistParameters = async (
     faith_filter: z.array(Faith).nullable(),
     max_price_initial: z.number().nullable(),
     availability_filter: Availability.nullable(),
+    areas_of_focus_filter: z.array(z.string()).nullable(),
     reasoning: z.string(),
   });
 
@@ -824,6 +851,13 @@ Please extract the following if mentioned:
 - faith (christian, jewish, muslim, hindu, buddhist, sikh, atheist, agnostic, spiritual, other, prefer_not_to_say)
 - price limit as a maximum hourly rate number
 - availability (online, in_person, both)
+- areas of focus (anxiety, depression, trauma, relationships, addiction, grief, stress, self_esteem, family, anger, career, etc.)
+
+IMPORTANT INSTRUCTIONS FOR AREAS OF FOCUS:
+- For areas_of_focus_filter, extract KEY CONCEPTS even if they're not in the exact format
+- Use simple, common terms that might appear within longer phrases (e.g., "anxiety" rather than "generalized anxiety disorder")
+- This filter works on partial matches, so simpler terms will match more broadly
+- Example: If user says "I need help with my panic attacks", extract "anxiety" as it's likely to match therapists who list anxiety-related specialties
 
 IMPORTANT PRICE INSTRUCTIONS:
 - Only set max_price_initial to a specific number if the user explicitly mentions a price limit (e.g. "$100", "under 150", etc.)
@@ -837,6 +871,7 @@ Be attentive to both explicit and implicit preferences. For example:
 - "Need someone who understands Asian culture" → ethnicity_filter: ["asian"]
 - "I can only afford $100 per hour" → max_price_initial: 100
 - No mention of price → max_price_initial: null (NOT 0)
+- "I need help with anxiety and depression" → areas_of_focus_filter: ["anxiety", "depression"]
 
 ${
       currentFilters && triggerSource === "FORM"
@@ -922,6 +957,8 @@ Include reasoning for the extracted preferences and explain any ambiguity in the
           result.max_price_initial,
         availability_filter: (currentFilters.availability as string) ??
           result.availability_filter,
+        areas_of_focus_filter: currentFilters.areas_of_focus ??
+          result.areas_of_focus_filter,
       };
     }
 

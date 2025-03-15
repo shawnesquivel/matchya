@@ -15,32 +15,37 @@ import Loading from "./loading";
 import { getSafeImageUrl } from "@/app/utils/imageHelpers";
 import CollapsibleSpecialties from "@/app/components/CollapsibleSpecialties";
 import CollapsibleApproaches from "@/app/components/CollapsibleApproaches";
-import TelehealthStatus from "@/components/TelehealthStatus";
-import { mockTherapistProfile, shouldUseMockDataForSlug } from "../../utils/mockTherapistData";
-import GlobeIcon from "@/components/icons/GlobeIcon";
-import CalendarIcon from "@/components/icons/CalendarIcon";
+import {
+  mockTherapistProfile,
+  shouldUseMockDataForSlug,
+} from "../../utils/mockTherapistData";
 import TherapistLocation from "@/app/components/TherapistLocation";
 import TherapistFees from "@/app/components/TherapistFees";
 import TherapistLicenses from "@/app/components/TherapistLicenses";
 import TherapistQualifications from "@/app/components/TherapistQualifications";
 
 // Dynamically import the client components with no SSR for proper client-side rendering
-const TherapistProfileTracker = dynamic(() => import("../../components/TherapistProfileTracker"), {
-  ssr: false,
-});
+const TherapistProfileTracker = dynamic(
+  () => import("../../components/TherapistProfileTracker"),
+  {
+    ssr: false,
+  }
+);
 
 // Define a client component placeholder for where the links should appear
 // This ensures we're not trying to pass event handlers to server components
-const LinkPlaceholder = dynamic(() => import("../../components/OutboundLinkTracker"), {
-  ssr: false,
-  // Use a loading placeholder that matches the size of the links area
-  loading: () => (
-    <div className="md:col-span-2 col-span-6 flex gap-2 mb-6 sm:mb-0 md:justify-end justify-start flex-col">
-      <div className="h-12 bg-gray-100 rounded-full animate-pulse"></div>
-      <div className="h-12 bg-gray-100 rounded-full animate-pulse"></div>
-    </div>
-  ),
-});
+const LinkPlaceholder = dynamic(
+  () => import("../../components/OutboundLinkTracker"),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="md:col-span-2 col-span-6 flex gap-2 mb-6 sm:mb-0 md:justify-end justify-start flex-col">
+        <div className="h-12 bg-gray-100 rounded-full animate-pulse"></div>
+        <div className="h-12 bg-gray-100 rounded-full animate-pulse"></div>
+      </div>
+    ),
+  }
+);
 
 // CSS for fill-from-left hover effect
 const buttonHoverStyles = `
@@ -71,8 +76,6 @@ async function getTherapist(slug: string): Promise<TherapistProfile | null> {
   try {
     // Decode any URL-encoded or Unicode characters in the slug
     const decodedSlug = decodeURIComponent(slug);
-
-    console.log(`[getTherapist] Processing slug: ${slug}, decoded: ${decodedSlug}`);
 
     // Check if this is our test user
     if (shouldUseMockDataForSlug(decodedSlug)) {
@@ -146,14 +149,17 @@ export async function generateStaticParams() {
 function generateJsonLd(therapist: TherapistProfile) {
   const getInitialFee = (): number => {
     const initialFee = therapist.fees?.find(
-      (fee) => fee.session_type === "individual" && fee.session_category === "initial"
+      (fee) =>
+        fee.session_type === "individual" && fee.session_category === "initial"
     );
     return initialFee?.price || 0;
   };
 
   const getSubsequentFee = (): number => {
     const subsequentFee = therapist.fees?.find(
-      (fee) => fee.session_type === "individual" && fee.session_category === "subsequent"
+      (fee) =>
+        fee.session_type === "individual" &&
+        fee.session_category === "subsequent"
     );
     return subsequentFee?.price || 0;
   };
@@ -213,10 +219,14 @@ export async function generateMetadata({
     };
   }
 
-  const title = `${therapist.first_name} - ${therapist.title || "Therapist"} | Matchya`;
+  const title = `${therapist.first_name} - ${
+    therapist.title || "Therapist"
+  } | Matchya`;
   const description = `${therapist.first_name} is a ${therapist.title} in ${
     therapist.location.city
-  }, specializing in ${therapist.specialties.join(", ")}. Book your session today.`;
+  }, specializing in ${therapist.areas_of_focus.join(
+    ", "
+  )}. Book your session today.`;
 
   return {
     title,
@@ -241,7 +251,9 @@ export async function generateMetadata({
       card: "summary_large_image",
       title,
       description,
-      images: therapist.profile_img_url ? [therapist.profile_img_url] : undefined,
+      images: therapist.profile_img_url
+        ? [therapist.profile_img_url]
+        : undefined,
     },
   };
 }
@@ -296,7 +308,8 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => {
             </div>
             <div className="flex flex-col gap-2 md:col-span-3 col-span-6">
               <h1 className="text-3xl lg:text-4xl font-medium">
-                {therapist.first_name || "Name Not Available"} {therapist.last_name || ""}
+                {therapist.first_name || "Name Not Available"}{" "}
+                {therapist.last_name || ""}
               </h1>
               {/* Add pronouns below the therapist's name */}
               {therapist.pronouns && (
@@ -312,17 +325,27 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => {
           <div className="container mx-auto gap-8 grid md:grid-cols-3 sm:grid-cols-1 md:py-14 sm:py-8">
             <div className="md:col-span-2 sm:col-span-2 gap-8">
               <div className="flex flex-col gap-2">
-                <h2 className="font-medium text-xl">About {therapist.first_name}</h2>
-                <p className="text-mblack">{therapist.bio || "No bio available"}</p>
+                <h2 className="font-medium text-xl">
+                  About {therapist.first_name}
+                </h2>
+                <p className="text-mblack">
+                  {therapist.bio || "No bio available"}
+                </p>
 
                 <div className="mt-8 flex flex-col gap-2">
                   <h2 className="font-medium text-xl">Areas of Practice</h2>
-                  <CollapsibleSpecialties specialties={therapist.specialties || []} />
+                  <CollapsibleSpecialties
+                    specialties={therapist.areas_of_focus || []}
+                  />
                 </div>
 
                 <div className="mt-8 flex flex-col gap-2">
-                  <h2 className="font-medium text-xl">Therapeutic Approaches</h2>
-                  <CollapsibleApproaches approaches={therapist.approaches || []} />
+                  <h2 className="font-medium text-xl">
+                    Therapeutic Approaches
+                  </h2>
+                  <CollapsibleApproaches
+                    approaches={therapist.approaches || []}
+                  />
                 </div>
 
                 <div className="mt-8 flex flex-col gap-2">
@@ -344,90 +367,18 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => {
           </div>
         </div>
       </div>
-
-      {/* Testing Section for Designer Reference */}
-      {/* <div className="container mx-auto mt-16 mb-16 px-4">
-        <div className="border-2 border-dashed border-red-400 p-6 rounded-lg">
-          <h2 className="text-2xl font-bold mb-6 text-red-500">
-            Testing - Additional Available Data
-          </h2>
-          <p className="text-sm text-gray-500 mb-4">
-            This section displays all available data from the database that isn't currently shown in
-            the UI. For designer reference only.
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="border border-gray-200 rounded-lg p-4">
-              <h3 className="text-lg font-medium mb-3">Identity Information</h3>
-              <div className="space-y-2">
-                <div>
-                  <span className="font-medium">Pronouns:</span>{" "}
-                  {therapist.pronouns || "Not specified"}
-                </div>
-                <div>
-                  <span className="font-medium">Sexuality:</span>{" "}
-                  {therapist.sexuality && therapist.sexuality.length > 0
-                    ? therapist.sexuality.join(", ")
-                    : "Not specified"}
-                </div>
-                <div>
-                  <span className="font-medium">Ethnicity:</span>{" "}
-                  {therapist.ethnicity && therapist.ethnicity.length > 0
-                    ? therapist.ethnicity.join(", ")
-                    : "Not specified"}
-                </div>
-                <div>
-                  <span className="font-medium">Faith:</span>{" "}
-                  {therapist.faith && therapist.faith.length > 0
-                    ? therapist.faith.join(", ")
-                    : "Not specified"}
-                </div>
-              </div>
-            </div>
-
-            <div className="border border-gray-200 rounded-lg p-4">
-              <h3 className="text-lg font-medium mb-3">Contact Information</h3>
-              <div className="space-y-2">
-                <div>
-                  <span className="font-medium">Email:</span>{" "}
-                  {therapist.therapist_email || "Not specified"}
-                </div>
-                <div>
-                  <span className="font-medium">Phone:</span>{" "}
-                  {therapist.therapist_phone || "Not specified"}
-                </div>
-                <div>
-                  <span className="font-medium">Clinic Phone:</span>{" "}
-                  {therapist.clinic_phone || "Not specified"}
-                </div>
-                <div>
-                  <span className="font-medium">Clinic Address:</span>{" "}
-                  {therapist.clinic_street ? (
-                    <span>
-                      {therapist.clinic_street}, {therapist.location.city},{" "}
-                      {therapist.location.province} {therapist.clinic_postal_code || ""}
-                    </span>
-                  ) : (
-                    "Not specified"
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div> */}
     </>
   );
 };
 
-export default async function TherapistProfile({ params }: { params: { slug: string } }) {
-  console.log(`[TherapistProfile] Route called with slug: ${params.slug}`);
+export default async function TherapistProfile({
+  params,
+}: {
+  params: { slug: string };
+}) {
   const therapist = await getTherapist(params.slug);
 
-  console.log(`[TherapistProfile] Therapist data retrieved:`, therapist ? "Yes" : "No");
-
   if (!therapist) {
-    console.log(`[TherapistProfile] No therapist found for slug: ${params.slug}`);
     notFound();
   }
 

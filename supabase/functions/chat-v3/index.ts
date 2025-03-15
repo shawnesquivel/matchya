@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
         }
 
         // Professional information
-        fullPrompt += `\nSpecialties: ${
+        fullPrompt += `\nAreas of Focus: ${
           therapist.areas_of_focus?.join(", ") || "Not specified"
         }`;
         if (therapist.approaches) {
