@@ -13,7 +13,7 @@ import {
 } from "../../utils/supabaseHelpers";
 import Loading from "./loading";
 import { getSafeImageUrl } from "@/app/utils/imageHelpers";
-import CollapsibleSpecialties from "@/app/components/CollapsibleSpecialties";
+import CollapsibleAreasOfFocus from "@/app/components/CollapsibleAreasOfFocus";
 import CollapsibleApproaches from "@/app/components/CollapsibleApproaches";
 import {
   mockTherapistProfile,
@@ -334,8 +334,8 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => {
 
                 <div className="mt-8 flex flex-col gap-2">
                   <h2 className="font-medium text-xl">Areas of Practice</h2>
-                  <CollapsibleSpecialties
-                    specialties={therapist.areas_of_focus || []}
+                  <CollapsibleAreasOfFocus
+                    areasOfFocus={therapist.areas_of_focus || []}
                   />
                 </div>
 
