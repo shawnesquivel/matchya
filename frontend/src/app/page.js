@@ -38,7 +38,7 @@ const isMobileDevice = () => {
 };
 
 export default function SupaChatContextPage() {
-  const [isFilterExpanded, setIsFilterExpanded] = useState(true);
+  const [isFilterExpanded, setIsFilterExpanded] = useState(false);
   const [isChatExpanded, setIsChatExpanded] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
 
