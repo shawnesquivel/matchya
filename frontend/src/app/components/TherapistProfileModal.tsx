@@ -4,10 +4,7 @@ import {
   TherapistProfile,
   getTherapistProfile,
 } from "../utils/supabaseHelpers";
-import CollapsibleSpecialties from "@/app/components/CollapsibleSpecialties";
 import CollapsibleApproaches from "@/app/components/CollapsibleApproaches";
-import TelehealthStatus from "@/components/TelehealthStatus";
-import TherapistHeader from "./TherapistHeader";
 import TherapistFees from "./TherapistFees";
 import TherapistLicenses from "./TherapistLicenses";
 import TherapistLocation from "./TherapistLocation";
@@ -15,10 +12,10 @@ import TherapistQualifications from "./TherapistQualifications";
 import { useTherapist } from "../contexts/TherapistContext";
 import { mockTherapistProfile } from "../utils/mockTherapistData";
 import Image from "next/image";
-import { getSafeImageUrl } from "../utils/imageHelpers";
 import GlobeIcon from "../../components/icons/GlobeIcon";
 import CalendarIcon from "../../components/icons/CalendarIcon";
 import { trackOutboundLink } from "../utils/analytics";
+import CollapsibleAreasOfFocus from "@/app/components/CollapsibleAreasOfFocus";
 
 // CSS for fill-from-left hover effect
 const buttonHoverStyles = `
@@ -286,8 +283,8 @@ export default function TherapistProfileModal({
 
                     <div className="mt-8 flex flex-col gap-2">
                       <h2 className="font-medium text-xl">Areas of Practice</h2>
-                      <CollapsibleSpecialties
-                        specialties={displayTherapist.areas_of_focus || []}
+                      <CollapsibleAreasOfFocus
+                        areasOfFocus={displayTherapist.areas_of_focus || []}
                       />
                     </div>
 

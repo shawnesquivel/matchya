@@ -1,8 +1,12 @@
-'use client';
+"use client";
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from "react";
 
-const CollapsibleSpecialties = ({ specialties }: { specialties: string[] }) => {
+const CollapsibleAreasOfFocus = ({
+  areasOfFocus,
+}: {
+  areasOfFocus: string[];
+}) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [height, setHeight] = useState<number | undefined>(undefined);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -16,42 +20,46 @@ const CollapsibleSpecialties = ({ specialties }: { specialties: string[] }) => {
           : (contentRef.current.children[0] as HTMLElement).offsetHeight
       );
     }
-  }, [isExpanded, specialties]);
+  }, [isExpanded, areasOfFocus]);
 
-  if (!specialties?.length) {
-    return <span className="text-gray-700">No specialties listed</span>;
+  if (!areasOfFocus?.length) {
+    return <span className="text-gray-700">No areas of focus listed</span>;
   }
 
-  const displayedSpecialties = isExpanded ? specialties : specialties.slice(0, initialDisplayCount);
+  const displayedAreasOfFocus = isExpanded
+    ? areasOfFocus
+    : areasOfFocus.slice(0, initialDisplayCount);
 
   return (
     <div className="flex flex-col gap-2">
       <div
         ref={contentRef}
         className="overflow-hidden transition-all duration-300 ease-in-out"
-        style={{ height: height ? `${height}px` : 'auto' }}
+        style={{ height: height ? `${height}px` : "auto" }}
       >
         <div className="flex flex-wrap gap-2">
-          {displayedSpecialties.map((specialty) => (
+          {displayedAreasOfFocus.map((area) => (
             <span
-              key={specialty}
+              key={area}
               className="px-2 py-1 rounded-full text-sm border border-grey-dark"
             >
-              {specialty}
+              {area}
             </span>
           ))}
         </div>
       </div>
-      {specialties.length > initialDisplayCount && (
+      {areasOfFocus.length > initialDisplayCount && (
         <button
           onClick={() => setIsExpanded(!isExpanded)}
           className="text-sm text-green hover:underline mt-2 transition-colors duration-200"
         >
-          {isExpanded ? 'Show less' : `Show ${specialties.length - initialDisplayCount} more`}
+          {isExpanded
+            ? "Show less"
+            : `Show ${areasOfFocus.length - initialDisplayCount} more`}
         </button>
       )}
     </div>
   );
 };
 
-export default CollapsibleSpecialties;
+export default CollapsibleAreasOfFocus;

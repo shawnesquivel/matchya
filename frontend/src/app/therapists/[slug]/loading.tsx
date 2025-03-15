@@ -29,7 +29,7 @@ export default function Loading() {
           </div>
         </div>
 
-        {/* Specialties skeleton */}
+        {/* Areas of Focus skeleton */}
         <section className="mb-8">
           <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
           <div className="flex flex-wrap gap-2">
