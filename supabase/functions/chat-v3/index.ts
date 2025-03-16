@@ -16,17 +16,39 @@ export const corsHeaders = {
 };
 
 const defaultPrompt = codeBlock`
-You are a therapy matching assistant focused on explaining why specific therapists match the user's needs.
+You are a friendly and supportive therapy matching assistant. Your tone is warm, encouraging, and genuinely helpful - like a knowledgeable friend who really wants to help.
 
-Your job is to connect therapists' qualities to each need the user expressed. Use the form inputs and mentioned preferences to explain how therapists align with the selected filters.
+Your job is to connect therapists' qualities to each need the user expressed, making the user feel heard and understood throughout the process. Use conversational language that's easy to relate to.
 
-Focus on explaining the RELEVANCE of each match to each NEED:
-- Why this therapist might understand their specific situation
-- How their expertise aligns with user's needs
-- Any standout qualities that make them a particularly good fit
+When explaining matches:
+- Express genuine enthusiasm about potential good fits without overselling
+- Highlight how each therapist's background might resonate with the user's situation
+- Use supportive language that acknowledges the courage it takes to seek therapy
+- Be conversational but respectful - use "you" language to connect directly with the user
+- Always explain in simple terms, educating the user on any jargon or concepts that might be new to them
+- Share specific ways a therapist's expertise might help with the user's unique challenges
+- Acknowledge that finding the right therapist is a personal journey and validate their efforts in this process
+- When mentioning therapy approaches or credentials, briefly explain why they matter in practical terms
 
-Be concise and focus on matching rationale rather than listing all details.
-Ask inviting questions so that the user can share more about their needs.
+Balance being friendly with being informative. Share insights about why each therapist might be a good match in a way that feels personal and thoughtful.
+
+When responding about no matches or limited options:
+- Be gently encouraging rather than apologetic
+- Offer constructive suggestions for broadening their search
+- Reassure them that finding the right fit sometimes takes time
+
+IMPORTANT - Avoid generic, AI-like closings:
+- Do NOT use phrases like "I'm here to help" or "Feel free to ask any questions"
+- Do NOT end with "Let me know if you have any other questions"
+- Do NOT use phrases that sound like customer service (e.g., "How else can I assist you today?")
+- Never apologize for being an AI or mention being an AI assistant
+
+Instead, end messages with:
+- A specific, thoughtful question related to what the user just shared
+- A gentle prompt that encourages the next step in their therapy journey
+- A warm comment that acknowledges where they are in their process
+
+Make your responses sound like they come from a thoughtful human therapist matching expert, not an AI assistant.
 `;
 
 // Handle OPTIONS requests for CORS
@@ -55,16 +77,28 @@ Deno.serve(async (req) => {
     );
 
     // Safely handle matchedTherapists
-    const therapists = Array.isArray(matchedTherapists)
+    const allTherapists = Array.isArray(matchedTherapists)
       ? matchedTherapists
       : [];
-    console.log("[chat-v3]: Received matched therapists:", therapists.length);
-    // Log therapist names, ensuring it works even if there are fewer than 5 therapists
-    const therapistCount = Math.min(therapists.length, 5);
+
+    // Limit to top 3 therapists only to keep responses concise
+    // We assume the therapists are already sorted by relevance (most relevant first)
+    const therapists = allTherapists.slice(0, 3);
+
+    console.log(
+      "[chat-v3]: Received matched therapists:",
+      allTherapists.length,
+    );
+    console.log("[chat-v3]: Processing top 3 therapists for response");
+
+    // Log therapist names of the top 3
+    const therapistCount = therapists.length;
     for (let i = 0; i < therapistCount; i++) {
       const therapist = therapists[i];
       console.log(
-        "[chat-v3]: Therapist name:",
+        "[chat-v3]: Top therapist",
+        i + 1,
+        ":",
         therapist.first_name,
         therapist.last_name,
       );
@@ -88,7 +122,7 @@ Deno.serve(async (req) => {
     let fullPrompt = basePrompt;
 
     if (therapists.length > 0) {
-      fullPrompt += "\n\nHere are the matched therapists:\n";
+      fullPrompt += "\n\nHere are the top matched therapists for the user:\n";
       therapists.forEach((therapist, index) => {
         fullPrompt += `\n${
           index + 1
@@ -149,8 +183,14 @@ Deno.serve(async (req) => {
         fullPrompt += "\n";
       });
 
+      // Adjust the prompt to make it clear we're only showing the top matches
+      if (allTherapists.length > 3) {
+        fullPrompt +=
+          `\nThese are the top 3 matches out of ${allTherapists.length} therapists found.`;
+      }
+
       fullPrompt +=
-        "\n\nPlease explain which therapist(s) might be the best match for the user's specific needs, focusing on how their expertise and background align with what the user is looking for.";
+        "\n\nPlease explain which of these therapists might be the best match for the user's specific needs, focusing on how their expertise and background align with what the user is looking for.";
     } else {
       fullPrompt +=
         "\n\nNo therapists were found matching the user's criteria. Please explain this and suggest broadening their search.";
