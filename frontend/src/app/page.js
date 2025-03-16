@@ -4,6 +4,7 @@ import { TherapistProvider } from "./contexts/TherapistContext";
 import FilterPanel from "./components/FilterPanel";
 import ChatPanel from "./components/ChatPanel";
 import TherapistResultsPanel from "./components/TherapistResultsPanel";
+import Image from "next/image";
 
 const scrollbarStyles = `
   ::-webkit-scrollbar {
@@ -67,6 +68,18 @@ export default function SupaChatContextPage() {
       {/* Mobile Restriction Overlay */}
       {isMobile && (
         <div className="fixed inset-0 bg-white z-50 flex flex-col items-center justify-center p-6 text-center">
+          {/* Mobile Logo */}
+          <div className="mb-6">
+            <Image
+              src="/assets/images/matchyalogo.png"
+              alt="Matchya Logo"
+              width={150}
+              height={45}
+              priority
+              className="object-contain"
+            />
+          </div>
+
           <div className="w-20 h-20 mb-6">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -105,10 +118,9 @@ export default function SupaChatContextPage() {
             }`}
           >
             <div className="relative h-full">
-              {/* Toggle Button */}
               <button
                 onClick={() => setIsFilterExpanded(!isFilterExpanded)}
-                className="absolute -right-3 top-4 z-10 bg-white rounded-full p-1 shadow-md border"
+                className="absolute -right-3 top-20 z-10 bg-white rounded-full p-1 shadow-md border"
               >
                 <svg
                   className={`w-4 h-4 transform transition-transform ${
