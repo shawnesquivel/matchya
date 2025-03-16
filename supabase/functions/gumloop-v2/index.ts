@@ -741,11 +741,20 @@ Deno.serve(async (req) => {
 
     // Extract and ensure areas_of_focus and certifications are arrays
     const education = processEducationField(profileData.education);
-    const certifications = processCertificationsField(
+    let certifications = processCertificationsField(
       profileData.certifications,
     );
     const areasOfFocus = processAreasOfFocusField(profileData.areas_of_focus);
     const languages = ensureArray(profileData.languages);
+
+    // Trim certifications if it exceeds 20 entries
+    if (certifications.length > 20) {
+      const warningMsg =
+        "Certifications array exceeds 20 entries, trimming to 20.";
+      log(`Warning: ${warningMsg}`);
+      warnings.push(warningMsg);
+      certifications = certifications.slice(0, 20);
+    }
 
     // Handle approaches - the database expects a string array, not an object
     let approaches = processApproachesField(profileData.approaches);
