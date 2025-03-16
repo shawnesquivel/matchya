@@ -75,6 +75,10 @@ const nextConfig = {
       },
       {
         protocol: "https",
+        hostname: "www.blueskywellnessclinic.ca",
+      },
+      {
+        protocol: "https",
         hostname: "ayoua.com",
       },
       {
