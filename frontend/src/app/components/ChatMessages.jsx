@@ -6,19 +6,76 @@ import styles from "../styles/spinner.module.css";
 import Loader from "./Loader";
 import useTypingEffect from "./useTypingEffect";
 
-// Helper function to split message content at paragraph breaks
 const splitIntoParagraphs = (content) => {
   if (!content) return [];
-
-  // Split on double line breaks which typically indicate paragraph boundaries
-  // Filter out empty paragraphs
   return content
     .split(/\n\s*\n/)
     .filter((paragraph) => paragraph.trim() !== "");
 };
 
+const FollowUpQuestions = ({ questions, onQuestionClick, isLoading }) => {
+  if (isLoading) {
+    return (
+      <div className="mt-2 mb-4">
+        <div className="flex items-center space-x-2 text-gray-400 text-sm">
+          <div
+            className={styles.spinner}
+            style={{ width: "16px", height: "16px" }}
+          ></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!questions || questions.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mt-3 mb-4">
+      <p className="text-sm text-gray-500 mb-1">People also ask</p>
+      <div className="flex flex-col gap-2">
+        {questions.map((question) => (
+          <button
+            key={question.id}
+            onClick={() => onQuestionClick(question.text, question.id)}
+            className="text-left px-3 py-2 bg-white hover:bg-beige-extralight text-gray-700 text-sm rounded-lg border border-gray-200 transition-colors cursor-pointer flex items-center"
+          >
+            <div className="flex-grow">{question.text}</div>
+            <div className="flex-shrink-0 ml-2 w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="text-gray-500"
+              >
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const MessageItem = memo(
-  ({ message, isLast, onButtonClick, questionStage }) => {
+  ({
+    message,
+    isLast,
+    onButtonClick,
+    questionStage,
+    followUpQuestions,
+    onFollowUpClick,
+    isLoadingFollowUps,
+  }) => {
     // If it's an assistant message, check if we need to split it
     const shouldSplitMessage =
       message.role === "assistant" && !message.isTyping;
@@ -43,7 +100,7 @@ const MessageItem = memo(
       paragraphs.forEach((_, index) => {
         setTimeout(() => {
           setVisibleParagraphs((prev) => [...prev, index]);
-        }, index * 350); // 350ms delay between each paragraph
+        }, index * 750); // 750ms delay between each paragraph
       });
     }, [message.content, paragraphs.length, shouldSplitMessage]);
 
@@ -82,38 +139,51 @@ const MessageItem = memo(
       <div className={`flex flex-col mb-2 ${isLast ? "flex-grow" : ""}`}>
         {shouldSplitMessage ? (
           // Render multiple message bubbles for the assistant
-          paragraphs.map((paragraph, index) => (
-            <div
-              key={index}
-              className={`mb-2 last:mb-0 transition-opacity duration-200 ease-in-out ${
-                visibleParagraphs.includes(index) ? "opacity-100" : "opacity-0"
-              }`}
-            >
-              {index === 0 && (
-                <div className="rounded flex gap-2 align-center relative overflow-hidden h-fit">
-                  <Image
-                    src={`/assets/images/matchya.png`}
-                    alt={`${message.role}'s profile`}
-                    width={32}
-                    height={32}
-                    className="w-8 h-8 rounded-full assistant"
-                    priority
-                    unoptimized
-                  />
-                  <p className="mt-1.5 text-sm">matchya</p>
-                </div>
-              )}
-              <div className="bg-beige-extralight flex gap-4 flex-col message p-3 h-fit max-w-full rounded-md text-sm w-fit assistant mt-1">
-                <div className="flex justify-start align-middle gap-4 w-full h-fit">
-                  <p className="sm:mt-[2px] mt-[unset] max-w-full h-fit assistant">
-                    <div className="assistant">
-                      <ReactMarkdown>{paragraph}</ReactMarkdown>
-                    </div>
-                  </p>
+          <>
+            {paragraphs.map((paragraph, index) => (
+              <div
+                key={index}
+                className={`mb-2 last:mb-0 transition-opacity duration-200 ease-in-out ${
+                  visibleParagraphs.includes(index)
+                    ? "opacity-100"
+                    : "opacity-0"
+                }`}
+              >
+                {index === 0 && (
+                  <div className="rounded flex gap-2 align-center relative overflow-hidden h-fit">
+                    <Image
+                      src={`/assets/images/matchya.png`}
+                      alt={`${message.role}'s profile`}
+                      width={32}
+                      height={32}
+                      className="w-8 h-8 rounded-full assistant"
+                      priority
+                      unoptimized
+                    />
+                    <p className="mt-1.5 text-sm">matchya</p>
+                  </div>
+                )}
+                <div className="bg-beige-extralight flex gap-4 flex-col message p-3 h-fit max-w-full rounded-md text-sm w-fit assistant mt-1">
+                  <div className="flex justify-start align-middle gap-4 w-full h-fit">
+                    <p className="sm:mt-[2px] mt-[unset] max-w-full h-fit assistant">
+                      <div className="assistant">
+                        <ReactMarkdown>{paragraph}</ReactMarkdown>
+                      </div>
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
+            ))}
+
+            {/* Show follow-up questions after the last assistant message */}
+            {isLast && (
+              <FollowUpQuestions
+                questions={followUpQuestions}
+                onQuestionClick={onFollowUpClick}
+                isLoading={isLoadingFollowUps}
+              />
+            )}
+          </>
         ) : (
           // Regular single bubble for user messages or typing assistant messages
           <div
@@ -212,6 +282,9 @@ const ChatMessages = ({
   loadingNewMsg,
   onButtonClick,
   questionStage,
+  followUpQuestions,
+  isLoadingFollowUps,
+  onFollowUpClick,
 }) => {
   const messagesEndRef = useRef(null);
 
@@ -221,7 +294,7 @@ const ChatMessages = ({
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, followUpQuestions]);
 
   return (
     <div className="flex-grow pl-4 pr-2 content-end overflow-y-scroll">
@@ -239,13 +312,25 @@ const ChatMessages = ({
               (message.content && message.content.trim() !== "") ||
               message.isTyping
           ) // Include typing messages
-          .map((message, index) => {
+          .map((message, index, filteredMessages) => {
+            const isLastMessage = index === filteredMessages.length - 1;
+
             return (
               <MessageItem
                 key={message.id || index}
                 message={message}
+                isLast={isLastMessage}
                 onButtonClick={onButtonClick}
                 questionStage={questionStage}
+                followUpQuestions={
+                  isLastMessage &&
+                  message.role === "assistant" &&
+                  !message.isTyping
+                    ? followUpQuestions
+                    : []
+                }
+                onFollowUpClick={onFollowUpClick}
+                isLoadingFollowUps={isLoadingFollowUps}
               />
             );
           })}
@@ -253,4 +338,5 @@ const ChatMessages = ({
     </div>
   );
 };
+
 export default ChatMessages;

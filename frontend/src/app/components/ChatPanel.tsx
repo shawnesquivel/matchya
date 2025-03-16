@@ -9,19 +9,25 @@ export default function ChatPanel() {
     messages,
     updateTherapists,
     isSendingChat,
+    isTherapistLoading,
+    isLoadingFollowUps,
     error,
     isLoadingHistory,
     resetChat,
+    followUpQuestions,
+    sendFollowUpQuestion,
   } = useTherapist();
 
   const [input, setInput] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
   const messagesEndRef = useRef(null);
 
+  const isLoading = isSendingChat || isTherapistLoading || isLoadingFollowUps;
+
   const handleSubmit = async (e) => {
     /** Reset input and send message */
     e.preventDefault();
-    if (!input.trim() || isSendingChat) return;
+    if (!input.trim() || isLoading) return;
     const message = input;
     setInput("");
     const textarea = e.target.querySelector("textarea");
@@ -39,14 +45,14 @@ export default function ChatPanel() {
   // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  const handleExampleClick = (text) => {
-    setInput(text);
-  };
+  }, [messages, followUpQuestions]);
 
   const handleResetChat = () => {
     resetChat();
+  };
+
+  const handleFollowUpClick = (questionText, questionId) => {
+    sendFollowUpQuestion(questionText, questionId);
   };
 
   return (
@@ -58,6 +64,7 @@ export default function ChatPanel() {
             onClick={handleResetChat}
             className="text-sm text-grey-medium hover:text-grey-dark px-3 py-1 rounded-md border border-grey-light hover:bg-beige-extralight transition-colors"
             title="Start a new conversation"
+            disabled={isLoading}
           >
             New Chat
           </button>
@@ -69,16 +76,23 @@ export default function ChatPanel() {
           loadingNewMsg={isSendingChat}
           onButtonClick={() => {}}
           questionStage={6}
+          followUpQuestions={followUpQuestions}
+          isLoadingFollowUps={isLoadingFollowUps}
+          onFollowUpClick={handleFollowUpClick}
         />
         <div ref={messagesEndRef} />
 
         <div className="p-4">
-          <form className="flex items-center  gap-1" onSubmit={handleSubmit}>
+          <form className="flex items-center gap-1" onSubmit={handleSubmit}>
             <textarea
               className={`flex-grow p-2 border text-sm min-h-[40px] max-h-[200px] overflow-y-auto resize-none focus:outline-none focus:ring-1 focus:ring-beige-dark ${
                 isExpanded ? "rounded-md" : "rounded-full"
-              }`}
-              placeholder="Describe your preferences or ask questions"
+              } ${isLoading ? "bg-gray-100 cursor-not-allowed" : "bg-white"}`}
+              placeholder={
+                isLoading
+                  ? "Loading..."
+                  : "The more you share, the better the match"
+              }
               value={input}
               onChange={(e) => {
                 handleInputChange(e);
@@ -95,11 +109,16 @@ export default function ChatPanel() {
               }}
               autoFocus
               rows={1}
+              disabled={isLoading}
             />
             <button
               type="submit"
-              className="mt-auto bg-blue-light w-10 h-10 rounded-full text-grey-medium hover:bg-blue-dark transition-colors flex items-center justify-center"
-              disabled={isSendingChat}
+              className={`mt-auto w-10 h-10 rounded-full text-grey-medium flex items-center justify-center ${
+                isLoading || !input.trim()
+                  ? "bg-gray-200 cursor-not-allowed"
+                  : "bg-blue-light hover:bg-blue-dark transition-colors"
+              }`}
+              disabled={isLoading || !input.trim()}
               aria-label="Send message"
               title="Send"
             >
@@ -110,44 +129,18 @@ export default function ChatPanel() {
 
           {error && <p className="text-red-500 mt-2">{error}</p>}
 
-          {/* Test Queries */}
-          {/* <div className="mt-4">
-            <p className="text-sm text-gray-500 mb-2">Try asking:</p>
-            <div className="flex flex-wrap gap-2">
-              <p
-                onClick={() =>
-                  handleExampleClick(
-                    "Looking for a female therapist with experience in asian backgrounds."
-                  )
-                }
-                className="text-sm cursor-pointer border p-2 rounded-md hover:bg-gray-100"
-              >
-                "Looking for a female therapist with experience in asian
-                backgrounds."
-              </p>
-              <p
-                onClick={() =>
-                  handleExampleClick(
-                    "Looking for a female therapist with experience in black backgrounds."
-                  )
-                }
-                className="text-sm cursor-pointer border p-2 rounded-md hover:bg-gray-100"
-              >
-                "Looking for a female therapist with experience in black
-                backgrounds."
-              </p>
-              <p
-                onClick={() =>
-                  handleExampleClick(
-                    "Looking for a female therapist that can speak thai."
-                  )
-                }
-                className="text-sm cursor-pointer border p-2 rounded-md hover:bg-gray-100"
-              >
-                "Looking for a female therapist that can speak thai."
-              </p>
-            </div>
-          </div> */}
+          {/* Optional loading indicator */}
+          {isLoading && (
+            <p className="text-xs text-gray-500 mt-1">
+              {isSendingChat
+                ? "Processing your question..."
+                : isTherapistLoading
+                ? "Finding therapists..."
+                : isLoadingFollowUps
+                ? "Creating follow-up questions..."
+                : "Loading..."}
+            </p>
+          )}
         </div>
       </div>
     </div>

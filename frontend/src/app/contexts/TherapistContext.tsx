@@ -110,6 +110,10 @@ const initialState = {
 
   // New flag for tracking history loading state
   isLoadingHistory: false,
+
+  // Follow-up questions
+  followUpQuestions: [],
+  isLoadingFollowUps: false,
 };
 
 // Create context
@@ -152,6 +156,8 @@ const ACTIONS = {
   SET_LOADING_HISTORY: "SET_LOADING_HISTORY",
   SET_CHAT_ID: "SET_CHAT_ID",
   REMOVE_TYPING_MESSAGE: "REMOVE_TYPING_MESSAGE",
+  SET_FOLLOW_UP_QUESTIONS: "SET_FOLLOW_UP_QUESTIONS",
+  SET_LOADING_FOLLOW_UPS: "SET_LOADING_FOLLOW_UPS",
 };
 
 // Reducer function
@@ -189,6 +195,7 @@ function therapistReducer(state, action) {
         ...initialState,
         chatId: action.payload?.chatId || crypto.randomUUID(),
         requestCount: state.requestCount,
+        followUpQuestions: [], // Clear follow-up questions on reset
       };
 
     case ACTIONS.INCREMENT_REQUEST_COUNT:
@@ -290,6 +297,18 @@ function therapistReducer(state, action) {
         chatId: action.payload,
       };
 
+    case ACTIONS.SET_FOLLOW_UP_QUESTIONS:
+      return {
+        ...state,
+        followUpQuestions: action.payload,
+      };
+
+    case ACTIONS.SET_LOADING_FOLLOW_UPS:
+      return {
+        ...state,
+        isLoadingFollowUps: action.payload,
+      };
+
     default:
       return state;
   }
@@ -322,7 +341,7 @@ export function TherapistProvider({ children }) {
         payload: {
           role: "assistant",
           content:
-            "Ready to find your match?\n\nUse the filters on the left to refine your search, or simply describe what you're looking for in the chat.",
+            "Hi! Thank you for making the first step to finding your perfect therapist. I'm here to help! \n\nThe more you're comfortable sharing about what you're looking for with me, the better I can match you with the right therapist. Don't worry, there's no way to mess this up – any information you share is fully confidential. \n\nWhen you're ready, just start chatting and I'll guide you the rest of the way :)",
           isWelcomeMessage: true, // Flag to identify this as a welcome message
         },
       });
@@ -421,6 +440,9 @@ export function TherapistProvider({ children }) {
       if (update.type === "CHAT") {
         // Set isSendingChat to true when starting a chat request
         dispatch({ type: ACTIONS.SET_SENDING_CHAT, payload: true });
+
+        // Clear any existing follow-up questions
+        dispatch({ type: ACTIONS.SET_FOLLOW_UP_QUESTIONS, payload: [] });
 
         // Add user message to state immediately
         dispatch({
@@ -522,6 +544,12 @@ export function TherapistProvider({ children }) {
           });
         }
 
+        // After receiving the main response, fetch follow-up questions
+        await fetchFollowUpQuestions(
+          update.message,
+          matchData.therapists || []
+        );
+
         // Set isSendingChat back to false when chat response is received
         dispatch({ type: ACTIONS.SET_SENDING_CHAT, payload: false });
       } else {
@@ -583,6 +611,71 @@ export function TherapistProvider({ children }) {
     }
   };
 
+  // Add new function to fetch follow-up questions
+  const fetchFollowUpQuestions = async (lastUserMessage, matchedTherapists) => {
+    try {
+      dispatch({ type: ACTIONS.SET_LOADING_FOLLOW_UPS, payload: true });
+
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/follow-up-questions`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({
+            messages: state.messages.filter((msg) => !msg.isWelcomeMessage),
+            matchedTherapists: matchedTherapists,
+            lastUserMessage: lastUserMessage,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to get follow-up questions: ${response.status}`
+        );
+      }
+
+      const data = await response.json();
+
+      if (data.questions && Array.isArray(data.questions)) {
+        // Add unique IDs to the questions to track them
+        const questionsWithIds = data.questions.map((q) => ({
+          ...q,
+          id: `followup-${Date.now()}-${Math.random()
+            .toString(36)
+            .substr(2, 9)}`,
+        }));
+
+        dispatch({
+          type: ACTIONS.SET_FOLLOW_UP_QUESTIONS,
+          payload: questionsWithIds,
+        });
+      }
+    } catch (error) {
+      console.error("[fetchFollowUpQuestions] Error:", error);
+    } finally {
+      dispatch({ type: ACTIONS.SET_LOADING_FOLLOW_UPS, payload: false });
+    }
+  };
+
+  // Add sendFollowUpQuestion function to handle when a user clicks a question
+  const sendFollowUpQuestion = async (questionText, questionId) => {
+    // Remove the question from the state
+    const updatedQuestions = state.followUpQuestions.filter(
+      (q) => q.id !== questionId
+    );
+    dispatch({
+      type: ACTIONS.SET_FOLLOW_UP_QUESTIONS,
+      payload: updatedQuestions,
+    });
+
+    // Send the question as a user message
+    await updateTherapists({ type: "CHAT", message: questionText });
+  };
+
   const toggleMockData = (value?: boolean) => {
     console.log(
       "[Context] Toggling mock data mode:",
@@ -614,6 +707,9 @@ export function TherapistProvider({ children }) {
         useMockData: state.useMockData,
         isLoadingHistory: state.isLoadingHistory,
         loadChatHistory,
+        followUpQuestions: state.followUpQuestions,
+        isLoadingFollowUps: state.isLoadingFollowUps,
+        sendFollowUpQuestion,
       }}
     >
       {children}

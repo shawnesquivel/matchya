@@ -1,7 +1,8 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useTherapist } from "../contexts/TherapistContext";
-
+import Image from "next/image";
+import Link from "next/link";
 export default function FilterPanel() {
   const {
     filters,
@@ -142,6 +143,19 @@ export default function FilterPanel() {
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
         </div>
       )}
+      {/* Single subtle logo in top-left */}
+      <div className="z-20 opacity-80 mb-4">
+        <Link href="https://matchya.app/" target="_blank">
+          <Image
+            src="/assets/images/matchyalogo.png"
+            alt="Matchya Logo"
+            width={80}
+            height={24}
+            priority
+            className="object-contain"
+          />
+        </Link>
+      </div>
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-semibold">Filter Therapists</h2>
         <button
