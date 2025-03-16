@@ -79,7 +79,59 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "repiphany.com",
+        hostname: "eastvancouvercounselling.ca",
+      },
+      {
+        protocol: "https",
+        hostname: "arccounselling.ca",
+      },
+      {
+        protocol: "https",
+        hostname: "clearheartcounselling.com",
+      },
+      {
+        protocol: "https",
+        hostname: "gatherandground.ca",
+      },
+      {
+        protocol: "https",
+        hostname: "chromacounselling.ca",
+      },
+      {
+        protocol: "https",
+        hostname: "wellspringcounselling.ca",
+      },
+      {
+        protocol: "https",
+        hostname: "fieldworkcounselling.ca",
+      },
+      {
+        protocol: "https",
+        hostname: "freemindtherapy.ca",
+      },
+      {
+        protocol: "https",
+        hostname: "providencetherapybc.com",
+      },
+      {
+        protocol: "https",
+        hostname: "vancouvercounsellingclinic.ca",
+      },
+      {
+        protocol: "https",
+        hostname: "jerichocounselling.com",
+      },
+      {
+        protocol: "https",
+        hostname: "benchmarkcounselling.com",
+      },
+      {
+        protocol: "https",
+        hostname: "richmondcounselling.com",
+      },
+      {
+        protocol: "https",
+        hostname: "panoramawellness.ca",
       },
     ],
   },
