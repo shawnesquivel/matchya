@@ -1,12 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "@supabase/supabase-js";
 import { codeBlock } from "common-tags";
-import OpenAI from "openai";
 import { createPerformanceTracker } from "../_lib/performance.ts";
-
-const openai = new OpenAI({
-  apiKey: Deno.env.get("OPENAI_API_KEY"),
-});
 
 // These are automatically injected
 const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
@@ -64,6 +59,16 @@ Deno.serve(async (req) => {
       ? matchedTherapists
       : [];
     console.log("[chat-v3]: Received matched therapists:", therapists.length);
+    // Log therapist names, ensuring it works even if there are fewer than 5 therapists
+    const therapistCount = Math.min(therapists.length, 5);
+    for (let i = 0; i < therapistCount; i++) {
+      const therapist = therapists[i];
+      console.log(
+        "[chat-v3]: Therapist name:",
+        therapist.first_name,
+        therapist.last_name,
+      );
+    }
 
     if (!Array.isArray(messages) || messages.length === 0) {
       return new Response(
@@ -91,9 +96,9 @@ Deno.serve(async (req) => {
 
         // Basic demographics
         if (therapist.pronouns) fullPrompt += ` (${therapist.pronouns})`;
-        if (therapist.gender) fullPrompt += `, ${therapist.gender}`;
+        if (therapist.gender) fullPrompt += `, Gender: ${therapist.gender}`;
         if (therapist.ethnicity && therapist.ethnicity.length) {
-          fullPrompt += `, ${therapist.ethnicity.join("/")}`;
+          fullPrompt += `, Ethnicity: ${therapist.ethnicity.join("/")}`;
         }
 
         // Practical information

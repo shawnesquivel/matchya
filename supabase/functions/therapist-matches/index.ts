@@ -95,7 +95,6 @@ Deno.serve(async (req) => {
   try {
     // Handle CORS preflight request
     if (req.method === "OPTIONS") {
-      console.log("[therapist-matches] CORS preflight request received");
       return new Response("ok", { headers: corsHeaders, status: 200 });
     }
 
@@ -125,8 +124,6 @@ Deno.serve(async (req) => {
       filterOnly = false,
       triggerSource,
     } = await req.json();
-
-    console.log("[therapist-matches] Request received from", { triggerSource });
 
     // -------------------------
     // HANDLE FILTER-ONLY REQUESTS
@@ -446,17 +443,11 @@ Deno.serve(async (req) => {
     );
 
     if (isUserAskingForTherapist.isTherapistRequest) {
-      // Run Query Builder with current filters context
-      console.log("running query builder");
-
       const params = await determineMatchTherapistParameters(
         userMessage,
         currentFilters,
         triggerSource,
       );
-
-      // Handle the max_price_initial parameter properly
-      console.log("params.max_price_initial", params.max_price_initial);
 
       const effectiveMaxPrice = params.max_price_initial === 0
         ? null
@@ -464,14 +455,12 @@ Deno.serve(async (req) => {
           ? params.max_price_initial
           : null);
 
-      console.log("effectiveMaxPrice", effectiveMaxPrice);
-      // DB: Get Therapists - now with embedding parameter
       perf.startEvent("database:semanticSearch");
 
       const { data: therapists, error: matchError } = await supabase
         .rpc("match_therapists", {
           query_embedding: embedding,
-          match_threshold: 0.05,
+          match_threshold: 0,
           gender_filter: params.gender_filter,
           sexuality_filter: params.sexuality_filter,
           ethnicity_filter: params.ethnicity_filter,
@@ -483,22 +472,28 @@ Deno.serve(async (req) => {
         .limit(5);
 
       // Detailed filter parameter logging
-      console.log("Search criteria details:", {
-        ethnicity_filter: params.ethnicity_filter,
-        gender_filter: params.gender_filter,
-        sexuality_filter: params.sexuality_filter,
-        faith_filter: params.faith_filter,
-        max_price_initial: params.max_price_initial > 0
-          ? params.max_price_initial
-          : null,
-        availability_filter: params.availability_filter,
-        areas_of_focus_filter: params.areas_of_focus_filter,
-      });
+      const searchCriteriaDetails = {
+        ...(params.ethnicity_filter &&
+          { ethnicity_filter: params.ethnicity_filter }),
+        ...(params.gender_filter && { gender_filter: params.gender_filter }),
+        ...(params.sexuality_filter &&
+          { sexuality_filter: params.sexuality_filter }),
+        ...(params.faith_filter && { faith_filter: params.faith_filter }),
+        ...(params.max_price_initial > 0 &&
+          { max_price_initial: params.max_price_initial }),
+        ...(params.availability_filter &&
+          { availability_filter: params.availability_filter }),
+        ...(params.areas_of_focus_filter &&
+          { areas_of_focus_filter: params.areas_of_focus_filter }),
+      };
 
-      console.log({ therapists });
-      console.log({ matchError });
+      console.log("Search criteria details:", searchCriteriaDetails);
 
-      // Safe access to array elements
+      console.log(
+        therapists?.map((t: TherapistMatch) =>
+          `${t.first_name} ${t.last_name}`
+        ),
+      );
       if (therapists && therapists.length > 0) {
         console.log("First therapist ethnicity:", therapists[0].ethnicity);
       } else {
@@ -734,11 +729,6 @@ const determineUserMessageIntent = async (
       response_format: zodResponseFormat(ClassifyUserIntent, "answer"),
     });
 
-    console.log(
-      "[determineUserMessageIntent]: Parsed response:",
-      JSON.stringify(completion.choices[0].message.parsed),
-    );
-
     perf.endEvent("llm:intentAnalysis", {
       model: "gpt-4o-mini",
       messageLength: userMessage.length,
@@ -835,11 +825,6 @@ const determineMatchTherapistParameters = async (
     reasoning: z.string(),
   });
 
-  // Log the user message for debugging
-  console.log(
-    `[determineMatchTherapistParameters] User message: "${userMessage}"`,
-  );
-
   const systemContent =
     `You are an expert at extracting therapist preferences from user messages.
 Your task is to carefully analyze the message and identify ANY mentions of therapist preferences.
@@ -874,21 +859,9 @@ Be attentive to both explicit and implicit preferences. For example:
 - "I need help with anxiety and depression" → areas_of_focus_filter: ["anxiety", "depression"]
 
 ${
-      currentFilters && triggerSource === "FORM"
+      currentFilters && (triggerSource === "FORM" || triggerSource === "CHAT")
         ? `
-Current active filters (HIGH PRIORITY - keep these unless explicitly changed):
-${
-          Object.entries(currentFilters)
-            .filter(([_, value]) => value !== null)
-            .map(
-              ([key, value]) =>
-                `- ${key}: ${Array.isArray(value) ? value.join(", ") : value}`,
-            )
-            .join("\n")
-        }
-`
-        : currentFilters && triggerSource === "CHAT"
-        ? `Current form filters (LOW PRIORITY - only use if chat doesn't specify preferences):
+Current active filters (HIGH PRIORITY - PRESERVE THESE unless explicitly changed):
 ${
           Object.entries(currentFilters)
             .filter(([_, value]) => value !== null)
@@ -899,7 +872,7 @@ ${
             .join("\n")
         }
 
-Prioritize any preferences mentioned in the chat over these form filters.
+IMPORTANT: For CHAT mode, PRESERVE previous filters and ADD new ones mentioned. Only REPLACE a filter if the user explicitly changes that specific preference.
 `
         : ""
     }
@@ -936,30 +909,54 @@ Include reasoning for the extracted preferences and explain any ambiguity in the
     });
     perf.complete();
 
-    console.log(
-      `[determineMatchTherapistParameters] Completion: ${
-        JSON.stringify(
-          result,
-        )
-      }`,
-    );
-
-    // If FORM trigger, merge the AI results with current filters, prioritizing current filters
-    if (triggerSource === "FORM" && currentFilters) {
-      return {
+    // For both FORM and CHAT trigger, merge the AI results with current filters
+    // Only replace filters that are explicitly mentioned in the current message
+    if (currentFilters) {
+      // First, create a merged version preserving previous filters
+      const mergedResult = {
         ...result,
-        gender_filter: (currentFilters.gender as string) ??
-          result.gender_filter,
-        sexuality_filter: currentFilters.sexuality ?? result.sexuality_filter,
-        ethnicity_filter: currentFilters.ethnicity ?? result.ethnicity_filter,
-        faith_filter: currentFilters.faith ?? result.faith_filter,
-        max_price_initial: currentFilters.max_price_initial ??
-          result.max_price_initial,
-        availability_filter: (currentFilters.availability as string) ??
-          result.availability_filter,
-        areas_of_focus_filter: currentFilters.areas_of_focus ??
-          result.areas_of_focus_filter,
+        gender_filter: result.gender_filter !== null
+          ? result.gender_filter
+          : (currentFilters.gender as string),
+        sexuality_filter: result.sexuality_filter !== null
+          ? result.sexuality_filter
+          : currentFilters.sexuality,
+        ethnicity_filter: result.ethnicity_filter !== null
+          ? result.ethnicity_filter
+          : currentFilters.ethnicity,
+        faith_filter: result.faith_filter !== null
+          ? result.faith_filter
+          : currentFilters.faith,
+        max_price_initial: result.max_price_initial !== null
+          ? result.max_price_initial
+          : currentFilters.max_price_initial,
+        availability_filter: result.availability_filter !== null
+          ? result.availability_filter
+          : (currentFilters.availability as string),
+        areas_of_focus_filter: result.areas_of_focus_filter !== null
+          ? result.areas_of_focus_filter
+          : currentFilters.areas_of_focus,
       };
+
+      // In FORM mode, give priority to form filters over chat message filters
+      if (triggerSource === "FORM") {
+        return {
+          ...mergedResult,
+          gender_filter: (currentFilters.gender as string) ??
+            result.gender_filter,
+          sexuality_filter: currentFilters.sexuality ?? result.sexuality_filter,
+          ethnicity_filter: currentFilters.ethnicity ?? result.ethnicity_filter,
+          faith_filter: currentFilters.faith ?? result.faith_filter,
+          max_price_initial: currentFilters.max_price_initial ??
+            result.max_price_initial,
+          availability_filter: (currentFilters.availability as string) ??
+            result.availability_filter,
+          areas_of_focus_filter: currentFilters.areas_of_focus ??
+            result.areas_of_focus_filter,
+        };
+      }
+
+      return mergedResult;
     }
 
     return result;
