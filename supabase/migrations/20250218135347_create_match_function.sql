@@ -47,96 +47,120 @@ create or replace function match_therapists(
 ) language plpgsql as $$
 begin
   return query
-  select 
-    t.id,                -- Column 1
-    t.first_name,        -- Column 2
-    t.middle_name,       -- Column 3
-    t.last_name,         -- Column 4
-    t.pronouns::text,    -- Column 5 - Adding explicit cast to text
-    t.bio,               -- Column 6
-    t.gender,            -- Column 7
-    t.ethnicity,         -- Column 8
-    t.sexuality,         -- Column 9
-    t.faith,             -- Column 10
-    t.availability,      -- Column 11
-    t.languages,         -- Column 12
-    t.ai_summary,        -- Column 13
-    t.areas_of_focus,    -- Column 14
-    t.approaches,        -- Column 15
-    case 
-      when tf_initial.price is not null then concat('$', tf_initial.price::text, ' ', coalesce(tf_initial.currency, 'USD'))
-      else null
-    end as initial_price, -- Column 16
-    case 
-      when tf_subsequent.price is not null then concat('$', tf_subsequent.price::text, ' ', coalesce(tf_subsequent.currency, 'USD'))
-      else null
-    end as subsequent_price, -- Column 17
-    1 - (t.embedding <=> query_embedding) as similarity, -- Column 18
-    t.profile_img_url,   -- Column 19
-    t.video_intro_link,  -- Column 20
-    t.clinic_profile_url, -- Column 21
-    t.clinic_booking_url, -- Column 22
-    t.therapist_email,   -- Column 23
-    t.therapist_phone,   -- Column 24
-    t.clinic_name,       -- Column 25
-    t.clinic_street,     -- Column 26
-    t.clinic_city,       -- Column 27
-    t.clinic_province,   -- Column 28
-    t.clinic_postal_code, -- Column 29
-    t.clinic_country,    -- Column 30
-    t.clinic_phone,      -- Column 31
-    t.education,         -- Column 32
-    t.certifications,    -- Column 33
-    (
-      select jsonb_agg(
-        jsonb_build_object(
-          'id', tl.id,
-          'license_number', tl.license_number,
-          'state', tl.state,
-          'title', tl.title,
-          'issuing_body', tl.issuing_body,
-          'expiry_date', tl.expiry_date,
-          'is_verified', tl.is_verified
+  -- Wrap the previous query with DISTINCT ON to ensure each therapist appears only once
+  WITH filtered_therapists AS (
+    select 
+      t.id,                -- Column 1
+      t.first_name,        -- Column 2
+      t.middle_name,       -- Column 3
+      t.last_name,         -- Column 4
+      t.pronouns::text,    -- Column 5 - Adding explicit cast to text
+      t.bio,               -- Column 6
+      t.gender,            -- Column 7
+      t.ethnicity,         -- Column 8
+      t.sexuality,         -- Column 9
+      t.faith,             -- Column 10
+      t.availability,      -- Column 11
+      t.languages,         -- Column 12
+      t.ai_summary,        -- Column 13
+      t.areas_of_focus,    -- Column 14
+      t.approaches,        -- Column 15
+      case 
+        when tf_initial.price is not null then concat('$', tf_initial.price::text, ' ', coalesce(tf_initial.currency, 'USD'))
+        else null
+      end as initial_price, -- Column 16
+      case 
+        when tf_subsequent.price is not null then concat('$', tf_subsequent.price::text, ' ', coalesce(tf_subsequent.currency, 'USD'))
+        else null
+      end as subsequent_price, -- Column 17
+      1 - (t.embedding <=> query_embedding) as similarity, -- Column 18
+      t.profile_img_url,   -- Column 19
+      t.video_intro_link,  -- Column 20
+      t.clinic_profile_url, -- Column 21
+      t.clinic_booking_url, -- Column 22
+      t.therapist_email,   -- Column 23
+      t.therapist_phone,   -- Column 24
+      t.clinic_name,       -- Column 25
+      t.clinic_street,     -- Column 26
+      t.clinic_city,       -- Column 27
+      t.clinic_province,   -- Column 28
+      t.clinic_postal_code, -- Column 29
+      t.clinic_country,    -- Column 30
+      t.clinic_phone,      -- Column 31
+      t.education,         -- Column 32
+      t.certifications,    -- Column 33
+      (
+        select jsonb_agg(
+          jsonb_build_object(
+            'id', tl.id,
+            'license_number', tl.license_number,
+            'state', tl.state,
+            'title', tl.title,
+            'issuing_body', tl.issuing_body,
+            'expiry_date', tl.expiry_date,
+            'is_verified', tl.is_verified
+          )
+        )
+        from therapist_licenses tl
+        where tl.therapist_id = t.id
+      ) as licenses,       -- Column 34
+      t.is_verified        -- Column 35
+    from therapists t
+    left join lateral (
+      select price, currency
+      from therapist_fees
+      where therapist_id = t.id 
+        and session_category = 'initial'
+        and session_type = 'individual'
+      limit 1
+    ) tf_initial on true
+    left join lateral (
+      select price, currency
+      from therapist_fees
+      where therapist_id = t.id 
+        and session_category = 'subsequent'
+        and session_type = 'individual'
+      limit 1
+    ) tf_subsequent on true
+    where 1 - (t.embedding <=> query_embedding) > match_threshold
+      and (gender_filter is null or t.gender = gender_filter)
+      and (sexuality_filter is null or t.sexuality && sexuality_filter)
+      and (ethnicity_filter is null or t.ethnicity && ethnicity_filter)
+      and (faith_filter is null or t.faith && faith_filter)
+      and (
+        max_price_initial is null 
+        or exists (
+          select 1 from therapist_fees 
+          where therapist_id = t.id 
+            and session_category = 'initial' 
+            and price <= max_price_initial
         )
       )
-      from therapist_licenses tl
-      where tl.therapist_id = t.id
-    ) as licenses,       -- Column 34
-    t.is_verified        -- Column 35
-  from therapists t
-  left join therapist_fees tf_initial on tf_initial.therapist_id = t.id 
-    and tf_initial.session_category = 'initial'
-    and tf_initial.session_type = 'individual'
-  left join therapist_fees tf_subsequent on tf_subsequent.therapist_id = t.id 
-    and tf_subsequent.session_category = 'subsequent'
-    and tf_subsequent.session_type = 'individual'
-  where 1 - (t.embedding <=> query_embedding) > match_threshold
-    and (gender_filter is null or t.gender = gender_filter)
-    and (sexuality_filter is null or t.sexuality && sexuality_filter)
-    and (ethnicity_filter is null or t.ethnicity && ethnicity_filter)
-    and (faith_filter is null or t.faith && faith_filter)
-    and (max_price_initial is null or tf_initial.price <= max_price_initial)
-    and (availability_filter is null or t.availability = availability_filter)
-    and (
-      areas_of_focus_filter is null 
-      or 
-      (
-        case when areas_of_focus_filter is not null then
-          exists (
-            select 1
-            from unnest(t.areas_of_focus) as t_area,
-                 unnest(areas_of_focus_filter) as f_area
-            where 
-              lower(t_area) like '%' || lower(f_area) || '%'
-              or 
-              t_area = f_area
-              or
-              t_area = initcap(f_area)
-          )
-        else true
-        end
+      and (availability_filter is null or t.availability = availability_filter)
+      and (
+        areas_of_focus_filter is null 
+        or 
+        (
+          case when areas_of_focus_filter is not null then
+            exists (
+              select 1
+              from unnest(t.areas_of_focus) as t_area,
+                   unnest(areas_of_focus_filter) as f_area
+              where 
+                lower(t_area) like '%' || lower(f_area) || '%'
+                or 
+                t_area = f_area
+                or
+                t_area = initcap(f_area)
+            )
+          else true
+          end
+        )
       )
-    )
-  order by similarity desc;
+  )
+  
+  SELECT DISTINCT ON (id) *
+  FROM filtered_therapists
+  ORDER BY id, similarity DESC;
 end;
 $$;
