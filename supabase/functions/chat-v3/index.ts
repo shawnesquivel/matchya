@@ -20,15 +20,22 @@ You are a friendly and supportive therapy matching assistant. Your tone is warm,
 
 Your job is to connect therapists' qualities to each need the user expressed, making the user feel heard and understood throughout the process. Use conversational language that's easy to relate to.
 
+WRITING STYLE:
+- Keep paragraphs extremely short - maximum 2-3 sentences per paragraph
+- Break up information into multiple short paragraphs rather than long ones
+- Use simple, direct language and avoid complex sentences
+- Present one clear idea per paragraph
+- Add line breaks between descriptions of different therapists
+- Use bullet points sparingly for key information when appropriate
+
 When explaining matches:
 - Express genuine enthusiasm about potential good fits without overselling
 - Highlight how each therapist's background might resonate with the user's situation
 - Use supportive language that acknowledges the courage it takes to seek therapy
 - Be conversational but respectful - use "you" language to connect directly with the user
-- Always explain in simple terms, educating the user on any jargon or concepts that might be new to them
+- Explain any jargon in simple terms
 - Share specific ways a therapist's expertise might help with the user's unique challenges
-- Acknowledge that finding the right therapist is a personal journey and validate their efforts in this process
-- When mentioning therapy approaches or credentials, briefly explain why they matter in practical terms
+- Acknowledge that finding the right therapist is a personal journey
 
 Balance being friendly with being informative. Share insights about why each therapist might be a good match in a way that feels personal and thoughtful.
 
@@ -67,14 +74,6 @@ Deno.serve(async (req) => {
     if (corsResponse) return corsResponse;
 
     const { chatId, messages, matchedTherapists } = await req.json();
-
-    // Log received data
-    console.log(
-      "[chat-v3]: Received messages:",
-      messages?.length || 0,
-      "last message:",
-      messages?.length > 0 ? messages[messages.length - 1].content : "none",
-    );
 
     // Safely handle matchedTherapists
     const allTherapists = Array.isArray(matchedTherapists)
@@ -129,30 +128,32 @@ Deno.serve(async (req) => {
         }. ${therapist.first_name} ${therapist.last_name}`;
 
         // Basic demographics
-        if (therapist.pronouns) fullPrompt += ` (${therapist.pronouns})`;
-        if (therapist.gender) fullPrompt += `, Gender: ${therapist.gender}`;
+        fullPrompt += " - ";
+        if (therapist.pronouns) fullPrompt += `${therapist.pronouns}, `;
+        if (therapist.gender) fullPrompt += `${therapist.gender}, `;
         if (therapist.ethnicity && therapist.ethnicity.length) {
-          fullPrompt += `, Ethnicity: ${therapist.ethnicity.join("/")}`;
+          fullPrompt += `${therapist.ethnicity.join("/")}`;
         }
 
         // Practical information
-        fullPrompt += `\nAvailability: ${
+        fullPrompt += `\n• Availability: ${
           therapist.availability || "Not specified"
         }`;
-        fullPrompt += `\nLanguages: ${
+        fullPrompt += `\n• Languages: ${
           therapist.languages?.join(", ") || "English"
         }`;
 
         // Financial information
+        fullPrompt += "\n• Pricing: ";
         if (therapist.initial_price) {
-          fullPrompt += `\nInitial session: ${therapist.initial_price}`;
+          fullPrompt += `Initial: ${therapist.initial_price}`;
         }
         if (therapist.subsequent_price) {
           fullPrompt += `, Follow-up: ${therapist.subsequent_price}`;
         }
 
         // Professional information
-        fullPrompt += `\nAreas of Focus: ${
+        fullPrompt += `\n• Areas of Focus: ${
           therapist.areas_of_focus?.join(", ") || "Not specified"
         }`;
         if (therapist.approaches) {
@@ -167,17 +168,17 @@ Deno.serve(async (req) => {
             });
           }
           if (approachesList.length > 0) {
-            fullPrompt += `\nApproaches: ${approachesList.join(", ")}`;
+            fullPrompt += `\n• Approaches: ${approachesList.join(", ")}`;
           }
         }
 
         // Educational background
         if (therapist.education && therapist.education.length) {
-          fullPrompt += `\nEducation: ${therapist.education.join("; ")}`;
+          fullPrompt += `\n• Education: ${therapist.education.join("; ")}`;
         }
 
         // Bio information
-        fullPrompt += `\nBio: ${
+        fullPrompt += `\n\nBio: ${
           therapist.bio || therapist.ai_summary || "No bio available"
         }`;
         fullPrompt += "\n";
@@ -190,7 +191,7 @@ Deno.serve(async (req) => {
       }
 
       fullPrompt +=
-        "\n\nPlease explain which of these therapists might be the best match for the user's specific needs, focusing on how their expertise and background align with what the user is looking for.";
+        "\n\nPlease explain which of these therapists might be the best match for the user's specific needs, focusing on how their expertise and background align with what the user is looking for. Remember to keep your paragraphs short (2-3 sentences maximum) and use simple language when describing each therapist.";
     } else {
       fullPrompt +=
         "\n\nNo therapists were found matching the user's criteria. Please explain this and suggest broadening their search.";
@@ -214,6 +215,11 @@ Deno.serve(async (req) => {
         messages: [
           { role: "system", content: fullPrompt },
           ...messages.map((msg) => ({ role: msg.role, content: msg.content })),
+          {
+            role: "system",
+            content:
+              "Remember to keep your paragraphs very short (2-3 sentences maximum). Use simple language and break up information into separate paragraphs.",
+          },
         ],
         temperature: 0.7,
         max_tokens: 1000,

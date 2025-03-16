@@ -7,6 +7,7 @@ import Image from "next/image";
 import TherapistProfileModal from "./TherapistProfileModal";
 import { mockTherapist } from "../utils/mockTherapistData";
 import { trackModalOpen, trackOutboundLink } from "../utils/analytics";
+import { ClientOnly } from "./ClientOnly";
 
 export default function TherapistResultsPanel() {
   const {
@@ -154,9 +155,11 @@ export default function TherapistResultsPanel() {
             </button>
           )}
           <span className="text-grey-medium px-2 py-1 text-sm">
-            Showing {useMockData ? 1 : displayTherapists?.length || 0}{" "}
-            Therapists
-            {useMockData && " (Mock)"}
+            <ClientOnly>
+              Showing {useMockData ? 1 : displayTherapists?.length || 0}{" "}
+              Therapists
+              {useMockData && " (Mock)"}
+            </ClientOnly>
           </span>
         </div>
       </div>
@@ -166,167 +169,31 @@ export default function TherapistResultsPanel() {
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-medium"></div>
           </div>
-        ) : showTherapists ? (
-          <>
-            {/* First 3 therapists (full-width) */}
-            <div className="space-y-6 mb-8">
-              <h3 className="text-lg font-medium text-mblack mb-4">
-                Top 3 Matches
-              </h3>
-              {displayTherapists.slice(0, 3).map((therapist) => (
-                <div
-                  key={therapist.id}
-                  className="block bg-beige-extralight border border-grey-light rounded-xl p-6 hover:shadow-sm relative transition-all duration-200 hover:border-beige-dark hover:bg-beige-xxl cursor-pointer"
-                  onClick={() => openTherapistModal(therapist.id)}
-                >
-                  <div className="flex items-center mb-4">
-                    <div className="relative w-24 h-24 rounded-full overflow-hidden mr-4 flex-shrink-0">
-                      {therapist.profile_img_url ? (
-                        <Image
-                          src={therapist.profile_img_url}
-                          alt={`${therapist.first_name} ${therapist.last_name}`}
-                          fill
-                          className="object-cover"
-                          onError={(e) => {
-                            e.currentTarget.src = "/default-pp.png";
-                          }}
-                        />
-                      ) : (
-                        <Image
-                          src="/default-pp.png"
-                          alt={`${therapist.first_name} ${therapist.last_name}`}
-                          fill
-                          className="object-cover"
-                        />
-                      )}
-                    </div>
-                    <div>
-                      <h3 className="font-medium text-2xl text-mblack">
-                        {therapist.first_name} {therapist.last_name}
-                      </h3>
-                      <div className="flex items-center text-grey-medium mt-1">
-                        <span className="text-mblack text-xs">
-                          {therapist.pronouns || "Pronouns Unavailable"}
-                        </span>
-                        <span className="mx-2 text-beige-dark text-xs">|</span>
-                        <span className="text-mblack text-xs">
-                          {therapist.clinic_city && therapist.clinic_province
-                            ? `${therapist.clinic_city}, ${therapist.clinic_province}`
-                            : "Location Unavailable"}
-                        </span>
-                        <span className="mx-2 text-beige-dark text-xs">•</span>
-                        <div className="flex gap-1">
-                          {therapist.availability === "online" ||
-                          therapist.availability === "both" ? (
-                            <span className="bg-blue-light text-blue-800 px-2 py-0.5 rounded-full text-xs font-semibold border border-blue-dark">
-                              online
-                            </span>
-                          ) : null}
-                          {therapist.availability === "in_person" ||
-                          therapist.availability === "both" ? (
-                            <span className="bg-green-light text-green-dark px-2 py-0.5 rounded-full text-xs font-medium">
-                              in-person
-                            </span>
-                          ) : null}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="ml-auto flex gap-2 mb-auto">
-                      {therapist.clinic_profile_url && (
-                        <a
-                          href={therapist.clinic_profile_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="w-10 h-10 rounded-lg bg-beige-dark flex items-center justify-center hover:bg-beige-dark transition-colors cursor-pointer z-10"
-                          title="Visit website"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            trackOutboundLink(therapist.clinic_profile_url, {
-                              id: therapist.id,
-                              name: `${therapist.first_name} ${therapist.last_name}`,
-                              linkType: "website",
-                              source: "results_panel",
-                            });
-                          }}
-                        >
-                          <GlobeIcon className="text-m-black w-4 h-4" />
-                        </a>
-                      )}
-                      {therapist.booking_link && (
-                        <a
-                          href={therapist.booking_link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="w-10 h-10 rounded-lg bg-beige-dark flex items-center justify-center hover:bg-beige-dark transition-colors cursor-pointer z-10"
-                          title="Book appointment"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            trackOutboundLink(therapist.booking_link, {
-                              id: therapist.id,
-                              name: `${therapist.first_name} ${therapist.last_name}`,
-                              linkType: "booking",
-                              source: "results_panel",
-                            });
-                          }}
-                        >
-                          <CalendarIcon className="text-m-black w-4 h-4" />
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                  <p className="text-mblack text-base mb-4">
-                    {truncateBioToTwoSentencesNoReadMore(
-                      therapist.ai_summary ||
-                        therapist.bio ||
-                        `Therapist based in ${
-                          therapist.clinic_city || "various locations"
-                        } working with ${
-                          therapist.areas_of_focus?.length > 0
-                            ? therapist.areas_of_focus.join(", ")
-                            : "various mental health issues"
-                        }.`
-                    )}
-                  </p>
-
-                  {/* Areas of focus tags - up to 6 for top therapists */}
-                  {therapist.areas_of_focus &&
-                    therapist.areas_of_focus.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        {therapist.areas_of_focus.slice(0, 6).map((area) => (
-                          <span
-                            key={area}
-                            className="bg-beige-dark text-mblack px-3 py-1 rounded-full text-xs"
-                          >
-                            {area}
-                          </span>
-                        ))}
-                        {therapist.areas_of_focus.length > 6 && (
-                          <span className="text-gray-500 text-xs flex items-center">
-                            +{therapist.areas_of_focus.length - 6} more
-                          </span>
-                        )}
-                      </div>
-                    )}
+        ) : (
+          <ClientOnly
+            fallback={
+              <div className="flex items-center justify-center h-64">
+                <div className="animate-pulse text-gray-400">
+                  Loading therapists...
                 </div>
-              ))}
-            </div>
-
-            {/* Remaining therapists (two-column grid) */}
-            {displayTherapists.length > 3 && (
-              <div>
-                <h3 className="text-lg font-medium text-mblack mb-4">
-                  You may also like these therapists
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {displayTherapists.slice(3).map((therapist) => (
+              </div>
+            }
+          >
+            {showTherapists ? (
+              <>
+                {/* First 3 therapists (full-width) */}
+                <div className="space-y-6 mb-8">
+                  <h3 className="text-lg font-medium text-mblack mb-4">
+                    Top 3 Matches
+                  </h3>
+                  {displayTherapists.slice(0, 3).map((therapist) => (
                     <div
                       key={therapist.id}
                       className="block bg-beige-extralight border border-grey-light rounded-xl p-6 hover:shadow-sm relative transition-all duration-200 hover:border-beige-dark hover:bg-beige-xxl cursor-pointer"
                       onClick={() => openTherapistModal(therapist.id)}
                     >
-                      {/* Top section with image and action buttons */}
-                      <div className="flex justify-between items-start mb-3">
-                        <div className="relative w-16 h-16 rounded-full overflow-hidden flex-shrink-0">
+                      <div className="flex items-center mb-4">
+                        <div className="relative w-24 h-24 rounded-full overflow-hidden mr-4 flex-shrink-0">
                           {therapist.profile_img_url ? (
                             <Image
                               src={therapist.profile_img_url}
@@ -334,7 +201,6 @@ export default function TherapistResultsPanel() {
                               fill
                               className="object-cover"
                               onError={(e) => {
-                                // When image fails to load, use default profile picture
                                 e.currentTarget.src = "/default-pp.png";
                               }}
                             />
@@ -347,13 +213,49 @@ export default function TherapistResultsPanel() {
                             />
                           )}
                         </div>
-                        <div className="flex gap-2">
+                        <div>
+                          <h3 className="font-medium text-2xl text-mblack">
+                            {therapist.first_name} {therapist.last_name}
+                          </h3>
+                          <div className="flex items-center text-grey-medium mt-1">
+                            <span className="text-mblack text-xs">
+                              {therapist.pronouns || "Pronouns Unavailable"}
+                            </span>
+                            <span className="mx-2 text-beige-dark text-xs">
+                              |
+                            </span>
+                            <span className="text-mblack text-xs">
+                              {therapist.clinic_city &&
+                              therapist.clinic_province
+                                ? `${therapist.clinic_city}, ${therapist.clinic_province}`
+                                : "Location Unavailable"}
+                            </span>
+                            <span className="mx-2 text-beige-dark text-xs">
+                              •
+                            </span>
+                            <div className="flex gap-1">
+                              {therapist.availability === "online" ||
+                              therapist.availability === "both" ? (
+                                <span className="bg-blue-light text-blue-800 px-2 py-0.5 rounded-full text-xs font-semibold border border-blue-dark">
+                                  online
+                                </span>
+                              ) : null}
+                              {therapist.availability === "in_person" ||
+                              therapist.availability === "both" ? (
+                                <span className="bg-green-light text-green-dark px-2 py-0.5 rounded-full text-xs font-medium">
+                                  in-person
+                                </span>
+                              ) : null}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="ml-auto flex gap-2 mb-auto">
                           {therapist.clinic_profile_url && (
                             <a
                               href={therapist.clinic_profile_url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="w-8 h-8 rounded-lg bg-beige-dark flex items-center justify-center hover:bg-beige-dark transition-colors cursor-pointer z-10"
+                              className="w-10 h-10 rounded-lg bg-beige-dark flex items-center justify-center hover:bg-beige-dark transition-colors cursor-pointer z-10"
                               title="Visit website"
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -368,7 +270,7 @@ export default function TherapistResultsPanel() {
                                 );
                               }}
                             >
-                              <GlobeIcon className="text-m-black w-3 h-3" />
+                              <GlobeIcon className="text-m-black w-4 h-4" />
                             </a>
                           )}
                           {therapist.booking_link && (
@@ -376,7 +278,7 @@ export default function TherapistResultsPanel() {
                               href={therapist.booking_link}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="w-8 h-8 rounded-lg bg-beige-dark flex items-center justify-center hover:bg-beige-dark transition-colors cursor-pointer z-10"
+                              className="w-10 h-10 rounded-lg bg-beige-dark flex items-center justify-center hover:bg-beige-dark transition-colors cursor-pointer z-10"
                               title="Book appointment"
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -388,55 +290,18 @@ export default function TherapistResultsPanel() {
                                 });
                               }}
                             >
-                              <CalendarIcon className="text-m-black w-3 h-3" />
+                              <CalendarIcon className="text-m-black w-4 h-4" />
                             </a>
                           )}
                         </div>
                       </div>
-
-                      {/* Name and location below the image */}
-                      <div className="mb-2 flex flex-col gap-1">
-                        <h3 className="font-medium text-xl text-mblack">
-                          {therapist.first_name} {therapist.last_name}
-                        </h3>
-                        <div className="flex items-center text-grey-medium mt-1">
-                          <span className="text-mblack text-xs">
-                            {therapist.pronouns || "Pronouns Unavailable"}
-                          </span>
-                          <span className="mx-2 text-beige-dark text-xs">
-                            |
-                          </span>
-                          <span className="text-mblack text-xs">
-                            {therapist.clinic_city && therapist.clinic_province
-                              ? `${therapist.clinic_city}, ${therapist.clinic_province}`
-                              : "Location Unavailable"}
-                          </span>
-                          <span className="mx-2 text-beige-dark text-xs">
-                            •
-                          </span>
-                          <div className="flex gap-1">
-                            {therapist.availability === "online" ||
-                            therapist.availability === "both" ? (
-                              <span className="bg-blue-light text-blue-800 px-2 py-0.5 rounded-full text-xs font-semibold border border-blue-dark">
-                                online
-                              </span>
-                            ) : null}
-                            {therapist.availability === "in_person" ||
-                            therapist.availability === "both" ? (
-                              <span className="bg-green-light text-green-dark px-2 py-0.5 rounded-full text-xs font-medium">
-                                in-person
-                              </span>
-                            ) : null}
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Bio text */}
-                      <p className="text-mblack text-sm line-clamp-2 mb-3">
+                      <p className="text-mblack text-base mb-4">
                         {truncateBioToTwoSentencesNoReadMore(
                           therapist.ai_summary ||
                             therapist.bio ||
-                            `Therapist working with ${
+                            `Therapist based in ${
+                              therapist.clinic_city || "various locations"
+                            } working with ${
                               therapist.areas_of_focus?.length > 0
                                 ? therapist.areas_of_focus.join(", ")
                                 : "various mental health issues"
@@ -444,23 +309,23 @@ export default function TherapistResultsPanel() {
                         )}
                       </p>
 
-                      {/* Areas of focus tags (limit to 3 for the grid view) */}
+                      {/* Areas of focus tags - up to 6 for top therapists */}
                       {therapist.areas_of_focus &&
                         therapist.areas_of_focus.length > 0 && (
-                          <div className="flex flex-wrap gap-1">
+                          <div className="flex flex-wrap gap-2">
                             {therapist.areas_of_focus
-                              .slice(0, 3)
+                              .slice(0, 6)
                               .map((area) => (
                                 <span
                                   key={area}
-                                  className="bg-beige-dark text-mblack px-2 py-0.5 rounded-full text-xs"
+                                  className="bg-beige-dark text-mblack px-3 py-1 rounded-full text-xs"
                                 >
                                   {area}
                                 </span>
                               ))}
-                            {therapist.areas_of_focus.length > 3 && (
+                            {therapist.areas_of_focus.length > 6 && (
                               <span className="text-gray-500 text-xs flex items-center">
-                                +{therapist.areas_of_focus.length - 3}
+                                +{therapist.areas_of_focus.length - 6} more
                               </span>
                             )}
                           </div>
@@ -468,29 +333,190 @@ export default function TherapistResultsPanel() {
                     </div>
                   ))}
                 </div>
+
+                {/* Remaining therapists (two-column grid) */}
+                {displayTherapists.length > 3 && (
+                  <div>
+                    <h3 className="text-lg font-medium text-mblack mb-4">
+                      You may also like these therapists
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {displayTherapists.slice(3).map((therapist) => (
+                        <div
+                          key={therapist.id}
+                          className="block bg-beige-extralight border border-grey-light rounded-xl p-6 hover:shadow-sm relative transition-all duration-200 hover:border-beige-dark hover:bg-beige-xxl cursor-pointer"
+                          onClick={() => openTherapistModal(therapist.id)}
+                        >
+                          {/* Top section with image and action buttons */}
+                          <div className="flex justify-between items-start mb-3">
+                            <div className="relative w-16 h-16 rounded-full overflow-hidden flex-shrink-0">
+                              {therapist.profile_img_url ? (
+                                <Image
+                                  src={therapist.profile_img_url}
+                                  alt={`${therapist.first_name} ${therapist.last_name}`}
+                                  fill
+                                  className="object-cover"
+                                  onError={(e) => {
+                                    // When image fails to load, use default profile picture
+                                    e.currentTarget.src = "/default-pp.png";
+                                  }}
+                                />
+                              ) : (
+                                <Image
+                                  src="/default-pp.png"
+                                  alt={`${therapist.first_name} ${therapist.last_name}`}
+                                  fill
+                                  className="object-cover"
+                                />
+                              )}
+                            </div>
+                            <div className="flex gap-2">
+                              {therapist.clinic_profile_url && (
+                                <a
+                                  href={therapist.clinic_profile_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="w-8 h-8 rounded-lg bg-beige-dark flex items-center justify-center hover:bg-beige-dark transition-colors cursor-pointer z-10"
+                                  title="Visit website"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    trackOutboundLink(
+                                      therapist.clinic_profile_url,
+                                      {
+                                        id: therapist.id,
+                                        name: `${therapist.first_name} ${therapist.last_name}`,
+                                        linkType: "website",
+                                        source: "results_panel",
+                                      }
+                                    );
+                                  }}
+                                >
+                                  <GlobeIcon className="text-m-black w-3 h-3" />
+                                </a>
+                              )}
+                              {therapist.booking_link && (
+                                <a
+                                  href={therapist.booking_link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="w-8 h-8 rounded-lg bg-beige-dark flex items-center justify-center hover:bg-beige-dark transition-colors cursor-pointer z-10"
+                                  title="Book appointment"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    trackOutboundLink(therapist.booking_link, {
+                                      id: therapist.id,
+                                      name: `${therapist.first_name} ${therapist.last_name}`,
+                                      linkType: "booking",
+                                      source: "results_panel",
+                                    });
+                                  }}
+                                >
+                                  <CalendarIcon className="text-m-black w-3 h-3" />
+                                </a>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Name and location below the image */}
+                          <div className="mb-2 flex flex-col gap-1">
+                            <h3 className="font-medium text-xl text-mblack">
+                              {therapist.first_name} {therapist.last_name}
+                            </h3>
+                            <div className="flex items-center text-grey-medium mt-1">
+                              <span className="text-mblack text-xs">
+                                {therapist.pronouns || "Pronouns Unavailable"}
+                              </span>
+                              <span className="mx-2 text-beige-dark text-xs">
+                                |
+                              </span>
+                              <span className="text-mblack text-xs">
+                                {therapist.clinic_city &&
+                                therapist.clinic_province
+                                  ? `${therapist.clinic_city}, ${therapist.clinic_province}`
+                                  : "Location Unavailable"}
+                              </span>
+                              <span className="mx-2 text-beige-dark text-xs">
+                                •
+                              </span>
+                              <div className="flex gap-1">
+                                {therapist.availability === "online" ||
+                                therapist.availability === "both" ? (
+                                  <span className="bg-blue-light text-blue-800 px-2 py-0.5 rounded-full text-xs font-semibold border border-blue-dark">
+                                    online
+                                  </span>
+                                ) : null}
+                                {therapist.availability === "in_person" ||
+                                therapist.availability === "both" ? (
+                                  <span className="bg-green-light text-green-dark px-2 py-0.5 rounded-full text-xs font-medium">
+                                    in-person
+                                  </span>
+                                ) : null}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Bio text */}
+                          <p className="text-mblack text-sm line-clamp-2 mb-3">
+                            {truncateBioToTwoSentencesNoReadMore(
+                              therapist.ai_summary ||
+                                therapist.bio ||
+                                `Therapist working with ${
+                                  therapist.areas_of_focus?.length > 0
+                                    ? therapist.areas_of_focus.join(", ")
+                                    : "various mental health issues"
+                                }.`
+                            )}
+                          </p>
+
+                          {/* Areas of focus tags (limit to 3 for the grid view) */}
+                          {therapist.areas_of_focus &&
+                            therapist.areas_of_focus.length > 0 && (
+                              <div className="flex flex-wrap gap-1">
+                                {therapist.areas_of_focus
+                                  .slice(0, 3)
+                                  .map((area) => (
+                                    <span
+                                      key={area}
+                                      className="bg-beige-dark text-mblack px-2 py-0.5 rounded-full text-xs"
+                                    >
+                                      {area}
+                                    </span>
+                                  ))}
+                                {therapist.areas_of_focus.length > 3 && (
+                                  <span className="text-gray-500 text-xs flex items-center">
+                                    +{therapist.areas_of_focus.length - 3}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : hasUserTakenAction() ? (
+              <div className="text-center text-grey-medium py-16 bg-white rounded-xl border border-grey-light p-8">
+                <p className="text-lg font-medium mb-2">
+                  No therapists match your current criteria
+                </p>
+                <p className="text-base">
+                  Try adjusting your filters or describe what you're looking for
+                  in the chat.
+                </p>
+              </div>
+            ) : (
+              <div className="text-center text-grey-medium py-16 bg-white rounded-xl border border-grey-light p-8">
+                <p className="text-lg font-medium mb-2">
+                  Ready to find your match?
+                </p>
+                <p className="text-base mb-4">
+                  Use the filters on the left to refine your search, or simply
+                  describe what you're looking for in the chat.
+                </p>
               </div>
             )}
-          </>
-        ) : hasUserTakenAction() ? (
-          <div className="text-center text-grey-medium py-16 bg-white rounded-xl border border-grey-light p-8">
-            <p className="text-lg font-medium mb-2">
-              No therapists match your current criteria
-            </p>
-            <p className="text-base">
-              Try adjusting your filters or describe what you're looking for in
-              the chat.
-            </p>
-          </div>
-        ) : (
-          <div className="text-center text-grey-medium py-16 bg-white rounded-xl border border-grey-light p-8">
-            <p className="text-lg font-medium mb-2">
-              Ready to find your match?
-            </p>
-            <p className="text-base mb-4">
-              Use the filters on the left to refine your search, or simply
-              describe what you're looking for in the chat.
-            </p>
-          </div>
+          </ClientOnly>
         )}
       </div>
 

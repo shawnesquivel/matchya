@@ -13,7 +13,7 @@ const openai = new OpenAI({
 // These are automatically injected
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
-
+const QUERY_LIMIT = 10;
 type DetermineUserMessageIntentResponse = {
   isTherapistRequest: boolean;
   answer: string;
@@ -254,7 +254,7 @@ Deno.serve(async (req) => {
 
       // Execute the query with performance tracking
       perf.startEvent("database:filterQuery");
-      const { data: therapists, error } = await query.limit(10);
+      const { data: therapists, error } = await query.limit(QUERY_LIMIT);
 
       // Debug logging to help identify issues
       console.log("[therapist-matches] Query completed");
@@ -469,7 +469,7 @@ Deno.serve(async (req) => {
           availability_filter: params.availability_filter,
           areas_of_focus_filter: params.areas_of_focus_filter,
         })
-        .limit(5);
+        .limit(QUERY_LIMIT);
 
       // Detailed filter parameter logging
       const searchCriteriaDetails = {
@@ -487,18 +487,16 @@ Deno.serve(async (req) => {
           { areas_of_focus_filter: params.areas_of_focus_filter }),
       };
 
-      console.log("Search criteria details:", searchCriteriaDetails);
+      console.log(
+        "[therapist-matches]: searchCriteriaDetails",
+        searchCriteriaDetails,
+      );
 
       console.log(
         therapists?.map((t: TherapistMatch) =>
           `${t.first_name} ${t.last_name}`
         ),
       );
-      if (therapists && therapists.length > 0) {
-        console.log("First therapist ethnicity:", therapists[0].ethnicity);
-      } else {
-        console.log("No therapists found matching criteria");
-      }
 
       console.log(`Found ${therapists?.length || 0} therapists`);
 

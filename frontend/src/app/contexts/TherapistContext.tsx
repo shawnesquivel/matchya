@@ -71,23 +71,102 @@ export interface Therapist {
   is_verified: boolean;
 }
 
-// Initial state
+// Helper functions for localStorage persistence
+const STORAGE_KEYS = {
+  FILTERS: "matchya_filters",
+  THERAPISTS: "matchya_therapists",
+};
+
+// Save filters to localStorage
+const saveFiltersToStorage = (filters: TherapistFilters) => {
+  try {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(STORAGE_KEYS.FILTERS, JSON.stringify(filters));
+      console.log("[TherapistContext] Saved filters to localStorage");
+    }
+  } catch (error) {
+    console.error(
+      "[TherapistContext] Error saving filters to localStorage:",
+      error
+    );
+  }
+};
+
+// Save therapists to localStorage
+const saveTherapistsToStorage = (therapists: Therapist[]) => {
+  try {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(STORAGE_KEYS.THERAPISTS, JSON.stringify(therapists));
+      console.log("[TherapistContext] Saved therapists to localStorage");
+    }
+  } catch (error) {
+    console.error(
+      "[TherapistContext] Error saving therapists to localStorage:",
+      error
+    );
+  }
+};
+
+// Load filters from localStorage
+const loadFiltersFromStorage = (): TherapistFilters | null => {
+  try {
+    if (typeof window !== "undefined") {
+      const savedFilters = localStorage.getItem(STORAGE_KEYS.FILTERS);
+      if (savedFilters) {
+        console.log("[TherapistContext] Loaded filters from localStorage");
+        return JSON.parse(savedFilters);
+      }
+    }
+    return null;
+  } catch (error) {
+    console.error(
+      "[TherapistContext] Error loading filters from localStorage:",
+      error
+    );
+    return null;
+  }
+};
+
+// Load therapists from localStorage
+const loadTherapistsFromStorage = (): Therapist[] | null => {
+  try {
+    if (typeof window !== "undefined") {
+      const savedTherapists = localStorage.getItem(STORAGE_KEYS.THERAPISTS);
+      if (savedTherapists) {
+        console.log("[TherapistContext] Loaded therapists from localStorage");
+        return JSON.parse(savedTherapists);
+      }
+    }
+    return null;
+  } catch (error) {
+    console.error(
+      "[TherapistContext] Error loading therapists from localStorage:",
+      error
+    );
+    return null;
+  }
+};
+
+// Default state without localStorage access to prevent hydration errors
+const defaultFilters = {
+  gender: null,
+  sexuality: null,
+  ethnicity: null,
+  faith: null,
+  max_price_initial: null,
+  max_price_subsequent: null,
+  availability: null,
+  format: null,
+};
+
+// Initial state without accessing localStorage - this avoids hydration errors
 const initialState = {
   // Chat state - use getChatID() first, fallback to UUID
   chatId: getChatID() || crypto.randomUUID(),
   messages: [],
 
-  // Filter state (matching database schema)
-  filters: {
-    gender: null,
-    sexuality: null,
-    ethnicity: null,
-    faith: null,
-    max_price_initial: null,
-    max_price_subsequent: null,
-    availability: null,
-    format: null,
-  },
+  // Filter state (matching database schema) - default state for SSR
+  filters: defaultFilters,
 
   // UI state
   isLoading: false,
@@ -96,7 +175,7 @@ const initialState = {
   lastRequestTime: null,
   requestCount: 0,
 
-  // Results
+  // Results - empty array for SSR
   therapists: [] as Therapist[],
 
   // New flags
@@ -114,6 +193,9 @@ const initialState = {
   // Follow-up questions
   followUpQuestions: [],
   isLoadingFollowUps: false,
+
+  // Flag to track if we've hydrated from localStorage yet
+  isHydrated: false,
 };
 
 // Create context
@@ -158,10 +240,12 @@ const ACTIONS = {
   REMOVE_TYPING_MESSAGE: "REMOVE_TYPING_MESSAGE",
   SET_FOLLOW_UP_QUESTIONS: "SET_FOLLOW_UP_QUESTIONS",
   SET_LOADING_FOLLOW_UPS: "SET_LOADING_FOLLOW_UPS",
+  HYDRATE_FROM_STORAGE: "HYDRATE_FROM_STORAGE",
 };
 
-// Reducer function
+// Reducer function with persistence hooks
 function therapistReducer(state, action) {
+  let newState;
   switch (action.type) {
     case ACTIONS.SET_LOADING:
       return { ...state, isLoading: action.payload };
@@ -188,14 +272,23 @@ function therapistReducer(state, action) {
       };
 
     case ACTIONS.SET_THERAPISTS:
-      return { ...state, therapists: action.payload };
+      newState = { ...state, therapists: action.payload };
+      // Persist therapists to localStorage
+      saveTherapistsToStorage(action.payload);
+      return newState;
 
     case ACTIONS.RESET_CHAT:
+      // Note: We don't save the empty therapists array to localStorage here
+      // because we're explicitly removing it in the resetChat function
       return {
         ...initialState,
         chatId: action.payload?.chatId || crypto.randomUUID(),
         requestCount: state.requestCount,
         followUpQuestions: [], // Clear follow-up questions on reset
+        // Keep filters but clear therapists on reset
+        therapists: [], // Clear therapists list on New Chat
+        filters: state.filters, // Still maintain filter selections
+        isHydrated: state.isHydrated, // Maintain hydration status
       };
 
     case ACTIONS.INCREMENT_REQUEST_COUNT:
@@ -205,12 +298,17 @@ function therapistReducer(state, action) {
       };
 
     case ACTIONS.SET_FILTERS_AND_THERAPISTS:
-      return {
+      const newFilters = { ...state.filters, ...action.payload.filters };
+      newState = {
         ...state,
-        filters: { ...state.filters, ...action.payload.filters },
+        filters: newFilters,
         therapists: action.payload.therapists,
         skipFilterEffect: true,
       };
+      // Persist filters and therapists to localStorage
+      saveFiltersToStorage(newFilters);
+      saveTherapistsToStorage(action.payload.therapists);
+      return newState;
 
     case ACTIONS.SET_SKIP_FILTER_EFFECT:
       return {
@@ -250,18 +348,27 @@ function therapistReducer(state, action) {
       };
 
     case ACTIONS.UPDATE_CHAT_RESULTS:
-      return {
+      const chatFilters = { ...state.filters, ...action.payload.filters };
+      newState = {
         ...state,
         therapists: action.payload.therapists,
-        filters: { ...state.filters, ...action.payload.filters },
+        filters: chatFilters,
       };
+      // Persist filters and therapists to localStorage
+      saveFiltersToStorage(chatFilters);
+      saveTherapistsToStorage(action.payload.therapists);
+      return newState;
 
     case ACTIONS.UPDATE_FILTER_RESULTS:
-      return {
+      newState = {
         ...state,
         therapists: action.payload.therapists,
         filters: action.payload.filters,
       };
+      // Persist filters and therapists to localStorage
+      saveFiltersToStorage(action.payload.filters);
+      saveTherapistsToStorage(action.payload.therapists);
+      return newState;
 
     case ACTIONS.SET_LOADING_STATE:
       return {
@@ -309,6 +416,15 @@ function therapistReducer(state, action) {
         isLoadingFollowUps: action.payload,
       };
 
+    // Add a new action type for hydration from localStorage
+    case ACTIONS.HYDRATE_FROM_STORAGE:
+      return {
+        ...state,
+        filters: action.payload.filters || state.filters,
+        therapists: action.payload.therapists || state.therapists,
+        isHydrated: true,
+      };
+
     default:
       return state;
   }
@@ -329,6 +445,32 @@ export function TherapistProvider({ children }) {
     // If we have a chatId, load history
     if (state.chatId) {
       loadChatHistory(state.chatId);
+    }
+
+    // Only run client-side localStorage hydration once after mounting
+    if (typeof window !== "undefined" && !state.isHydrated) {
+      // Safely load data from localStorage after mount (client-side only)
+      try {
+        // Get filters and therapists from localStorage
+        const savedFilters = loadFiltersFromStorage();
+        const savedTherapists = loadTherapistsFromStorage();
+
+        // Dispatch a single hydration action with both values
+        dispatch({
+          type: ACTIONS.HYDRATE_FROM_STORAGE,
+          payload: {
+            filters: savedFilters || defaultFilters,
+            therapists: savedTherapists || [],
+          },
+        });
+
+        console.log("[TherapistProvider] Hydrated state from localStorage");
+      } catch (error) {
+        console.error(
+          "[TherapistProvider] Error hydrating from localStorage:",
+          error
+        );
+      }
     }
   }, []);
 
@@ -411,6 +553,23 @@ export function TherapistProvider({ children }) {
   const resetChat = () => {
     const newChatId = generateUniqueID();
     setCookiesChatId(newChatId); // Store in cookie
+
+    // Clear therapists from localStorage
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.removeItem(STORAGE_KEYS.THERAPISTS);
+        console.log(
+          "[TherapistContext] Cleared therapists from localStorage during reset"
+        );
+      } catch (error) {
+        console.error(
+          "[TherapistContext] Error clearing therapists from localStorage:",
+          error
+        );
+      }
+    }
+
+    // Clear therapists and reset chat
     dispatch({ type: ACTIONS.RESET_CHAT, payload: { chatId: newChatId } });
 
     // Add welcome message after reset
