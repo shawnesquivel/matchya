@@ -52,7 +52,31 @@ const MessageItem = memo(
       message.role === "assistant" && message.isTyping
     );
 
-    if (!message.content) return null;
+    // If message is empty and not typing, return null
+    if (!message.content && !message.isTyping) return null;
+
+    // Special case for typing messages with no content yet
+    if (message.isTyping && !message.content) {
+      return (
+        <div className="flex flex-col mb-2">
+          <div className="rounded flex gap-2 align-center relative overflow-hidden h-fit">
+            <Image
+              src={`/assets/images/matchya.png`}
+              alt={`assistant's profile`}
+              width={32}
+              height={32}
+              className="w-8 h-8 rounded-full assistant"
+              priority
+              unoptimized
+            />
+            <p className="mt-1.5 text-sm">matchya</p>
+          </div>
+          <div className="bg-beige-extralight message p-3 h-fit max-w-full rounded-md text-sm w-fit assistant mt-1">
+            <Loader />
+          </div>
+        </div>
+      );
+    }
 
     return (
       <div className={`flex flex-col mb-2 ${isLast ? "flex-grow" : ""}`}>
@@ -210,19 +234,21 @@ const ChatMessages = ({
       {/* Display messages if isLoadingMessages is false, regardless of messages count */}
       {!isLoadingMessages &&
         messages
-          .filter((message) => message.content && message.content.trim() !== "") // Filter out empty messages
+          .filter(
+            (message) =>
+              (message.content && message.content.trim() !== "") ||
+              message.isTyping
+          ) // Include typing messages
           .map((message, index) => {
             return (
               <MessageItem
-                // Ensuring unique key
-                key={index}
+                key={message.id || index}
                 message={message}
                 onButtonClick={onButtonClick}
                 questionStage={questionStage}
               />
             );
           })}
-      {loadingNewMsg && <Loader />}
       <div ref={messagesEndRef} />
     </div>
   );

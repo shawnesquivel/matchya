@@ -151,6 +151,7 @@ const ACTIONS = {
   ADD_USER_MESSAGE: "ADD_USER_MESSAGE",
   SET_LOADING_HISTORY: "SET_LOADING_HISTORY",
   SET_CHAT_ID: "SET_CHAT_ID",
+  REMOVE_TYPING_MESSAGE: "REMOVE_TYPING_MESSAGE",
 };
 
 // Reducer function
@@ -173,6 +174,12 @@ function therapistReducer(state, action) {
 
     case ACTIONS.SET_MESSAGES:
       return { ...state, messages: action.payload };
+
+    case ACTIONS.REMOVE_TYPING_MESSAGE:
+      return {
+        ...state,
+        messages: state.messages.filter((msg) => msg.id !== action.payload),
+      };
 
     case ACTIONS.SET_THERAPISTS:
       return { ...state, therapists: action.payload };
@@ -263,7 +270,11 @@ function therapistReducer(state, action) {
         ...state,
         messages: [
           ...state.messages,
-          { role: "user", content: action.payload },
+          {
+            role: "user",
+            content: action.payload,
+            id: Date.now().toString(), // Add unique ID for user messages
+          },
         ],
       };
 
@@ -408,10 +419,25 @@ export function TherapistProvider({ children }) {
       dispatch({ type: ACTIONS.SET_LOADING_STATE, payload: true });
 
       if (update.type === "CHAT") {
+        // Set isSendingChat to true when starting a chat request
+        dispatch({ type: ACTIONS.SET_SENDING_CHAT, payload: true });
+
         // Add user message to state immediately
         dispatch({
           type: ACTIONS.ADD_USER_MESSAGE,
           payload: update.message,
+        });
+
+        // Add a temporary "typing" message from the assistant to show animation
+        const typingMessageId = Date.now().toString();
+        dispatch({
+          type: ACTIONS.ADD_MESSAGE,
+          payload: {
+            id: typingMessageId,
+            role: "assistant",
+            content: "",
+            isTyping: true, // This flag indicates typing animation should show
+          },
         });
 
         const response = await fetch(
@@ -478,6 +504,13 @@ export function TherapistProvider({ children }) {
         }
 
         const chatData = await chatResponse.json();
+
+        // Remove the temporary typing message
+        dispatch({
+          type: ACTIONS.REMOVE_TYPING_MESSAGE,
+          payload: typingMessageId,
+        });
+
         if (chatData.message) {
           dispatch({
             type: ACTIONS.ADD_MESSAGE,
@@ -488,6 +521,9 @@ export function TherapistProvider({ children }) {
             },
           });
         }
+
+        // Set isSendingChat back to false when chat response is received
+        dispatch({ type: ACTIONS.SET_SENDING_CHAT, payload: false });
       } else {
         // Direct filter flow
         const mergedFilters = { ...state.filters, ...update.filters };
@@ -530,6 +566,18 @@ export function TherapistProvider({ children }) {
     } catch (error) {
       console.error("[updateTherapists] Error:", error);
       dispatch({ type: ACTIONS.SET_ERROR, payload: error.toString() });
+
+      // If there's a typing message, remove it even if there was an error
+      if (update.type === "CHAT") {
+        dispatch({ type: ACTIONS.SET_SENDING_CHAT, payload: false });
+        // Find and remove any typing messages
+        const typingMessages = state.messages.filter((msg) => msg.isTyping);
+        typingMessages.forEach((msg) => {
+          if (msg.id) {
+            dispatch({ type: ACTIONS.REMOVE_TYPING_MESSAGE, payload: msg.id });
+          }
+        });
+      }
     } finally {
       dispatch({ type: ACTIONS.SET_LOADING_STATE, payload: false });
     }
