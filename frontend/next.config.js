@@ -56,10 +56,6 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "open_space_counselling.ca",
-      },
-      {
-        protocol: "https",
         hostname: "openspacecounselling.ca",
       },
       {
