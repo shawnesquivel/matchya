@@ -77,6 +77,9 @@ const STORAGE_KEYS = {
   THERAPISTS: "matchya_therapists",
 };
 
+const WELCOME_CHATBOT_MSG =
+  "Hi! I'm here to help you find the perfect therapist. \n\nTo start, just mention what you're going through, or what kind of therapist you're looking for. \n\nThe more you are comfortable sharing, the better I can match you with the right person. \n\nIf you run into any issues, just shoot us an email at hello@designwithshay.com";
+
 // Save filters to localStorage
 const saveFiltersToStorage = (filters: TherapistFilters) => {
   try {
@@ -477,8 +480,7 @@ export function TherapistProvider({ children }) {
         type: ACTIONS.ADD_MESSAGE,
         payload: {
           role: "assistant",
-          content:
-            "Hi! Thank you for making the first step to finding your perfect therapist. I'm here to help! \n\nThe more you're comfortable sharing about what you're looking for with me, the better I can match you with the right therapist. Don't worry, there's no way to mess this up – any information you share is fully confidential. \n\nWhen you're ready, just start chatting and I'll guide you the rest of the way :)",
+          content: WELCOME_CHATBOT_MSG,
           isWelcomeMessage: true, // Flag to identify this as a welcome message
         },
       });
@@ -573,8 +575,7 @@ export function TherapistProvider({ children }) {
       type: ACTIONS.ADD_MESSAGE,
       payload: {
         role: "assistant",
-        content:
-          "Ready to find your match?\n\nUse the filters on the left to refine your search, or simply describe what you're looking for in the chat.",
+        content: WELCOME_CHATBOT_MSG,
         isWelcomeMessage: true, // Flag to identify this as a welcome message
       },
     });
@@ -789,11 +790,19 @@ export function TherapistProvider({ children }) {
 
       if (!response.ok) {
         throw new Error(
-          `Failed to get follow-up questions: ${response.status}`
+          `Failed to get follow-up questions: ${response.status} ${response.statusText}`
         );
       }
 
       const data = await response.json();
+
+      if (!data.questions || !Array.isArray(data.questions)) {
+        console.error(
+          "[fetchFollowUpQuestions] Invalid response format:",
+          data
+        );
+        return;
+      }
 
       if (data.questions && Array.isArray(data.questions)) {
         // Add unique IDs to the questions to track them
@@ -810,7 +819,10 @@ export function TherapistProvider({ children }) {
         });
       }
     } catch (error) {
-      console.error("[fetchFollowUpQuestions] Error:", error);
+      console.error("[fetchFollowUpQuestions] Error details:", {
+        message: error.message,
+        stack: error.stack,
+      });
     } finally {
       dispatch({ type: ACTIONS.SET_LOADING_FOLLOW_UPS, payload: false });
     }
