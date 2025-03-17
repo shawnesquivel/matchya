@@ -162,6 +162,10 @@ const nextConfig = {
         protocol: "https",
         hostname: "vancouvercounsellingclinic.com",
       },
+      {
+        protocol: "https",
+        hostname: "hippo-ai-public-assets.s3.us-east-1.amazonaws.com",
+      },
     ],
   },
   env: {
