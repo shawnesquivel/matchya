@@ -201,12 +201,13 @@ export default function TherapistResultsPanel() {
                               fill
                               className="object-cover"
                               onError={(e) => {
-                                e.currentTarget.src = "/default-pp.png";
+                                e.currentTarget.src =
+                                  "/assets/images/default-pp.png";
                               }}
                             />
                           ) : (
                             <Image
-                              src="/default-pp.png"
+                              src="/assets/images/default-pp.png"
                               alt={`${therapist.first_name} ${therapist.last_name}`}
                               fill
                               className="object-cover"
@@ -358,12 +359,13 @@ export default function TherapistResultsPanel() {
                                   className="object-cover"
                                   onError={(e) => {
                                     // When image fails to load, use default profile picture
-                                    e.currentTarget.src = "/default-pp.png";
+                                    e.currentTarget.src =
+                                      "/assets/images/default-pp.png";
                                   }}
                                 />
                               ) : (
                                 <Image
-                                  src="/default-pp.png"
+                                  src="/assets/images/default-pp.png"
                                   alt={`${therapist.first_name} ${therapist.last_name}`}
                                   fill
                                   className="object-cover"
