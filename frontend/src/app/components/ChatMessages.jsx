@@ -75,6 +75,7 @@ const MessageItem = memo(
     followUpQuestions,
     onFollowUpClick,
     isLoadingFollowUps,
+    chatId,
   }) => {
     // If it's an assistant message, check if we need to split it
     const shouldSplitMessage =
@@ -166,7 +167,10 @@ const MessageItem = memo(
     }
 
     return (
-      <div className={`flex flex-col mb-2 ${isLast ? "flex-grow" : ""}`}>
+      <div
+        className={`flex flex-col mb-2 ${isLast ? "flex-grow" : ""}`}
+        key={`${chatId}-${message.id || index}`}
+      >
         {shouldSplitMessage ? (
           // Render multiple message bubbles for the assistant
           <>
@@ -315,6 +319,7 @@ const ChatMessages = ({
   followUpQuestions,
   isLoadingFollowUps,
   onFollowUpClick,
+  chatId,
 }) => {
   const messagesEndRef = useRef(null);
 
@@ -361,6 +366,7 @@ const ChatMessages = ({
                 }
                 onFollowUpClick={onFollowUpClick}
                 isLoadingFollowUps={isLoadingFollowUps}
+                chatId={chatId}
               />
             );
           })}

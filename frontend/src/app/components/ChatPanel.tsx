@@ -16,6 +16,7 @@ export default function ChatPanel() {
     resetChat,
     followUpQuestions,
     sendFollowUpQuestion,
+    chatId,
   } = useTherapist();
 
   const [input, setInput] = useState("");
@@ -49,6 +50,7 @@ export default function ChatPanel() {
 
   const handleResetChat = () => {
     resetChat();
+    setInput("");
   };
 
   const handleFollowUpClick = (questionText, questionId) => {
@@ -79,6 +81,7 @@ export default function ChatPanel() {
           followUpQuestions={followUpQuestions}
           isLoadingFollowUps={isLoadingFollowUps}
           onFollowUpClick={handleFollowUpClick}
+          chatId={chatId}
         />
         <div ref={messagesEndRef} />
 

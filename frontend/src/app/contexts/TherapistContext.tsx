@@ -284,6 +284,7 @@ function therapistReducer(state, action) {
         ...initialState,
         chatId: action.payload?.chatId || crypto.randomUUID(),
         requestCount: state.requestCount,
+        messages: [], // Explicitly clear messages array
         followUpQuestions: [], // Clear follow-up questions on reset
         // Reset therapists and filters to defaults
         therapists: [], // Clear therapists list on New Chat
