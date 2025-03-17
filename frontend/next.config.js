@@ -12,6 +12,7 @@ const nextConfig = {
     return config;
   },
   images: {
+    //  use GetImageDomains from Supabase.SQL-Editor
     remotePatterns: [
       {
         protocol: "https",
@@ -136,6 +137,30 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "panoramawellness.ca",
+      },
+      {
+        protocol: "https",
+        hostname: "cdn.prod.website-files.com",
+      },
+      {
+        protocol: "https",
+        hostname: "abbotsford.skylarkclinic.ca",
+      },
+      {
+        protocol: "https",
+        hostname: "cdn-hhfkf.nitrocdn.com",
+      },
+      {
+        protocol: "https",
+        hostname: "images.squarespace-cdn.com",
+      },
+      {
+        protocol: "https",
+        hostname: "repiphany.com",
+      },
+      {
+        protocol: "https",
+        hostname: "vancouvercounsellingclinic.com",
       },
     ],
   },
