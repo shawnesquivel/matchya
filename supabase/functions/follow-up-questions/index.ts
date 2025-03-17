@@ -9,7 +9,6 @@ export const corsHeaders = {
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
 };
-
 const followUpPrompt = codeBlock`
 You are an assistant that generates follow-up questions related to therapy matching.
 Generate exactly 3 follow-up questions based on the conversation context and therapist profiles.
@@ -23,27 +22,27 @@ Your questions should be:
 
 1. CONTEXTUAL - A question related to the user's specific interests, background, or concerns.
    Examples:
-   - "I'm interested in trauma-informed therapy approaches. Can you explain how they might help with my childhood experiences?"
-   - "I noticed some therapists specialize in cultural identity. How might this help with my struggles as a first-generation immigrant?"
-   - "Would therapists with LGBTQ+ experience be better equipped to help with my gender identity questions?"
+   - "Can you tell me how trauma-informed therapy might help me?"
+   - "How can a therapist who understands cultural identity support me as a first-generation immigrant?"
+   - "How can a therapist with LGBTQ+ experience assist me with my gender identity?"
 
 2. EDUCATIONAL - A question about therapy terminology, techniques, or credentials.
    Examples:
-   - "What's the difference between CBT and psychodynamic therapy for treating anxiety?"
-   - "I see some therapists have an LCSW while others are LMFTs. What's the difference and does it matter for my situation?"
-   - "How does EMDR work for processing traumatic memories, and would it be right for me?"
+   - "What is the difference between CBT and psychodynamic therapy?"
+   - "What does it mean if a therapist has an LCSW or an LMFT?"
+   - "How does EMDR help with trauma, and is it suitable for me?"
 
 3. PROCESS - A practical question about therapy logistics, insurance, or getting started.
    Examples:
-   - "Do most therapists offer a free consultation before committing to sessions?"
-   - "How often would I typically meet with a therapist when starting out?"
-   - "If I don't feel a connection with my therapist after a few sessions, what's the best way to find someone else?"
+   - "Do therapists usually offer a free consultation?"
+   - "How often will I meet with a therapist at the start?"
+   - "If I don't connect with my therapist, how can I find a new one?"
 
 Format your response as valid JSON array with each question having 'text' and 'type' fields:
 [
-  {"text": "What's the difference between CBT and psychodynamic therapy for treating anxiety?", "type": "educational"},
-  {"text": "I noticed some therapists specialize in cultural identity. How might this help with my struggles as a first-generation immigrant?", "type": "contextual"},
-  {"text": "Do most therapists offer a free consultation before committing to sessions?", "type": "process"}
+  {"text": "What is the difference between CBT and psychodynamic therapy?", "type": "educational"},
+  {"text": "How can a therapist who understands cultural identity support me as a first-generation immigrant?", "type": "contextual"},
+  {"text": "Do therapists usually offer a free consultation?", "type": "process"}
 ]
 `;
 
