@@ -9,6 +9,35 @@ import { mockTherapist } from "../utils/mockTherapistData";
 import { trackModalOpen, trackOutboundLink } from "../utils/analytics";
 import { ClientOnly } from "./ClientOnly";
 
+// Add utility function to check image domains
+const validateImageUrl = (
+  url: string | null | undefined,
+  therapistInfo: string
+): string => {
+  if (!url) return "/assets/images/default-pp.png";
+
+  try {
+    const parsedUrl = new URL(url);
+    const hostname = parsedUrl.hostname;
+
+    // Check for problem domains - specifically looking for underscores
+    if (hostname.includes("_")) {
+      console.warn(
+        `[Image Domain Warning] Invalid hostname with underscore detected: "${hostname}" for therapist ${therapistInfo}`
+      );
+      return "/assets/images/default-pp.png";
+    }
+
+    return url;
+  } catch (e) {
+    console.error(
+      `[Image URL Error] Invalid URL format: "${url}" for therapist ${therapistInfo}`,
+      e
+    );
+    return "/assets/images/default-pp.png";
+  }
+};
+
 export default function TherapistResultsPanel() {
   const {
     therapists,
@@ -196,13 +225,23 @@ export default function TherapistResultsPanel() {
                         <div className="relative w-24 h-24 rounded-full overflow-hidden mr-4 flex-shrink-0">
                           {therapist.profile_img_url ? (
                             <Image
-                              src={therapist.profile_img_url}
+                              src={validateImageUrl(
+                                therapist.profile_img_url,
+                                `${therapist.first_name} ${therapist.last_name} (ID: ${therapist.id})`
+                              )}
                               alt={`${therapist.first_name} ${therapist.last_name}`}
                               fill
                               className="object-cover"
                               onError={(e: any) => {
                                 const target = e.target as HTMLImageElement;
                                 target.onerror = null; // Prevent infinite loop
+                                console.error(
+                                  `Image load error for therapist "${therapist.first_name} ${therapist.last_name}" (ID: ${therapist.id})`,
+                                  {
+                                    url: therapist.profile_img_url,
+                                    error: e.error || "Unknown error",
+                                  }
+                                );
                                 target.src = "/assets/images/default-pp.png";
                               }}
                             />
@@ -355,13 +394,23 @@ export default function TherapistResultsPanel() {
                             <div className="relative w-16 h-16 rounded-full overflow-hidden flex-shrink-0">
                               {therapist.profile_img_url ? (
                                 <Image
-                                  src={therapist.profile_img_url}
+                                  src={validateImageUrl(
+                                    therapist.profile_img_url,
+                                    `${therapist.first_name} ${therapist.last_name} (ID: ${therapist.id})`
+                                  )}
                                   alt={`${therapist.first_name} ${therapist.last_name}`}
                                   fill
                                   className="object-cover"
                                   onError={(e: any) => {
                                     const target = e.target as HTMLImageElement;
                                     target.onerror = null; // Prevent infinite loop
+                                    console.error(
+                                      `Image load error for therapist "${therapist.first_name} ${therapist.last_name}" (ID: ${therapist.id})`,
+                                      {
+                                        url: therapist.profile_img_url,
+                                        error: e.error || "Unknown error",
+                                      }
+                                    );
                                     target.src =
                                       "/assets/images/default-pp.png";
                                   }}

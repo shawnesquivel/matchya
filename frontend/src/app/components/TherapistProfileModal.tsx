@@ -17,6 +17,35 @@ import CalendarIcon from "../../components/icons/CalendarIcon";
 import { trackOutboundLink } from "../utils/analytics";
 import CollapsibleAreasOfFocus from "@/app/components/CollapsibleAreasOfFocus";
 
+// Add utility function to check image domains
+const validateImageUrl = (
+  url: string | null | undefined,
+  therapistInfo: string
+): string => {
+  if (!url) return "/assets/images/default-pp.png";
+
+  try {
+    const parsedUrl = new URL(url);
+    const hostname = parsedUrl.hostname;
+
+    // Check for problem domains - specifically looking for underscores
+    if (hostname.includes("_")) {
+      console.warn(
+        `[Modal Image Domain Warning] Invalid hostname with underscore detected: "${hostname}" for therapist ${therapistInfo}`
+      );
+      return "/assets/images/default-pp.png";
+    }
+
+    return url;
+  } catch (e) {
+    console.error(
+      `[Modal Image URL Error] Invalid URL format: "${url}" for therapist ${therapistInfo}`,
+      e
+    );
+    return "/assets/images/default-pp.png";
+  }
+};
+
 // CSS for fill-from-left hover effect
 const buttonHoverStyles = `
   .fill-from-left {
@@ -201,10 +230,25 @@ export default function TherapistProfileModal({
                     <div className="absolute max-w-[150px] md:max-w-none w-full bottom-0 border border-grey-extraDark aspect-square rounded-full overflow-hidden md:translate-y-[50%]">
                       {displayTherapist.profile_img_url ? (
                         <Image
-                          src={displayTherapist.profile_img_url}
+                          src={validateImageUrl(
+                            displayTherapist.profile_img_url,
+                            `${displayTherapist.first_name} ${displayTherapist.last_name} (ID: ${displayTherapist.id})`
+                          )}
                           alt={`${displayTherapist.first_name} ${displayTherapist.last_name}`}
                           fill
                           className="object-cover"
+                          onError={(e: any) => {
+                            const target = e.target as HTMLImageElement;
+                            target.onerror = null; // Prevent infinite loop
+                            console.error(
+                              `[TherapistProfileModal] Image load error for therapist "${displayTherapist.first_name} ${displayTherapist.last_name}" (ID: ${displayTherapist.id})`,
+                              {
+                                url: displayTherapist.profile_img_url,
+                                errorType: e.type || "Unknown error",
+                              }
+                            );
+                            target.src = "/assets/images/default-pp.png";
+                          }}
                         />
                       ) : (
                         <div className="bg-grey-light h-full w-full flex items-center justify-center"></div>
