@@ -517,8 +517,7 @@ export default function TherapistResultsPanel() {
                   Ready to find your match?
                 </p>
                 <p className="text-base mb-4">
-                  Use the filters on the left to refine your search, or simply
-                  describe what you're looking for in the chat.
+                  Describe what you're looking for in therapy or a therapist.
                 </p>
               </div>
             )}
