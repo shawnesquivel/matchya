@@ -200,9 +200,10 @@ export default function TherapistResultsPanel() {
                               alt={`${therapist.first_name} ${therapist.last_name}`}
                               fill
                               className="object-cover"
-                              onError={(e) => {
-                                e.currentTarget.src =
-                                  "/assets/images/default-pp.png";
+                              onError={(e: any) => {
+                                const target = e.target as HTMLImageElement;
+                                target.onerror = null; // Prevent infinite loop
+                                target.src = "/assets/images/default-pp.png";
                               }}
                             />
                           ) : (
@@ -211,6 +212,7 @@ export default function TherapistResultsPanel() {
                               alt={`${therapist.first_name} ${therapist.last_name}`}
                               fill
                               className="object-cover"
+                              priority
                             />
                           )}
                         </div>
@@ -357,9 +359,10 @@ export default function TherapistResultsPanel() {
                                   alt={`${therapist.first_name} ${therapist.last_name}`}
                                   fill
                                   className="object-cover"
-                                  onError={(e) => {
-                                    // When image fails to load, use default profile picture
-                                    e.currentTarget.src =
+                                  onError={(e: any) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.onerror = null; // Prevent infinite loop
+                                    target.src =
                                       "/assets/images/default-pp.png";
                                   }}
                                 />
@@ -369,6 +372,7 @@ export default function TherapistResultsPanel() {
                                   alt={`${therapist.first_name} ${therapist.last_name}`}
                                   fill
                                   className="object-cover"
+                                  priority
                                 />
                               )}
                             </div>
