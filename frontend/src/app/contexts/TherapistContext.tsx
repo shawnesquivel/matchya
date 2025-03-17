@@ -97,7 +97,6 @@ const saveTherapistsToStorage = (therapists: Therapist[]) => {
   try {
     if (typeof window !== "undefined") {
       localStorage.setItem(STORAGE_KEYS.THERAPISTS, JSON.stringify(therapists));
-      console.log("[TherapistContext] Saved therapists to localStorage");
     }
   } catch (error) {
     console.error(
@@ -113,7 +112,6 @@ const loadFiltersFromStorage = (): TherapistFilters | null => {
     if (typeof window !== "undefined") {
       const savedFilters = localStorage.getItem(STORAGE_KEYS.FILTERS);
       if (savedFilters) {
-        console.log("[TherapistContext] Loaded filters from localStorage");
         return JSON.parse(savedFilters);
       }
     }
@@ -133,7 +131,6 @@ const loadTherapistsFromStorage = (): Therapist[] | null => {
     if (typeof window !== "undefined") {
       const savedTherapists = localStorage.getItem(STORAGE_KEYS.THERAPISTS);
       if (savedTherapists) {
-        console.log("[TherapistContext] Loaded therapists from localStorage");
         return JSON.parse(savedTherapists);
       }
     }
@@ -463,8 +460,6 @@ export function TherapistProvider({ children }) {
             therapists: savedTherapists || [],
           },
         });
-
-        console.log("[TherapistProvider] Hydrated state from localStorage");
       } catch (error) {
         console.error(
           "[TherapistProvider] Error hydrating from localStorage:",

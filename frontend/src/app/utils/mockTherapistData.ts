@@ -219,6 +219,3 @@ export const shouldUseMockDataForSlug = (slug: string): boolean => {
   const shouldUseMock = slug === "test-user" || slug === "emma-thompson";
   return shouldUseMock;
 };
-
-// Log that mock data is loaded for debugging
-console.log("[mockTherapistData] Mock therapist module loaded");
