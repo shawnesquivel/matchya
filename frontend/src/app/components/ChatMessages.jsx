@@ -79,6 +79,7 @@ const MessageItem = memo(
     // If it's an assistant message, check if we need to split it
     const shouldSplitMessage =
       message.role === "assistant" && !message.isTyping;
+    const shouldAnimate = shouldSplitMessage && isLast; // Only animate if it's the last message
     const paragraphs = shouldSplitMessage
       ? splitIntoParagraphs(message.content || "")
       : [message.content];
@@ -86,23 +87,23 @@ const MessageItem = memo(
     // State to track which paragraphs are visible
     const [visibleParagraphs, setVisibleParagraphs] = useState([]);
 
-    // Add staggered animation effect
+    // Add staggered animation effect only for the last message
     useEffect(() => {
-      if (!shouldSplitMessage) {
-        setVisibleParagraphs([0]); // Show the single paragraph immediately
+      if (!shouldAnimate) {
+        setVisibleParagraphs(paragraphs.map((_, i) => i)); // Show all paragraphs immediately
         return;
       }
 
       // Reset visible paragraphs when message changes
       setVisibleParagraphs([]);
 
-      // Reveal paragraphs one by one with a delay
+      // Reveal paragraphs one by one with a delay only for the last message
       paragraphs.forEach((_, index) => {
         setTimeout(() => {
           setVisibleParagraphs((prev) => [...prev, index]);
-        }, index * 750); // 750ms delay between each paragraph
+        }, index * 1000);
       });
-    }, [message.content, paragraphs.length, shouldSplitMessage]);
+    }, [message.content, paragraphs.length, shouldAnimate]);
 
     const typedText = useTypingEffect(
       message.content || "",
@@ -130,6 +131,35 @@ const MessageItem = memo(
           </div>
           <div className="bg-beige-extralight message p-3 h-fit max-w-full rounded-md text-sm w-fit assistant mt-1">
             <Loader />
+          </div>
+        </div>
+      );
+    }
+
+    // For non-last assistant messages, show content immediately
+    if (message.role === "assistant" && !isLast && !message.isTyping) {
+      return (
+        <div className="flex flex-col mb-2">
+          <div className="rounded flex gap-2 align-center relative overflow-hidden h-fit">
+            <Image
+              src={`/assets/images/matchya.png`}
+              alt={`assistant's profile`}
+              width={32}
+              height={32}
+              className="w-8 h-8 rounded-full assistant"
+              priority
+              unoptimized
+            />
+            <p className="mt-1.5 text-sm">matchya</p>
+          </div>
+          <div className="bg-beige-extralight message p-3 h-fit max-w-full rounded-md text-sm w-fit assistant mt-1">
+            <div className="flex justify-start align-middle gap-4 w-full h-fit">
+              <p className="sm:mt-[2px] mt-[unset] max-w-full h-fit assistant">
+                <div className="assistant">
+                  <ReactMarkdown>{message.content}</ReactMarkdown>
+                </div>
+              </p>
+            </div>
           </div>
         </div>
       );
