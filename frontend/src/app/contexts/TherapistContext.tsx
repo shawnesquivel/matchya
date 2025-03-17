@@ -278,16 +278,16 @@ function therapistReducer(state, action) {
       return newState;
 
     case ACTIONS.RESET_CHAT:
-      // Note: We don't save the empty therapists array to localStorage here
-      // because we're explicitly removing it in the resetChat function
+      // Note: We don't save the empty therapists array or default filters to localStorage here
+      // because we're explicitly removing them in the resetChat function
       return {
         ...initialState,
         chatId: action.payload?.chatId || crypto.randomUUID(),
         requestCount: state.requestCount,
         followUpQuestions: [], // Clear follow-up questions on reset
-        // Keep filters but clear therapists on reset
+        // Reset therapists and filters to defaults
         therapists: [], // Clear therapists list on New Chat
-        filters: state.filters, // Still maintain filter selections
+        filters: defaultFilters, // Reset filters to default values
         isHydrated: state.isHydrated, // Maintain hydration status
       };
 
@@ -554,22 +554,23 @@ export function TherapistProvider({ children }) {
     const newChatId = generateUniqueID();
     setCookiesChatId(newChatId); // Store in cookie
 
-    // Clear therapists from localStorage
+    // Clear therapists and filters from localStorage
     if (typeof window !== "undefined") {
       try {
         localStorage.removeItem(STORAGE_KEYS.THERAPISTS);
+        localStorage.removeItem(STORAGE_KEYS.FILTERS);
         console.log(
-          "[TherapistContext] Cleared therapists from localStorage during reset"
+          "[TherapistContext] Cleared therapists and filters from localStorage during reset"
         );
       } catch (error) {
         console.error(
-          "[TherapistContext] Error clearing therapists from localStorage:",
+          "[TherapistContext] Error clearing data from localStorage:",
           error
         );
       }
     }
 
-    // Clear therapists and reset chat
+    // Clear therapists, reset filters, and reset chat
     dispatch({ type: ACTIONS.RESET_CHAT, payload: { chatId: newChatId } });
 
     // Add welcome message after reset
