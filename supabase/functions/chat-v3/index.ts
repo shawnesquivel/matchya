@@ -90,7 +90,8 @@ Deno.serve(async (req) => {
     const corsResponse = handleCors(req);
     if (corsResponse) return corsResponse;
 
-    const { chatId, messages, matchedTherapists } = await req.json();
+    const { chatId, messages, matchedTherapists, isFollowUp = false } =
+      await req.json();
 
     // Safely handle matchedTherapists
     const allTherapists = Array.isArray(matchedTherapists)
@@ -106,6 +107,7 @@ Deno.serve(async (req) => {
       allTherapists.length,
     );
     console.log("[chat-v3]: Processing top 3 therapists for response");
+    console.log("[chat-v3]: Is follow-up question:", isFollowUp);
 
     // Log therapist names of the top 3
     const therapistCount = therapists.length;
@@ -136,6 +138,12 @@ Deno.serve(async (req) => {
     // Create prompt with therapist information
     const basePrompt = defaultPrompt;
     let fullPrompt = basePrompt;
+
+    // If this is a follow-up question, add special instructions
+    if (isFollowUp) {
+      fullPrompt +=
+        `\n\nIMPORTANT FOLLOW-UP CONTEXT: The user is asking a follow-up question about therapy or the process. This is NOT a request for new therapist recommendations. Maintain the context of previous therapist recommendations and respond to their question directly.`;
+    }
 
     if (therapists.length > 0) {
       fullPrompt += "\n\nHere are the top matched therapists for the user:\n";

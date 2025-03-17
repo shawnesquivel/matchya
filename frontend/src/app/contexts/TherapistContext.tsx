@@ -210,6 +210,8 @@ type DirectFilterUpdate = {
 type ChatBasedUpdate = {
   type: "CHAT";
   message: string;
+  isFollowUp?: boolean;
+  preserveTherapists?: boolean;
 };
 
 type TherapistUpdate = DirectFilterUpdate | ChatBasedUpdate;
@@ -637,13 +639,19 @@ export function TherapistProvider({ children }) {
               triggerSource: "CHAT",
               lastUserMessage: update.message,
               filterOnly: false,
+              isFollowUp: update.isFollowUp || false, // Pass the flag to the backend
             }),
           }
         );
 
         const matchData = await response.json();
 
-        if (matchData.therapists && Array.isArray(matchData.therapists)) {
+        // Only update therapists if we have new therapists AND we're not preserving existing ones
+        if (
+          matchData.therapists &&
+          Array.isArray(matchData.therapists) &&
+          matchData.therapists.length > 0
+        ) {
           const uniqueTherapists = deduplicateTherapists(matchData.therapists);
           dispatch({
             type: ACTIONS.UPDATE_CHAT_RESULTS,
@@ -653,6 +661,21 @@ export function TherapistProvider({ children }) {
               message: update.message,
             },
           });
+        } else if (!update.preserveTherapists) {
+          // Only clear therapists if not a follow-up question
+          console.log(
+            "No therapists returned and not preserving existing ones"
+          );
+          dispatch({
+            type: ACTIONS.UPDATE_CHAT_RESULTS,
+            payload: {
+              therapists: [],
+              filters: matchData.extractedFilters || {},
+              message: update.message,
+            },
+          });
+        } else {
+          console.log("Preserving existing therapists for follow-up question");
         }
 
         // Process chat response - pass chatId to enable history storage
@@ -672,6 +695,7 @@ export function TherapistProvider({ children }) {
                 { role: "user", content: update.message },
               ],
               matchedTherapists: matchData.therapists || [],
+              isFollowUp: update.isFollowUp || false, // Pass flag to chat endpoint
             }),
           }
         );
@@ -702,10 +726,13 @@ export function TherapistProvider({ children }) {
         }
 
         // After receiving the main response, fetch follow-up questions
-        await fetchFollowUpQuestions(
-          update.message,
-          matchData.therapists || []
-        );
+        // For follow-up questions, use the current therapists rather than potentially empty results
+        const therapistsForFollowUps =
+          update.preserveTherapists && matchData.therapists.length === 0
+            ? state.therapists
+            : matchData.therapists || [];
+
+        await fetchFollowUpQuestions(update.message, therapistsForFollowUps);
 
         // Set isSendingChat back to false when chat response is received
         dispatch({ type: ACTIONS.SET_SENDING_CHAT, payload: false });
@@ -841,7 +868,12 @@ export function TherapistProvider({ children }) {
     });
 
     // Send the question as a user message
-    await updateTherapists({ type: "CHAT", message: questionText });
+    await updateTherapists({
+      type: "CHAT",
+      message: questionText,
+      isFollowUp: true, // Add flag to identify this as a follow-up question
+      preserveTherapists: true, // Flag to preserve existing therapists
+    });
   };
 
   const toggleMockData = (value?: boolean) => {

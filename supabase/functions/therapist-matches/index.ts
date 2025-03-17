@@ -27,6 +27,7 @@ type DetermineUserMessageIntentContext = {
     first_name: string;
     last_name: string;
   }[];
+  isFollowUp?: boolean;
 };
 interface TherapistFee {
   session_type: string;
@@ -123,6 +124,7 @@ Deno.serve(async (req) => {
       lastUserMessage,
       filterOnly = false,
       triggerSource,
+      isFollowUp = false,
     } = await req.json();
 
     // -------------------------
@@ -424,19 +426,49 @@ Deno.serve(async (req) => {
     const isFirstMessage = messages.length === 0;
     console.log(`[therapist-matches]: isFirstMessage ${isFirstMessage}`);
 
-    const isUserAskingForTherapist = await determineUserMessageIntent(
-      userMessage,
-      {
-        isFirstMessage,
-        currentTherapists: messages.map((
-          m: { id: string; first_name: string; last_name: string },
-        ) => ({
-          id: m.id,
-          first_name: m.first_name,
-          last_name: m.last_name,
-        })),
-      },
-    );
+    // If this is a follow-up question, assume it's not asking for therapists
+    // unless it clearly is (e.g., "Can you show me more therapists?")
+    let isUserAskingForTherapist;
+
+    if (isFollowUp) {
+      console.log("[therapist-matches]: Processing as follow-up question");
+
+      // For follow-up questions, we'll still check intent but with a higher threshold
+      isUserAskingForTherapist = await determineUserMessageIntent(
+        userMessage,
+        {
+          isFirstMessage,
+          currentTherapists: messages.map((
+            m: { id: string; first_name: string; last_name: string },
+          ) => ({
+            id: m.id,
+            first_name: m.first_name,
+            last_name: m.last_name,
+          })),
+          isFollowUp: true, // Add this flag
+        },
+      );
+
+      console.log(
+        "[therapist-matches]: Follow-up question intent:",
+        isUserAskingForTherapist,
+      );
+    } else {
+      // Process normal messages as before
+      isUserAskingForTherapist = await determineUserMessageIntent(
+        userMessage,
+        {
+          isFirstMessage,
+          currentTherapists: messages.map((
+            m: { id: string; first_name: string; last_name: string },
+          ) => ({
+            id: m.id,
+            first_name: m.first_name,
+            last_name: m.last_name,
+          })),
+        },
+      );
+    }
 
     console.log(
       { isUserAskingForTherapist },
@@ -678,6 +710,20 @@ const determineUserMessageIntent = async (
             : ""
         }
   
+  ${
+          context.isFollowUp
+            ? `
+  IMPORTANT: This message is a follow-up question after being shown therapists. 
+  For follow-up questions, only classify as a therapist request if they are SPECIFICALLY:
+  - Asking for different therapists
+  - Adding new criteria for therapists
+  - Explicitly asking to see more options
+  
+  Otherwise, treat it as a general question about therapy or the existing therapists.
+  `
+            : ""
+        }
+  
   Consider a message as a therapist request if it mentions any subtle hints about the following:
   - demographic preferences (gender, ethnicity, age, etc.)
   - therapy style or approach preferences
@@ -711,7 +757,7 @@ const determineUserMessageIntent = async (
 
   console.log(
     `[determineUserMessageIntent]`,
-    { userMessage },
+    { userMessage, isFollowUp: context.isFollowUp || false },
   );
 
   const ClassifyUserIntent = z.object({
@@ -731,6 +777,7 @@ const determineUserMessageIntent = async (
       model: "gpt-4o-mini",
       messageLength: userMessage.length,
       isFirstMessage: context.isFirstMessage,
+      isFollowUp: context.isFollowUp || false,
       isTherapistRequest:
         completion.choices[0].message.parsed.isTherapistRequest,
     });

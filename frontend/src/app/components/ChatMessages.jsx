@@ -169,7 +169,7 @@ const MessageItem = memo(
     return (
       <div
         className={`flex flex-col mb-2 ${isLast ? "flex-grow" : ""}`}
-        key={`${chatId}-${message.id || index}`}
+        key={`${chatId}-${message.id || Date.now()}`}
       >
         {shouldSplitMessage ? (
           // Render multiple message bubbles for the assistant
