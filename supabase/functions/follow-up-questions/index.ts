@@ -1,14 +1,15 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { codeBlock } from "common-tags";
+import { codeBlock } from "npm:common-tags";
 import { createPerformanceTracker } from "../_lib/performance.ts";
 
-const FOLLOW_UP_LLM_PROVIDER = "gpt-4o";
+const FOLLOW_UP_LLM_PROVIDER = "gpt-4o-mini";
 
 export const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
 };
+
 const followUpPrompt = codeBlock`
 You are an assistant that generates follow-up questions related to therapy matching.
 Generate exactly 3 follow-up questions based on the conversation context and therapist profiles.
@@ -26,10 +27,10 @@ Your questions should be:
    - "How can a therapist who understands cultural identity support me as a first-generation immigrant?"
    - "How can a therapist with LGBTQ+ experience assist me with my gender identity?"
 
-2. EDUCATIONAL - A question about therapy terminology, techniques, or credentials.
+2. EDUCATIONAL - A question about therapy terminology, techniques, or credentials, from the recommended therapists.
    Examples:
    - "What is the difference between CBT and psychodynamic therapy?"
-   - "What does it mean if a therapist has an LCSW or an LMFT?"
+   - "What is an RCC, and is it covered by insurance?"
    - "How does EMDR help with trauma, and is it suitable for me?"
 
 3. PROCESS - A practical question about therapy logistics, insurance, or getting started.
@@ -209,19 +210,89 @@ Deno.serve(async (req) => {
     try {
       // Parse the JSON response - it should be a string containing JSON
       const content = result.choices[0].message.content;
-      const parsedContent = JSON.parse(content);
+      console.log("[follow-up-questions]: Raw LLM response:", content);
 
-      // Extract the questions array
-      questions = Array.isArray(parsedContent)
-        ? parsedContent
-        : parsedContent.questions || [];
+      let parsedContent;
+      try {
+        parsedContent = JSON.parse(content);
+        console.log(
+          "[follow-up-questions]: Successfully parsed JSON:",
+          parsedContent,
+        );
+      } catch (parseError) {
+        console.error("[follow-up-questions]: JSON parse error:", parseError);
+        console.error(
+          "[follow-up-questions]: Failed to parse content:",
+          content,
+        );
 
-      // Ensure we have valid questions
-      questions = questions.filter((q: Question) =>
-        q && typeof q.text === "string"
-      ).slice(0, 3);
-    } catch (e) {
-      console.error("[follow-up-questions]: Failed to parse questions:", e);
+        // Attempt to extract JSON from the content if it's embedded in text
+        const jsonMatch = content.match(/\[[\s\S]*\]/);
+        if (jsonMatch) {
+          try {
+            parsedContent = JSON.parse(jsonMatch[0]);
+            console.log(
+              "[follow-up-questions]: Successfully parsed JSON from match:",
+              parsedContent,
+            );
+          } catch (retryError) {
+            console.error(
+              "[follow-up-questions]: Retry parse error:",
+              retryError,
+            );
+            throw new Error("Could not parse questions from response");
+          }
+        } else {
+          throw new Error("No valid JSON array found in response");
+        }
+      }
+
+      // Extract and validate questions array
+      if (Array.isArray(parsedContent)) {
+        questions = parsedContent;
+      } else if (parsedContent && Array.isArray(parsedContent.questions)) {
+        questions = parsedContent.questions;
+      } else {
+        console.error(
+          "[follow-up-questions]: Invalid questions format:",
+          parsedContent,
+        );
+        throw new Error("Response did not contain a valid questions array");
+      }
+
+      // Validate and clean each question
+      questions = questions
+        .filter((q: any): q is Question => {
+          const isValid = q &&
+            typeof q.text === "string" &&
+            q.text.trim() !== "" &&
+            typeof q.type === "string" &&
+            ["contextual", "educational", "process"].includes(q.type);
+
+          if (!isValid) {
+            console.warn(
+              "[follow-up-questions]: Filtered out invalid question:",
+              q,
+            );
+          }
+          return isValid;
+        })
+        .slice(0, 3)
+        .map((q) => ({
+          text: q.text.trim(),
+          type: q.type,
+        }));
+
+      console.log(
+        "[follow-up-questions]: Final processed questions:",
+        questions,
+      );
+    } catch (e: unknown) {
+      console.error("[follow-up-questions]: Error processing questions:", e);
+      console.error("[follow-up-questions]: Error details:", {
+        message: e instanceof Error ? e.message : String(e),
+        stack: e instanceof Error ? e.stack : undefined,
+      });
       questions = [];
     }
 
