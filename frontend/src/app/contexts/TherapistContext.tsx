@@ -88,10 +88,7 @@ const saveFiltersToStorage = (filters: TherapistFilters) => {
       console.log("[TherapistContext] Saved filters to localStorage");
     }
   } catch (error) {
-    console.error(
-      "[TherapistContext] Error saving filters to localStorage:",
-      error
-    );
+    console.error("[TherapistContext] Error saving filters to localStorage:", error);
   }
 };
 
@@ -102,10 +99,7 @@ const saveTherapistsToStorage = (therapists: Therapist[]) => {
       localStorage.setItem(STORAGE_KEYS.THERAPISTS, JSON.stringify(therapists));
     }
   } catch (error) {
-    console.error(
-      "[TherapistContext] Error saving therapists to localStorage:",
-      error
-    );
+    console.error("[TherapistContext] Error saving therapists to localStorage:", error);
   }
 };
 
@@ -120,10 +114,7 @@ const loadFiltersFromStorage = (): TherapistFilters | null => {
     }
     return null;
   } catch (error) {
-    console.error(
-      "[TherapistContext] Error loading filters from localStorage:",
-      error
-    );
+    console.error("[TherapistContext] Error loading filters from localStorage:", error);
     return null;
   }
 };
@@ -139,10 +130,7 @@ const loadTherapistsFromStorage = (): Therapist[] | null => {
     }
     return null;
   } catch (error) {
-    console.error(
-      "[TherapistContext] Error loading therapists from localStorage:",
-      error
-    );
+    console.error("[TherapistContext] Error loading therapists from localStorage:", error);
     return null;
   }
 };
@@ -346,8 +334,7 @@ function therapistReducer(state, action) {
     case ACTIONS.TOGGLE_MOCK_DATA:
       return {
         ...state,
-        useMockData:
-          action.payload !== undefined ? action.payload : !state.useMockData,
+        useMockData: action.payload !== undefined ? action.payload : !state.useMockData,
       };
 
     case ACTIONS.UPDATE_CHAT_RESULTS:
@@ -445,9 +432,13 @@ export function TherapistProvider({ children }) {
       setCookiesChatId(state.chatId);
     }
 
-    // If we have a chatId, load history
-    if (state.chatId) {
+    // Only attempt to load chat history in production
+    if (process.env.NODE_ENV === "production" && state.chatId) {
       loadChatHistory(state.chatId);
+    } else {
+      // In development, just set loading to false and let welcome message show
+      dispatch({ type: ACTIONS.SET_LOADING_HISTORY, payload: false });
+      dispatch({ type: ACTIONS.SET_MESSAGES, payload: [] });
     }
 
     // Only run client-side localStorage hydration once after mounting
@@ -467,10 +458,7 @@ export function TherapistProvider({ children }) {
           },
         });
       } catch (error) {
-        console.error(
-          "[TherapistProvider] Error hydrating from localStorage:",
-          error
-        );
+        console.error("[TherapistProvider] Error hydrating from localStorage:", error);
       }
     }
   }, []);
@@ -492,6 +480,14 @@ export function TherapistProvider({ children }) {
 
   // Add loadChatHistory function
   const loadChatHistory = async (chatId) => {
+    // Skip chat history loading in development
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[TherapistContext] Skipping chat history load in development");
+      dispatch({ type: ACTIONS.SET_LOADING_HISTORY, payload: false });
+      dispatch({ type: ACTIONS.SET_MESSAGES, payload: [] });
+      return;
+    }
+
     try {
       dispatch({ type: ACTIONS.SET_LOADING_HISTORY, payload: true });
 
@@ -523,10 +519,7 @@ export function TherapistProvider({ children }) {
             timestamp: msg.created_at, // Keep timestamp for sorting
           }))
           // Ensure messages are in chronological order
-          .sort(
-            (a, b) =>
-              new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-          );
+          .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
         dispatch({ type: ACTIONS.SET_MESSAGES, payload: formattedMessages });
       } else {
@@ -563,10 +556,7 @@ export function TherapistProvider({ children }) {
           "[TherapistContext] Cleared therapists and filters from localStorage during reset"
         );
       } catch (error) {
-        console.error(
-          "[TherapistContext] Error clearing data from localStorage:",
-          error
-        );
+        console.error("[TherapistContext] Error clearing data from localStorage:", error);
       }
     }
 
@@ -586,9 +576,7 @@ export function TherapistProvider({ children }) {
 
   const deduplicateTherapists = (therapists: Therapist[]): Therapist[] => {
     if (!therapists || !therapists.length) return [];
-    return Array.from(
-      new Map(therapists.map((therapist) => [therapist.id, therapist])).values()
-    );
+    return Array.from(new Map(therapists.map((therapist) => [therapist.id, therapist])).values());
   };
 
   // New unified update function
@@ -663,9 +651,7 @@ export function TherapistProvider({ children }) {
           });
         } else if (!update.preserveTherapists) {
           // Only clear therapists if not a follow-up question
-          console.log(
-            "No therapists returned and not preserving existing ones"
-          );
+          console.log("No therapists returned and not preserving existing ones");
           dispatch({
             type: ACTIONS.UPDATE_CHAT_RESULTS,
             payload: {
@@ -701,9 +687,7 @@ export function TherapistProvider({ children }) {
         );
 
         if (!chatResponse.ok) {
-          throw new Error(
-            `Failed to get chat response: ${chatResponse.status}`
-          );
+          throw new Error(`Failed to get chat response: ${chatResponse.status}`);
         }
 
         const chatData = await chatResponse.json();
@@ -825,10 +809,7 @@ export function TherapistProvider({ children }) {
       const data = await response.json();
 
       if (!data.questions || !Array.isArray(data.questions)) {
-        console.error(
-          "[fetchFollowUpQuestions] Invalid response format:",
-          data
-        );
+        console.error("[fetchFollowUpQuestions] Invalid response format:", data);
         return;
       }
 
@@ -836,9 +817,7 @@ export function TherapistProvider({ children }) {
         // Add unique IDs to the questions to track them
         const questionsWithIds = data.questions.map((q) => ({
           ...q,
-          id: `followup-${Date.now()}-${Math.random()
-            .toString(36)
-            .substr(2, 9)}`,
+          id: `followup-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         }));
 
         dispatch({
@@ -859,9 +838,7 @@ export function TherapistProvider({ children }) {
   // Add sendFollowUpQuestion function to handle when a user clicks a question
   const sendFollowUpQuestion = async (questionText, questionId) => {
     // Remove the question from the state
-    const updatedQuestions = state.followUpQuestions.filter(
-      (q) => q.id !== questionId
-    );
+    const updatedQuestions = state.followUpQuestions.filter((q) => q.id !== questionId);
     dispatch({
       type: ACTIONS.SET_FOLLOW_UP_QUESTIONS,
       payload: updatedQuestions,

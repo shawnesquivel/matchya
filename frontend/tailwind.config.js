@@ -48,7 +48,8 @@ module.exports = {
         },
       },
       fontFamily: {
-        tuppence: ["tuppence", "serif"],
+        tuppence: ["var(--font-tuppence)"],
+        'new-spirit': ['new-spirit', 'serif'],
       },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",

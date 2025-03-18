@@ -18,11 +18,10 @@ export default function TherapistQualifications({
 }: TherapistQualificationsProps) {
   const containerClasses =
     variant === "modal"
-      ? "border border-grey-dark rounded-lg p-8 flex flex-col gap-6"
-      : "border border-grey-dark rounded-lg p-8 flex flex-col gap-6";
+      ? "border border-grey-dark rounded-lg sm:p-8 p-4 flex flex-col gap-6"
+      : "border border-grey-dark rounded-lg sm:p-8 p-4 flex flex-col gap-6";
 
-  const titleClasses =
-    variant === "modal" ? "font-medium text-xl" : "font-medium text-2xl";
+  const titleClasses = variant === "modal" ? "font-medium text-xl" : "font-medium text-2xl";
 
   return (
     <div className={`${containerClasses} ${className}`}>
@@ -65,9 +64,7 @@ export default function TherapistQualifications({
         {therapist.qualifications && therapist.qualifications.length > 0 && (
           <div className="flex flex-col gap-2">
             <hr className="border-grey-light mt-2 mb-4" />
-            <h3 className="text-xs font-medium">
-              Certifications & Specialties
-            </h3>
+            <h3 className="text-xs font-medium">Certifications & Specialties</h3>
             <ul className="list-disc space-y-0.5 ml-4">
               {therapist.qualifications.map((qual, index) => (
                 <li key={index} className="">
@@ -98,11 +95,8 @@ export default function TherapistQualifications({
         {/* No qualifications case */}
         {(!therapist.education || therapist.education.length === 0) &&
           (!therapist.experience || therapist.experience.length === 0) &&
-          (!therapist.qualifications ||
-            therapist.qualifications.length === 0) && (
-            <p className="text-sm text-grey-extraDark">
-              Qualification information not available
-            </p>
+          (!therapist.qualifications || therapist.qualifications.length === 0) && (
+            <p className="text-sm text-grey-extraDark">Qualification information not available</p>
           )}
       </div>
     </div>

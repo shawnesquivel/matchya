@@ -1,9 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import {
-  TherapistProfile,
-  getTherapistProfile,
-} from "../utils/supabaseHelpers";
+import { TherapistProfile, getTherapistProfile } from "../utils/supabaseHelpers";
 import CollapsibleApproaches from "@/app/components/CollapsibleApproaches";
 import TherapistFees from "./TherapistFees";
 import TherapistLicenses from "./TherapistLicenses";
@@ -18,10 +15,7 @@ import { trackOutboundLink } from "../utils/analytics";
 import CollapsibleAreasOfFocus from "@/app/components/CollapsibleAreasOfFocus";
 
 // Add utility function to check image domains
-const validateImageUrl = (
-  url: string | null | undefined,
-  therapistInfo: string
-): string => {
+const validateImageUrl = (url: string | null | undefined, therapistInfo: string): string => {
   if (!url) return "/assets/images/default-pp.png";
 
   try {
@@ -165,7 +159,7 @@ export default function TherapistProfileModal({
       aria-labelledby="therapist-profile-title"
     >
       <div
-        className="bg-white rounded-lg w-full max-w-5xl max-h-[90vh] overflow-y-auto relative animate-slideIn"
+        className="bg-white rounded-lg w-full sm:max-w-5xl max-h-[90vh] overflow-y-auto relative animate-slideIn"
         onClick={(e) => e.stopPropagation()} // Prevent clicks inside the modal from closing it
       >
         {/* Close button */}
@@ -222,12 +216,12 @@ export default function TherapistProfileModal({
         ) : displayTherapist ? (
           <div>
             {/* Banner and Header styled like the slug page */}
-            <div className="bg-beige sm:py-14 py-20"></div>
-            <div className="bg-white pt-8 px-8">
+            <div className="bg-beige sm:py-14 py-12"></div>
+            <div className="bg-white sm:pt-8 sm:px-8 pt-6 px-4">
               <div className="grid grid-cols-6 gap-8 container mx-auto">
                 <div className="relative md:col-span-1 sm:col-span-2 col-span-6">
                   <div className="relative w-[40vw] md:w-full md:left-0 md:translate-x-0">
-                    <div className="absolute max-w-[150px] md:max-w-none w-full bottom-0 border border-grey-extraDark aspect-square rounded-full overflow-hidden md:translate-y-[50%]">
+                    <div className="absolute sm:max-w-[150px] max-w-[100px] md:max-w-none w-full bottom-0 border border-grey-extraDark aspect-square rounded-full overflow-hidden md:translate-y-[50%]">
                       {displayTherapist.profile_img_url ? (
                         <Image
                           src={validateImageUrl(
@@ -257,18 +251,16 @@ export default function TherapistProfileModal({
                   </div>
                 </div>
                 <div className="flex flex-col gap-2 md:col-span-3 col-span-6">
-                  <h1 className="text-3xl lg:text-4xl font-medium">
+                  <h1 className="font-new-spirit text-3xl lg:text-4xl font-light">
                     {displayTherapist.first_name || "Name Not Available"}{" "}
                     {displayTherapist.last_name || ""}
                   </h1>
                   {/* Add pronouns below the therapist's name */}
                   {displayTherapist.pronouns && (
-                    <p className="text-sm text-gray-500">
-                      {displayTherapist.pronouns}
-                    </p>
+                    <p className="text-sm text-gray-500">{displayTherapist.pronouns}</p>
                   )}
                 </div>
-                <div className="md:col-span-2 col-span-6 flex gap-2 mb-6 sm:mb-0 md:justify-end justify-start sm:flex-col-reverse lg:flex-col">
+                <div className="md:col-span-2 col-span-6 flex gap-2 mb-6 sm:mb-0 md:justify-end justify-start flex-col-reverse lg:flex-col">
                   {displayTherapist.clinic_profile_url && (
                     <a
                       href={displayTherapist.clinic_profile_url}
@@ -314,16 +306,12 @@ export default function TherapistProfileModal({
             </div>
 
             {/* Main Content */}
-            <div className="bg-white px-8">
+            <div className="bg-white sm:px-8 px-4">
               <div className="container mx-auto gap-8 grid md:grid-cols-3 sm:grid-cols-1 md:py-14 sm:py-8">
                 <div className="md:col-span-2 sm:col-span-2 gap-8">
                   <div className="flex flex-col gap-2">
-                    <h2 className="font-medium text-xl">
-                      About {displayTherapist.first_name}
-                    </h2>
-                    <p className="text-mblack">
-                      {displayTherapist.bio || "No bio available"}
-                    </p>
+                    <h2 className="font-medium text-xl">About {displayTherapist.first_name}</h2>
+                    <p className="text-mblack">{displayTherapist.bio || "No bio available"}</p>
 
                     <div className="mt-8 flex flex-col gap-2">
                       <h2 className="font-medium text-xl">Areas of Practice</h2>
@@ -333,32 +321,19 @@ export default function TherapistProfileModal({
                     </div>
 
                     <div className="mt-8 flex flex-col gap-2">
-                      <h2 className="font-medium text-xl">
-                        Therapeutic Approaches
-                      </h2>
-                      <CollapsibleApproaches
-                        approaches={displayTherapist.approaches || []}
-                      />
+                      <h2 className="font-medium text-xl">Therapeutic Approaches</h2>
+                      <CollapsibleApproaches approaches={displayTherapist.approaches || []} />
                     </div>
                     <div className="mt-8 flex flex-col gap-2">
-                      <TherapistLicenses
-                        therapist={displayTherapist}
-                        variant="modal"
-                      />
+                      <TherapistLicenses therapist={displayTherapist} variant="modal" />
                     </div>
                   </div>
                 </div>
 
                 <div className="md:col-span-1 sm:col-span-2 space-y-8">
-                  <TherapistLocation
-                    therapist={displayTherapist}
-                    variant="modal"
-                  />
+                  <TherapistLocation therapist={displayTherapist} variant="modal" />
                   <TherapistFees therapist={displayTherapist} variant="modal" />
-                  <TherapistQualifications
-                    therapist={displayTherapist}
-                    variant="modal"
-                  />
+                  <TherapistQualifications therapist={displayTherapist} variant="modal" />
                 </div>
               </div>
             </div>

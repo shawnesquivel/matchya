@@ -142,9 +142,9 @@ export default function TherapistResultsPanel() {
 
   return (
     <div className="w-full h-full overflow-y-auto bg-white">
-      <div className="sticky top-0 p-4 flex flex-col sm:flex-row sm:justify-between sm:items-center bg-white z-20">
-        <h2 className="text-lg font-medium text-mblack">Matched Therapists</h2>
-        <div className="flex items-center">
+      <div className="sm:flex hidden sticky top-0 sm:p-4 p-2 flex-col sm:flex-row sm:justify-between sm:items-center bg-white z-20">
+        <h2 className="sm:block hidden text-lg font-medium text-mblack">Matched Therapists</h2>
+        <div className="flex items-center ml-auto">
           {/* Mock data toggle button (only in development) */}
           {process.env.NODE_ENV !== "production" && (
             <button
@@ -166,7 +166,7 @@ export default function TherapistResultsPanel() {
         </div>
       </div>
 
-      <div className="p-4">
+      <div className="sm:p-4 p-2">
         {showLoading ? (
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-medium"></div>
@@ -183,30 +183,16 @@ export default function TherapistResultsPanel() {
               <>
                 {/* First 3 therapists (full-width) */}
                 <div className="space-y-6 mb-8">
-                  <h3 className="text-lg font-medium text-mblack mb-4">Top 3 Matches</h3>
+                  <h3 className="text-lg font-medium text-mblack sm:mb-4 mb-2">Top 3 Matches</h3>
                   {displayTherapists.slice(0, 3).map((therapist) => (
                     <div
                       key={therapist.id}
-                      className="block bg-beige-extralight border border-grey-light rounded-xl p-6 hover:shadow-sm relative transition-all duration-200 hover:border-beige-dark hover:bg-beige-xxl cursor-pointer"
+                      className="block bg-beige-extralight border border-grey-light rounded-xl md:p-6 p-4 hover:shadow-sm relative transition-all duration-200 hover:border-beige-dark hover:bg-beige-xxl cursor-pointer"
                       onClick={() => openTherapistModal(therapist.id)}
                     >
                       <div className="relative">
                         {/* Action buttons and chips - always positioned at top right */}
                         <div className="absolute top-0 right-0 flex items-center">
-                          <div className="flex gap-1 mr-2">
-                            {therapist.availability === "online" ||
-                            therapist.availability === "both" ? (
-                              <span className="bg-blue-light text-blue-800 px-2 py-0.5 rounded-full text-xs font-semibold border border-blue-dark">
-                                online
-                              </span>
-                            ) : null}
-                            {therapist.availability === "in_person" ||
-                            therapist.availability === "both" ? (
-                              <span className="bg-green-light text-green-dark px-2 py-0.5 rounded-full text-xs font-medium">
-                                in-person
-                              </span>
-                            ) : null}
-                          </div>
                           <div className="flex gap-2">
                             {therapist.clinic_profile_url && (
                               <a
@@ -228,16 +214,16 @@ export default function TherapistResultsPanel() {
                                 <GlobeIcon className="text-m-black w-4 h-4" />
                               </a>
                             )}
-                            {therapist.booking_link && (
+                            {therapist.clinic_booking_url && (
                               <a
-                                href={therapist.booking_link}
+                                href={therapist.clinic_booking_url}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="w-10 h-10 rounded-lg bg-beige-dark flex items-center justify-center hover:bg-beige-dark transition-colors cursor-pointer z-10"
                                 title="Book appointment"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  trackOutboundLink(therapist.booking_link, {
+                                  trackOutboundLink(therapist.clinic_booking_url, {
                                     id: therapist.id,
                                     name: `${therapist.first_name} ${therapist.last_name}`,
                                     linkType: "booking",
@@ -287,19 +273,73 @@ export default function TherapistResultsPanel() {
                             )}
                           </div>
                           <div className="my-auto text-left w-full sm:pl-0">
-                            <h3 className="font-medium text-2xl text-mblack">
-                              {therapist.first_name} {therapist.last_name}
-                            </h3>
-                            <div className="flex items-center text-grey-medium mt-1">
-                              <span className="text-mblack text-xs">
+                            <div className="flex items-end gap-2">
+                              <h3 className="font-new-spirit font-light text-2xl text-mblack">
+                                {therapist.first_name} {therapist.last_name}
+                              </h3>
+                              <span className="text-grey-medium text-sm mb-0.5">
                                 {therapist.pronouns || "Pronouns Unavailable"}
                               </span>
-                              <span className="mx-2 text-beige-dark text-xs">|</span>
+                            </div>
+                            <div className="flex items-center text-mblack mt-1">
                               <span className="text-mblack text-xs">
                                 {therapist.clinic_city && therapist.clinic_province
                                   ? `${therapist.clinic_city}, ${therapist.clinic_province}`
                                   : "Location Unavailable"}
                               </span>
+                              <span className="mx-2 text-beige-dark text-xs">|</span>
+                              <div className="flex gap-2">
+                                {therapist.availability === "online" ||
+                                therapist.availability === "both" ? (
+                                  <div className="flex items-center gap-0.5">
+                                    <div
+                                      className="w-4 h-6 flex items-center justify-center"
+                                      title="Online sessions available"
+                                    >
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="h-4 w-4 text-m-black"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                                        />
+                                      </svg>
+                                    </div>
+                                    <span className="text-xs text-m-black">Virtual</span>
+                                  </div>
+                                ) : null}
+                                {therapist.availability === "in_person" ||
+                                therapist.availability === "both" ? (
+                                  <div className="flex items-center gap-0.5">
+                                    <div
+                                      className="w-4 h-6  flex items-center justify-center"
+                                      title="In-person sessions available"
+                                    >
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="h-4 w-4 text-green-dark"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M4 6a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm4 8h8M4 14h16"
+                                        />
+                                      </svg>
+                                    </div>
+                                    <span className="text-xs text-green-dark">In-person</span>
+                                  </div>
+                                ) : null}
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -351,7 +391,7 @@ export default function TherapistResultsPanel() {
                       {displayTherapists.slice(3).map((therapist) => (
                         <div
                           key={therapist.id}
-                          className="block bg-beige-extralight border border-grey-light rounded-xl p-6 hover:shadow-sm relative transition-all duration-200 hover:border-beige-dark hover:bg-beige-xxl cursor-pointer"
+                          className="block bg-beige-extralight border border-grey-light rounded-xl md:p-6 p-2 hover:shadow-sm relative transition-all duration-200 hover:border-beige-dark hover:bg-beige-xxl cursor-pointer"
                           onClick={() => openTherapistModal(therapist.id)}
                         >
                           {/* Top section with image and action buttons */}
@@ -390,20 +430,6 @@ export default function TherapistResultsPanel() {
                               )}
                             </div>
                             <div className="flex items-center">
-                              <div className="flex gap-1 mr-2">
-                                {therapist.availability === "online" ||
-                                therapist.availability === "both" ? (
-                                  <span className="bg-blue-light text-blue-800 px-2 py-0.5 rounded-full text-xs font-semibold border border-blue-dark">
-                                    online
-                                  </span>
-                                ) : null}
-                                {therapist.availability === "in_person" ||
-                                therapist.availability === "both" ? (
-                                  <span className="bg-green-light text-green-dark px-2 py-0.5 rounded-full text-xs font-medium">
-                                    in-person
-                                  </span>
-                                ) : null}
-                              </div>
                               <div className="flex gap-2">
                                 {therapist.clinic_profile_url && (
                                   <a
@@ -425,16 +451,16 @@ export default function TherapistResultsPanel() {
                                     <GlobeIcon className="text-m-black w-3 h-3" />
                                   </a>
                                 )}
-                                {therapist.booking_link && (
+                                {therapist.clinic_booking_url && (
                                   <a
-                                    href={therapist.booking_link}
+                                    href={therapist.clinic_booking_url}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="w-8 h-8 rounded-lg bg-beige-dark flex items-center justify-center hover:bg-beige-dark transition-colors cursor-pointer z-10"
                                     title="Book appointment"
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      trackOutboundLink(therapist.booking_link, {
+                                      trackOutboundLink(therapist.clinic_booking_url, {
                                         id: therapist.id,
                                         name: `${therapist.first_name} ${therapist.last_name}`,
                                         linkType: "booking",
@@ -450,20 +476,74 @@ export default function TherapistResultsPanel() {
                           </div>
 
                           {/* Name and location below the image */}
-                          <div className="mb-2 flex flex-col gap-1">
-                            <h3 className="font-medium text-xl text-mblack">
-                              {therapist.first_name} {therapist.last_name}
-                            </h3>
-                            <div className="flex items-center text-grey-medium mt-1">
-                              <span className="text-mblack text-xs">
+                          <div className="my-auto text-left w-full sm:pl-0">
+                            <div className="flex items-end gap-2">
+                              <h3 className="font-new-spirit font-light text-2xl text-mblack">
+                                {therapist.first_name} {therapist.last_name}
+                              </h3>
+                              <span className="text-grey-medium text-sm mb-0.5">
                                 {therapist.pronouns || "Pronouns Unavailable"}
                               </span>
-                              <span className="mx-2 text-beige-dark text-xs">|</span>
+                            </div>
+                            <div className="flex items-center text-mblack mt-1">
                               <span className="text-mblack text-xs">
                                 {therapist.clinic_city && therapist.clinic_province
                                   ? `${therapist.clinic_city}, ${therapist.clinic_province}`
                                   : "Location Unavailable"}
                               </span>
+                              <span className="mx-2 text-beige-dark text-xs">|</span>
+                              <div className="flex gap-2">
+                                {therapist.availability === "online" ||
+                                therapist.availability === "both" ? (
+                                  <div className="flex items-center gap-0.5">
+                                    <div
+                                      className="w-4 h-6 flex items-center justify-center"
+                                      title="Online sessions available"
+                                    >
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="h-4 w-4 text-m-black"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                                        />
+                                      </svg>
+                                    </div>
+                                    <span className="text-xs text-m-black">Virtual</span>
+                                  </div>
+                                ) : null}
+                                {therapist.availability === "in_person" ||
+                                therapist.availability === "both" ? (
+                                  <div className="flex items-center gap-0.5">
+                                    <div
+                                      className="w-4 h-6  flex items-center justify-center"
+                                      title="In-person sessions available"
+                                    >
+                                      <svg
+                                        xmlns="http://www.w3.org/2000/svg"
+                                        className="h-4 w-4 text-green-dark"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M4 6a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm4 8h8M4 14h16"
+                                        />
+                                      </svg>
+                                    </div>
+                                    <span className="text-xs text-green-dark">In-person</span>
+                                  </div>
+                                ) : null}
+                              </div>
                             </div>
                           </div>
 

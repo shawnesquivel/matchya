@@ -35,13 +35,15 @@ const scrollbarStyles = `
 // Mobile detection function
 const isMobileDevice = () => {
   if (typeof window === "undefined") return false;
-  return window.innerWidth < 768; // Common breakpoint for mobile devices
+  return window.innerWidth < 900; // Common breakpoint for mobile devices
 };
 
 export default function SupaChatContextPage() {
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
   const [isChatExpanded, setIsChatExpanded] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const lastScrollY = useRef(0);
   
   // Mobile-specific states
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -92,6 +94,22 @@ export default function SupaChatContextPage() {
     };
   }, [isMobile, chatDrawerState]);
 
+  // Handle scroll for header visibility
+  useEffect(() => {
+    if (!isMobile) return;
+
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      const isScrollingDown = currentScrollY > lastScrollY.current;
+      
+      setIsHeaderVisible(!isScrollingDown);
+      lastScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isMobile]);
+
   // Toggle chat drawer state
   const toggleChatDrawer = () => {
     // Reset custom height when using the toggle button
@@ -135,6 +153,21 @@ export default function SupaChatContextPage() {
       <style jsx global>
         {`
           ${scrollbarStyles}
+          
+          /* Header transition */
+          .sticky-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 30;
+            transition: transform 0.3s ease-in-out;
+            background: white;
+          }
+          
+          .sticky-header.hidden {
+            transform: translateY(-100%);
+          }
           
           /* Prevent zoom on focus */
           @viewport {
@@ -181,46 +214,51 @@ export default function SupaChatContextPage() {
       <TherapistProvider>
         {isMobile ? (
           /* Mobile Layout */
-          <div className="flex flex-col h-screen relative overflow-hidden">
-            {/* Main content area */}
-            <div className="flex-grow overflow-y-auto">
+          <div className="flex flex-col h-[100dvh] relative">
+            {/* Main content area with fixed header */}
+            <div className="flex-1 relative">
               {/* Top Bar with Logo and Filter Toggle */}
-              <div className="flex items-center justify-between p-3 border-b shadow-sm">
-                <div className="h-8 w-auto">
-                  <Image
-                    src="/assets/images/matchyalogo.png"
-                    alt="Matchya Logo"
-                    width={120}
-                    height={36}
-                    priority
-                    className="object-contain"
-                  />
-                </div>
-                
-                <button 
-                  onClick={toggleFilterPanel}
-                  className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 text-gray-600 focus:outline-none"
-                  aria-label="Toggle filters"
-                >
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    className="h-5 w-5" 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    stroke="currentColor"
+              <div className={`sticky-header ${!isHeaderVisible ? 'hidden' : ''}`}>
+                <div className="flex items-center justify-between px-2 py-1 border-b shadow-sm bg-white">
+                  <div className="sm:h-8 h-6 w-auto">
+                    <Image
+                      src="/assets/images/matchyalogo.png"
+                      alt="Matchya Logo"
+                      width={120}
+                      height={36}
+                      priority
+                      className="object-contain h-full w-auto"
+                    />
+                  </div>
+                  
+                  <button 
+                    onClick={toggleFilterPanel}
+                    className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 text-gray-600 focus:outline-none"
+                    aria-label="Toggle filters"
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 010 2H4a1 1 0 01-1-1zm3 6a1 1 0 011-1h10a1 1 0 010 2H7a1 1 0 01-1-1zm4 6a1 1 0 011-1h2a1 1 0 010 2h-2a1 1 0 01-1-1z" />
-                  </svg>
-                </button>
+                    <svg 
+                      xmlns="http://www.w3.org/2000/svg" 
+                      className="h-5 w-5" 
+                      fill="none" 
+                      viewBox="0 0 24 24" 
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 010 2H4a1 1 0 01-1-1zm3 6a1 1 0 011-1h10a1 1 0 010 2H7a1 1 0 01-1-1zm4 6a1 1 0 011-1h2a1 1 0 010 2h-2a1 1 0 01-1-1z" />
+                    </svg>
+                  </button>
+                </div>
               </div>
               
-              <TherapistResultsPanel />
+              {/* Scrollable content area */}
+              <div className="absolute inset-0 overflow-y-auto pt-[60px] pb-[60px]">
+                <TherapistResultsPanel />
+              </div>
             </div>
             
             {/* Filter Panel Drawer */}
             <div className={`fixed inset-y-0 left-0 transform ${isFilterOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out z-50 w-11/12 max-w-md bg-white-dark`}>
               <div className="h-full flex flex-col">
-                <div className="p-4 flex justify-between items-center border-grey-light">
+                <div className="p-2 flex justify-between items-center border-grey-light">
                   <h2 className="text-lg font-medium">Filters</h2>
                   <button 
                     onClick={toggleFilterPanel} 
@@ -332,7 +370,7 @@ export default function SupaChatContextPage() {
                     document.addEventListener('mouseup', handleMouseUp);
                   }}
                 >
-                  <div className="handle-bar w-16 h-0.5 bg-gray-400 rounded-full"></div>
+                  <div className="handle-bar w-10 h-0.5 bg-beige-dark rounded-full"></div>
                 </div>
                 
                 {/* Header content */}
@@ -380,7 +418,7 @@ export default function SupaChatContextPage() {
           </div>
         ) : (
           /* Desktop Layout */
-          <div className="flex w-full h-full gap-4 overflow-hidden">
+          <div className="flex w-full h-screen gap-4 overflow-hidden">
             {/* Filters - Collapsible */}
             <div
               className={`flex-none transition-all duration-300 ease-in-out ${
