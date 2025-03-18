@@ -16,6 +16,7 @@ export default function RootLayout({ children }) {
     <ClerkProvider>
       <html lang="en">
         <head>
+          <link rel="stylesheet" href="https://use.typekit.net/vmx7tbu.css" />
           <script async src="https://tally.so/widgets/embed.js"></script>
           <script
             async
