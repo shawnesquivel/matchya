@@ -146,7 +146,7 @@ export default function FilterPanel() {
         </div>
       )}
       {/* Single subtle logo in top-left */}
-      <div className="z-20 opacity-80 mb-4">
+      <div className="z-20 opacity-80 mb-4 md:block hidden">
         <Link href="https://matchya.app/" target="_blank">
           <Image
             src="/assets/images/matchyalogo.png"
@@ -159,7 +159,7 @@ export default function FilterPanel() {
         </Link>
       </div>
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold">Filter Therapists</h2>
+        <h2 className="text-lg font-semibold md:block hidden">Filters</h2>
         <button
           onClick={handleReset}
           className={`text-sm text-blue-500 hover:text-blue-700 ${
@@ -185,16 +185,11 @@ export default function FilterPanel() {
         <div>
           {/* Add Pricing Section with PriceDisplay */}
           <div className="mb-6">
-            <h3 className="text-sm mb-3 text-grey-medium font-medium">
-              Price Range
-            </h3>
+            <h3 className="text-sm mb-3 text-grey-medium font-medium">Price Range</h3>
 
             {/* Initial Session Price */}
             <div className="mb-4">
-              <label
-                htmlFor="initial-price"
-                className="block text-base mb-1 text-grey-medium"
-              >
+              <label htmlFor="initial-price" className="block text-base mb-1 text-grey-medium">
                 Max Initial Session Price
               </label>
               <div className="rounded-md border border-grey-light p-2 flex justify-between items-center">
@@ -221,10 +216,7 @@ export default function FilterPanel() {
 
             {/* Subsequent Session Price */}
             <div>
-              <label
-                htmlFor="subsequent-price"
-                className="block text-base mb-1 text-grey-medium"
-              >
+              <label htmlFor="subsequent-price" className="block text-base mb-1 text-grey-medium">
                 Max Subsequent Session Price
               </label>
               <div className="rounded-md border border-grey-light p-2 flex justify-between items-center">
@@ -252,17 +244,13 @@ export default function FilterPanel() {
 
           {/* Gender Section */}
           <div className="mb-6">
-            <h3 className="text-sm mb-3 text-grey-medium font-medium">
-              Gender
-            </h3>
+            <h3 className="text-sm mb-3 text-grey-medium font-medium">Gender</h3>
             <div className="flex flex-wrap gap-2">
               {["male", "female", "non_binary"].map((gender) => (
                 <button
                   key={gender}
                   className={`px-2 py-1 rounded-md border text-grey-medium border-beige-dark font-base hover:bg-beige-extralight hover:shadow-sm focus:ring-2 focus:ring-green-light ${
-                    filters.gender === gender
-                      ? "bg-white border-green-extralight border-2"
-                      : ""
+                    filters.gender === gender ? "bg-white border-green-extralight border-2" : ""
                   }`}
                   onClick={() => toggleGender(gender)}
                 >
@@ -276,9 +264,7 @@ export default function FilterPanel() {
 
           {/* Delivery Method */}
           <div className="mb-6">
-            <h3 className="text-sm mb-3 text-grey-medium font-medium">
-              Delivery Method
-            </h3>
+            <h3 className="text-sm mb-3 text-grey-medium font-medium">Delivery Method</h3>
             <div className="flex flex-wrap gap-2">
               {["online", "in_person"].map((method) => (
                 <button
@@ -314,9 +300,7 @@ export default function FilterPanel() {
 
           {/* Therapy Format */}
           <div className="mb-6">
-            <h3 className="text-sm mb-3 text-grey-medium font-medium">
-              Therapy Format
-            </h3>
+            <h3 className="text-sm mb-3 text-grey-medium font-medium">Therapy Format</h3>
             <div className="flex flex-wrap gap-2">
               {["individual", "couples", "family"].map((format) => (
                 <button
@@ -336,9 +320,7 @@ export default function FilterPanel() {
 
           {/* Add Areas of Focus Section */}
           <div className="mb-6">
-            <h3 className="text-sm mb-3 text-grey-medium font-medium">
-              Areas of Focus
-            </h3>
+            <h3 className="text-sm mb-3 text-grey-medium font-medium">Areas of Focus</h3>
             <div className="flex flex-wrap gap-2">
               {[
                 "Anxiety",
@@ -385,48 +367,31 @@ export default function FilterPanel() {
 
           {/* Add Ethnicity Section */}
           <div className="mb-6">
-            <h3 className="text-sm mb-3 text-grey-medium font-medium">
-              Ethnicity
-            </h3>
+            <h3 className="text-sm mb-3 text-grey-medium font-medium">Ethnicity</h3>
             <div className="flex flex-wrap gap-2">
-              {[
-                "asian",
-                "black",
-                "indigenous",
-                "latino",
-                "middle_eastern",
-                "white",
-              ].map((ethnicity) => (
-                <button
-                  key={ethnicity}
-                  className={`px-2 py-1 rounded-md border text-grey-medium border-beige-dark font-base hover:bg-beige-extralight hover:shadow-sm focus:ring-2 focus:ring-green-light ${
-                    filters.ethnicity?.includes(ethnicity)
-                      ? "bg-white border-green-extralight border-2"
-                      : ""
-                  }`}
-                  onClick={() => toggleArrayFilter("ethnicity", ethnicity)}
-                >
-                  {ethnicity.charAt(0).toUpperCase() +
-                    ethnicity.slice(1).replace("_", " ")}
-                </button>
-              ))}
+              {["asian", "black", "indigenous", "latino", "middle_eastern", "white"].map(
+                (ethnicity) => (
+                  <button
+                    key={ethnicity}
+                    className={`px-2 py-1 rounded-md border text-grey-medium border-beige-dark font-base hover:bg-beige-extralight hover:shadow-sm focus:ring-2 focus:ring-green-light ${
+                      filters.ethnicity?.includes(ethnicity)
+                        ? "bg-white border-green-extralight border-2"
+                        : ""
+                    }`}
+                    onClick={() => toggleArrayFilter("ethnicity", ethnicity)}
+                  >
+                    {ethnicity.charAt(0).toUpperCase() + ethnicity.slice(1).replace("_", " ")}
+                  </button>
+                )
+              )}
             </div>
           </div>
 
           {/* Add Sexuality Section */}
           <div className="mb-6">
-            <h3 className="text-sm mb-3 text-grey-medium font-medium">
-              Sexuality
-            </h3>
+            <h3 className="text-sm mb-3 text-grey-medium font-medium">Sexuality</h3>
             <div className="flex flex-wrap gap-2">
-              {[
-                "straight",
-                "gay",
-                "lesbian",
-                "bisexual",
-                "queer",
-                "asexual",
-              ].map((sexuality) => (
+              {["straight", "gay", "lesbian", "bisexual", "queer", "asexual"].map((sexuality) => (
                 <button
                   key={sexuality}
                   className={`px-2 py-1 rounded-md border text-grey-medium border-beige-dark font-base hover:bg-beige-extralight hover:shadow-sm focus:ring-2 focus:ring-green-light ${
@@ -446,27 +411,21 @@ export default function FilterPanel() {
           <div className="mb-6">
             <h3 className="text-sm mb-3 text-grey-medium font-medium">Faith</h3>
             <div className="flex flex-wrap gap-2">
-              {[
-                "christian",
-                "muslim",
-                "jewish",
-                "hindu",
-                "buddhist",
-                "sikh",
-                "atheist",
-              ].map((faith) => (
-                <button
-                  key={faith}
-                  className={`px-2 py-1 rounded-md border text-grey-medium border-beige-dark font-base hover:bg-beige-extralight hover:shadow-sm focus:ring-2 focus:ring-green-light ${
-                    filters.faith?.includes(faith)
-                      ? "bg-white border-green-extralight border-2"
-                      : ""
-                  }`}
-                  onClick={() => toggleArrayFilter("faith", faith)}
-                >
-                  {faith.charAt(0).toUpperCase() + faith.slice(1)}
-                </button>
-              ))}
+              {["christian", "muslim", "jewish", "hindu", "buddhist", "sikh", "atheist"].map(
+                (faith) => (
+                  <button
+                    key={faith}
+                    className={`px-2 py-1 rounded-md border text-grey-medium border-beige-dark font-base hover:bg-beige-extralight hover:shadow-sm focus:ring-2 focus:ring-green-light ${
+                      filters.faith?.includes(faith)
+                        ? "bg-white border-green-extralight border-2"
+                        : ""
+                    }`}
+                    onClick={() => toggleArrayFilter("faith", faith)}
+                  >
+                    {faith.charAt(0).toUpperCase() + faith.slice(1)}
+                  </button>
+                )
+              )}
             </div>
           </div>
         </div>

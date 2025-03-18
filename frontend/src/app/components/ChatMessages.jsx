@@ -8,9 +8,7 @@ import useTypingEffect from "./useTypingEffect";
 
 const splitIntoParagraphs = (content) => {
   if (!content) return [];
-  return content
-    .split(/\n\s*\n/)
-    .filter((paragraph) => paragraph.trim() !== "");
+  return content.split(/\n\s*\n/).filter((paragraph) => paragraph.trim() !== "");
 };
 
 const FollowUpQuestions = ({ questions, onQuestionClick, isLoading }) => {
@@ -18,10 +16,7 @@ const FollowUpQuestions = ({ questions, onQuestionClick, isLoading }) => {
     return (
       <div className="mt-2 mb-4">
         <div className="flex items-center space-x-2 text-gray-400 text-sm">
-          <div
-            className={styles.spinner}
-            style={{ width: "16px", height: "16px" }}
-          ></div>
+          <div className={styles.spinner} style={{ width: "16px", height: "16px" }}></div>
         </div>
       </div>
     );
@@ -78,8 +73,7 @@ const MessageItem = memo(
     chatId,
   }) => {
     // If it's an assistant message, check if we need to split it
-    const shouldSplitMessage =
-      message.role === "assistant" && !message.isTyping;
+    const shouldSplitMessage = message.role === "assistant" && !message.isTyping;
     const shouldAnimate = shouldSplitMessage && isLast; // Only animate if it's the last message
     const paragraphs = shouldSplitMessage
       ? splitIntoParagraphs(message.content || "")
@@ -155,11 +149,9 @@ const MessageItem = memo(
           </div>
           <div className="bg-beige-extralight message p-3 h-fit max-w-full rounded-md text-sm w-fit assistant mt-1">
             <div className="flex justify-start align-middle gap-4 w-full h-fit">
-              <p className="sm:mt-[2px] mt-[unset] max-w-full h-fit assistant">
-                <div className="assistant">
-                  <ReactMarkdown>{message.content}</ReactMarkdown>
-                </div>
-              </p>
+              <div className="sm:mt-[2px] mt-[unset] max-w-full h-fit assistant">
+                <ReactMarkdown>{message.content}</ReactMarkdown>
+              </div>
             </div>
           </div>
         </div>
@@ -178,9 +170,7 @@ const MessageItem = memo(
               <div
                 key={index}
                 className={`mb-2 last:mb-0 transition-opacity duration-200 ease-in-out ${
-                  visibleParagraphs.includes(index)
-                    ? "opacity-100"
-                    : "opacity-0"
+                  visibleParagraphs.includes(index) ? "opacity-100" : "opacity-0"
                 }`}
               >
                 {index === 0 && (
@@ -199,11 +189,9 @@ const MessageItem = memo(
                 )}
                 <div className="bg-beige-extralight flex gap-4 flex-col message p-3 h-fit max-w-full rounded-md text-sm w-fit assistant mt-1">
                   <div className="flex justify-start align-middle gap-4 w-full h-fit">
-                    <p className="sm:mt-[2px] mt-[unset] max-w-full h-fit assistant">
-                      <div className="assistant">
-                        <ReactMarkdown>{paragraph}</ReactMarkdown>
-                      </div>
-                    </p>
+                    <div className="sm:mt-[2px] mt-[unset] max-w-full h-fit assistant">
+                      <ReactMarkdown>{paragraph}</ReactMarkdown>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -241,7 +229,7 @@ const MessageItem = memo(
             )}
 
             <div className="flex justify-start align-middle gap-4 w-full h-fit">
-              <p
+              <div
                 className={`sm:mt-[2px] mt-[unset] max-w-full h-fit ${
                   message.role === "user" ? "user" : "assistant"
                 }`}
@@ -255,7 +243,7 @@ const MessageItem = memo(
                     <ReactMarkdown>{message.content}</ReactMarkdown>
                   </div>
                 )}
-              </p>
+              </div>
             </div>
           </div>
         )}
@@ -267,16 +255,8 @@ const MessageItem = memo(
                 <button
                   key={index}
                   onClick={() => {
-                    console.log(
-                      "button clicked",
-                      button.content,
-                      button.questionIndex
-                    );
-                    onButtonClick(
-                      button.value,
-                      button.content,
-                      button.questionIndex
-                    );
+                    console.log("button clicked", button.content, button.questionIndex);
+                    onButtonClick(button.value, button.content, button.questionIndex);
                   }}
                   className="flex flex-col items-start p-4 bg-white rounded-xl hover:bg-[#F8F8F2] transition-colors shadow-sm border border-gray-200 w-full"
                 >
@@ -343,9 +323,7 @@ const ChatMessages = ({
       {!isLoadingMessages &&
         messages
           .filter(
-            (message) =>
-              (message.content && message.content.trim() !== "") ||
-              message.isTyping
+            (message) => (message.content && message.content.trim() !== "") || message.isTyping
           ) // Include typing messages
           .map((message, index, filteredMessages) => {
             const isLastMessage = index === filteredMessages.length - 1;
@@ -358,9 +336,7 @@ const ChatMessages = ({
                 onButtonClick={onButtonClick}
                 questionStage={questionStage}
                 followUpQuestions={
-                  isLastMessage &&
-                  message.role === "assistant" &&
-                  !message.isTyping
+                  isLastMessage && message.role === "assistant" && !message.isTyping
                     ? followUpQuestions
                     : []
                 }

@@ -58,10 +58,10 @@ export default function ChatPanel() {
   };
 
   return (
-    <div className="flex-grow flex flex-col h-full p-4 bg-beige overflow-hidden border border-grey-dark">
-      <div className="bg-white rounded-lg w-full h-full flex flex-col border border-grey-dark">
+    <div className="flex-grow flex flex-col h-full sm:p-4 bg-beige overflow-hidden sm:border sm:border-grey-dark">
+      <div className="bg-white md:rounded-lg w-full h-full flex flex-col md:border md:border-grey-dark pt-1">
         {/* Header with reset button */}
-        <div className="flex justify-end items-center p-3 border-b border-grey-light">
+        <div className=" hidden md:flex justify-end items-center p-3 border-b border-grey-light">
           <button
             onClick={handleResetChat}
             className="text-sm text-grey-medium hover:text-grey-dark px-3 py-1 rounded-md border border-grey-light hover:bg-beige-extralight transition-colors"
@@ -85,17 +85,13 @@ export default function ChatPanel() {
         />
         <div ref={messagesEndRef} />
 
-        <div className="p-4">
+        <div className="sm:p-4 p-2">
           <form className="flex items-center gap-1" onSubmit={handleSubmit}>
             <textarea
               className={`flex-grow p-2 border text-sm min-h-[40px] max-h-[200px] overflow-y-auto resize-none focus:outline-none focus:ring-1 focus:ring-beige-dark ${
                 isExpanded ? "rounded-md" : "rounded-full"
               } ${isLoading ? "bg-gray-100 cursor-not-allowed" : "bg-white"}`}
-              placeholder={
-                isLoading
-                  ? "Loading..."
-                  : "The more you share, the better the match"
-              }
+              placeholder={isLoading ? "Loading..." : "The more you share, the better the match"}
               value={input}
               onChange={(e) => {
                 handleInputChange(e);
@@ -110,7 +106,6 @@ export default function ChatPanel() {
                   handleSubmit(e);
                 }
               }}
-              autoFocus
               rows={1}
               disabled={isLoading}
             />
