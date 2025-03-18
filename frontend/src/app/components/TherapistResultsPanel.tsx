@@ -391,12 +391,12 @@ export default function TherapistResultsPanel() {
                       {displayTherapists.slice(3).map((therapist) => (
                         <div
                           key={therapist.id}
-                          className="block bg-beige-extralight border border-grey-light rounded-xl md:p-6 p-2 hover:shadow-sm relative transition-all duration-200 hover:border-beige-dark hover:bg-beige-xxl cursor-pointer"
+                          className="block bg-beige-extralight border border-grey-light rounded-xl md:p-6 p-4 hover:shadow-sm relative transition-all duration-200 hover:border-beige-dark hover:bg-beige-xxl cursor-pointer"
                           onClick={() => openTherapistModal(therapist.id)}
                         >
                           {/* Top section with image and action buttons */}
                           <div className="flex justify-between items-start mb-3">
-                            <div className="relative w-16 h-16 rounded-full overflow-hidden flex-shrink-0">
+                            <div className="relative w-24 h-24 rounded-full overflow-hidden sm:mx-0 mb-4 sm:mb-0 sm:mr-4 flex-shrink-0">
                               {therapist.profile_img_url ? (
                                 <Image
                                   src={validateImageUrl(
@@ -448,7 +448,7 @@ export default function TherapistResultsPanel() {
                                       });
                                     }}
                                   >
-                                    <GlobeIcon className="text-m-black w-3 h-3" />
+                                    <GlobeIcon className="text-m-black w-4 h-4" />
                                   </a>
                                 )}
                                 {therapist.clinic_booking_url && (
@@ -468,7 +468,7 @@ export default function TherapistResultsPanel() {
                                       });
                                     }}
                                   >
-                                    <CalendarIcon className="text-m-black w-3 h-3" />
+                                    <CalendarIcon className="text-m-black w-4 h-4" />
                                   </a>
                                 )}
                               </div>

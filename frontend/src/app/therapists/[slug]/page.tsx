@@ -15,37 +15,28 @@ import Loading from "./loading";
 import { getSafeImageUrl } from "@/app/utils/imageHelpers";
 import CollapsibleAreasOfFocus from "@/app/components/CollapsibleAreasOfFocus";
 import CollapsibleApproaches from "@/app/components/CollapsibleApproaches";
-import {
-  mockTherapistProfile,
-  shouldUseMockDataForSlug,
-} from "../../utils/mockTherapistData";
+import { mockTherapistProfile, shouldUseMockDataForSlug } from "../../utils/mockTherapistData";
 import TherapistLocation from "@/app/components/TherapistLocation";
 import TherapistFees from "@/app/components/TherapistFees";
 import TherapistLicenses from "@/app/components/TherapistLicenses";
 import TherapistQualifications from "@/app/components/TherapistQualifications";
 
 // Dynamically import the client components with no SSR for proper client-side rendering
-const TherapistProfileTracker = dynamic(
-  () => import("../../components/TherapistProfileTracker"),
-  {
-    ssr: false,
-  }
-);
+const TherapistProfileTracker = dynamic(() => import("../../components/TherapistProfileTracker"), {
+  ssr: false,
+});
 
 // Define a client component placeholder for where the links should appear
 // This ensures we're not trying to pass event handlers to server components
-const LinkPlaceholder = dynamic(
-  () => import("../../components/OutboundLinkTracker"),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="md:col-span-2 col-span-6 flex gap-2 mb-6 sm:mb-0 md:justify-end justify-start flex-col">
-        <div className="h-12 bg-gray-100 rounded-full animate-pulse"></div>
-        <div className="h-12 bg-gray-100 rounded-full animate-pulse"></div>
-      </div>
-    ),
-  }
-);
+const LinkPlaceholder = dynamic(() => import("../../components/OutboundLinkTracker"), {
+  ssr: false,
+  loading: () => (
+    <div className="md:col-span-2 col-span-6 flex gap-2 mb-6 sm:mb-0 md:justify-end justify-start flex-col">
+      <div className="h-12 bg-gray-100 rounded-full animate-pulse"></div>
+      <div className="h-12 bg-gray-100 rounded-full animate-pulse"></div>
+    </div>
+  ),
+});
 
 // CSS for fill-from-left hover effect
 const buttonHoverStyles = `
@@ -131,9 +122,7 @@ export async function generateStaticParams() {
     if (allNames.length === 0) {
       console.warn("[generateStaticParams] No therapist names were fetched.");
     } else {
-      console.log(
-        `[generateStaticParams] Fetched ${allNames.length} therapist names`
-      );
+      console.log(`[generateStaticParams] Fetched ${allNames.length} therapist names`);
     }
 
     return allNames.map((name) => ({
@@ -149,17 +138,14 @@ export async function generateStaticParams() {
 function generateJsonLd(therapist: TherapistProfile) {
   const getInitialFee = (): number => {
     const initialFee = therapist.fees?.find(
-      (fee) =>
-        fee.session_type === "individual" && fee.session_category === "initial"
+      (fee) => fee.session_type === "individual" && fee.session_category === "initial"
     );
     return initialFee?.price || 0;
   };
 
   const getSubsequentFee = (): number => {
     const subsequentFee = therapist.fees?.find(
-      (fee) =>
-        fee.session_type === "individual" &&
-        fee.session_category === "subsequent"
+      (fee) => fee.session_type === "individual" && fee.session_category === "subsequent"
     );
     return subsequentFee?.price || 0;
   };
@@ -219,14 +205,10 @@ export async function generateMetadata({
     };
   }
 
-  const title = `${therapist.first_name} - ${
-    therapist.title || "Therapist"
-  } | Matchya`;
+  const title = `${therapist.first_name} - ${therapist.title || "Therapist"} | Matchya`;
   const description = `${therapist.first_name} is a ${therapist.title} in ${
     therapist.location.city
-  }, specializing in ${therapist.areas_of_focus.join(
-    ", "
-  )}. Book your session today.`;
+  }, specializing in ${therapist.areas_of_focus.join(", ")}. Book your session today.`;
 
   return {
     title,
@@ -251,9 +233,7 @@ export async function generateMetadata({
       card: "summary_large_image",
       title,
       description,
-      images: therapist.profile_img_url
-        ? [therapist.profile_img_url]
-        : undefined,
+      images: therapist.profile_img_url ? [therapist.profile_img_url] : undefined,
     },
   };
 }
@@ -307,9 +287,8 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => {
               </div>
             </div>
             <div className="flex flex-col gap-2 md:col-span-3 col-span-6">
-              <h1 className="text-3xl lg:text-4xl font-medium">
-                {therapist.first_name || "Name Not Available"}{" "}
-                {therapist.last_name || ""}
+              <h1 className="font-new-spirit text-3xl lg:text-4xl font-light">
+                {therapist.first_name || "Name Not Available"} {therapist.last_name || ""}
               </h1>
               {/* Add pronouns below the therapist's name */}
               {therapist.pronouns && (
@@ -325,27 +304,17 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => {
           <div className="container mx-auto gap-8 grid md:grid-cols-3 sm:grid-cols-1 md:py-14 sm:py-8">
             <div className="md:col-span-2 sm:col-span-2 gap-8">
               <div className="flex flex-col gap-2">
-                <h2 className="font-medium text-xl">
-                  About {therapist.first_name}
-                </h2>
-                <p className="text-mblack">
-                  {therapist.bio || "No bio available"}
-                </p>
+                <h2 className="font-medium text-xl">About {therapist.first_name}</h2>
+                <p className="text-mblack">{therapist.bio || "No bio available"}</p>
 
                 <div className="mt-8 flex flex-col gap-2">
                   <h2 className="font-medium text-xl">Areas of Practice</h2>
-                  <CollapsibleAreasOfFocus
-                    areasOfFocus={therapist.areas_of_focus || []}
-                  />
+                  <CollapsibleAreasOfFocus areasOfFocus={therapist.areas_of_focus || []} />
                 </div>
 
                 <div className="mt-8 flex flex-col gap-2">
-                  <h2 className="font-medium text-xl">
-                    Therapeutic Approaches
-                  </h2>
-                  <CollapsibleApproaches
-                    approaches={therapist.approaches || []}
-                  />
+                  <h2 className="font-medium text-xl">Therapeutic Approaches</h2>
+                  <CollapsibleApproaches approaches={therapist.approaches || []} />
                 </div>
 
                 <div className="mt-8 flex flex-col gap-2">
@@ -371,11 +340,7 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => {
   );
 };
 
-export default async function TherapistProfile({
-  params,
-}: {
-  params: { slug: string };
-}) {
+export default async function TherapistProfile({ params }: { params: { slug: string } }) {
   const therapist = await getTherapist(params.slug);
 
   if (!therapist) {
