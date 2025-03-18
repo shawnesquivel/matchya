@@ -32,7 +32,7 @@ export default function TherapistHeader({
   const nameClasses =
     variant === "modal"
       ? "text-2xl font-bold"
-      : "font-tuppence font-light text-3xl lg:text-4xl font-bold md:mb-2 md:pb-12";
+      : "font-light text-3xl lg:text-4xl font-bold md:mb-2 md:pb-12";
 
   return (
     <div className={containerClasses}>

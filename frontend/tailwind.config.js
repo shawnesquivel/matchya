@@ -48,7 +48,6 @@ module.exports = {
         },
       },
       fontFamily: {
-        tuppence: ["var(--font-tuppence)"],
         'new-spirit': ['new-spirit', 'serif'],
       },
       backgroundImage: {
