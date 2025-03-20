@@ -21,9 +21,14 @@ import TherapistFees from "@/app/components/TherapistFees";
 import TherapistLicenses from "@/app/components/TherapistLicenses";
 import TherapistQualifications from "@/app/components/TherapistQualifications";
 
-// Dynamically import the client components with no SSR for proper client-side rendering
+// Dynamically import client components
 const TherapistProfileTracker = dynamic(() => import("../../components/TherapistProfileTracker"), {
   ssr: false,
+});
+
+const TherapistProfileHeader = dynamic(() => import("../../components/TherapistProfileHeader"), {
+  ssr: false,
+  loading: () => <div className="h-[60px] bg-white shadow-sm"></div>,
 });
 
 // Define a client component placeholder for where the links should appear
@@ -245,6 +250,7 @@ export const revalidate = 3600;
 const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => {
   return (
     <>
+      <TherapistProfileHeader therapist={therapist} />
       {/* Client component for tracking views */}
       <TherapistProfileTracker therapist={therapist} />
 
@@ -265,12 +271,12 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => {
 
       <div>
         {/* Banner and Header styled like the modal */}
-        <div className="bg-beige sm:py-14 py-20"></div>
-        <div className="bg-white pt-8 px-8">
-          <div className="grid grid-cols-6 gap-8 container mx-auto">
+        <div className="bg-beige sm:py-14 py-12 relative"></div>
+        <div className="bg-white pt-8 sm:px-3  sm:pt-4 px-3">
+          <div className="grid grid-cols-6 sm:gap-8 gap-3 container mx-auto">
             <div className="relative md:col-span-1 sm:col-span-2 col-span-6">
               <div className="relative w-[40vw] md:w-full md:left-0 md:translate-x-0">
-                <div className="absolute max-w-[150px] md:max-w-none w-full bottom-0 border border-grey-extraDark aspect-square rounded-full overflow-hidden md:translate-y-[50%]">
+                <div className="absolute max-w-[100px] sm:max-w-[120px] md:max-w-[160px] w-full md:bottom-0 bottom-0 border border-grey-extraDark aspect-square rounded-full overflow-hidden md:translate-y-[60%] translate-y-[30%]">
                   {therapist.profile_img_url ? (
                     <>
                       <Image
@@ -288,7 +294,7 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => {
                 </div>
               </div>
             </div>
-            <div className="flex flex-col gap-2 md:col-span-3 col-span-6">
+            <div className="flex flex-col gap-2 md:col-span-3 col-span-6 mt-8 sm:mt-4 md:mt-0">
               <h1 className="font-new-spirit text-3xl lg:text-4xl font-light">
                 {therapist.first_name || "Name Not Available"} {therapist.last_name || ""}
               </h1>
@@ -302,7 +308,7 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => {
         </div>
 
         {/* Main Content */}
-        <div className="bg-white px-8">
+        <div className="bg-white sm:px-8 px-3">
           <div className="container mx-auto gap-8 grid md:grid-cols-3 sm:grid-cols-1 md:py-14 sm:py-8">
             <div className="md:col-span-2 sm:col-span-2 gap-8">
               <div className="flex flex-col gap-2">
