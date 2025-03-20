@@ -41,34 +41,15 @@ export default function TherapistQualifications({
             </ul>
           </div>
         )}
-        {/* Professional Experience */}
-        {therapist.experience && therapist.experience.length > 0 && (
-          <div className="flex flex-col gap-2">
-            <hr className="border-grey-light mt-2 mb-4" />
-            <h3 className="text-xs font-medium">Professional Experience</h3>
-            <div className="space-y-2">
-              {therapist.experience.map((exp, index) => (
-                <div key={index} className="flex flex-col gap-0.5">
-                  <p className="font-medium">{exp.position}</p>
-                  <p className="text-grey-medium text-xs">
-                    {exp.organization}
-                    <br></br> {exp.startYear}
-                    {exp.endYear ? ` - ${exp.endYear}` : " - Present"}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
         {/* Certifications */}
-        {therapist.qualifications && therapist.qualifications.length > 0 && (
+        {therapist.certifications && therapist.certifications.length > 0 && (
           <div className="flex flex-col gap-2">
             <hr className="border-grey-light mt-2 mb-4" />
             <h3 className="text-xs font-medium">Certifications & Specialties</h3>
             <ul className="list-disc space-y-0.5 ml-4">
-              {therapist.qualifications.map((qual, index) => (
+              {therapist.certifications.map((cert, index) => (
                 <li key={index} className="">
-                  {qual}
+                  {cert}
                 </li>
               ))}
             </ul>
@@ -94,8 +75,7 @@ export default function TherapistQualifications({
         )}
         {/* No qualifications case */}
         {(!therapist.education || therapist.education.length === 0) &&
-          (!therapist.experience || therapist.experience.length === 0) &&
-          (!therapist.qualifications || therapist.qualifications.length === 0) && (
+          (!therapist.certifications || therapist.certifications.length === 0) && (
             <p className="text-sm text-grey-extraDark">Qualification information not available</p>
           )}
       </div>

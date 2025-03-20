@@ -52,9 +52,9 @@ export default function TherapistProfileHeader({ therapist }: TherapistProfileHe
   }, [isMobile]);
 
   // Determine if we have links to show
-  const hasWebsite = therapist.clinic_profile_url || therapist.bio_link;
+  const hasWebsite = therapist.clinic_profile_url;
   const hasBooking = therapist.booking_link;
-  const websiteUrl = therapist.clinic_profile_url || therapist.bio_link || "";
+  const websiteUrl = therapist.clinic_profile_url || "";
 
   // Handle analytics tracking for outbound links
   const handleWebsiteClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
