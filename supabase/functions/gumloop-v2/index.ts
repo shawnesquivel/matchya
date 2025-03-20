@@ -1305,7 +1305,8 @@ function processApproachesField(value: any): string[] {
     // If we have a {long_term: [...]} object structure, extract the array
     if (value.long_term && Array.isArray(value.long_term)) {
       console.log("Found long_term array in approaches object");
-      const result = value.long_term.map((item: any) => String(item).trim())
+      const result = value.long_term
+        .map((item: any) => String(item).trim().replace(/^['"]|['"]$/g, "")) // Remove quotes
         .filter(Boolean);
       console.log(`Extracted ${result.length} approaches from long_term array`);
       return result;
@@ -1316,12 +1317,16 @@ function processApproachesField(value: any): string[] {
     for (const key in value) {
       if (Array.isArray(value[key])) {
         console.log(`Found array in approaches object at key: ${key}`);
-        allValues.push(...value[key].map((item: any) => String(item).trim()));
+        allValues.push(
+          ...value[key].map((item: any) =>
+            String(item).trim().replace(/^['"]|['"]$/g, "")
+          ),
+        ); // Remove quotes
       } else if (value[key]) {
         console.log(
           `Found non-array value in approaches object at key: ${key}`,
         );
-        allValues.push(String(value[key]).trim());
+        allValues.push(String(value[key]).trim().replace(/^['"]|['"]$/g, "")); // Remove quotes
       }
     }
 
@@ -1332,9 +1337,10 @@ function processApproachesField(value: any): string[] {
   // Join all entries, then split by comma for consistent processing
   console.log("Processing approaches as array or string");
   const combinedText = rawArray.join(", ");
-  const result = combinedText.split(",").map((item) => item.trim()).filter(
-    Boolean,
-  );
+  const result = combinedText
+    .split(",")
+    .map((item) => item.trim().replace(/^['"]|['"]$/g, "")) // Remove quotes
+    .filter(Boolean);
   console.log(`Final approaches array contains ${result.length} items`);
   return result;
 }
