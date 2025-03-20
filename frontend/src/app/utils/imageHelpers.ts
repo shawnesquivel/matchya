@@ -8,6 +8,7 @@ export const getSafeImageUrl = (url: string | undefined | null): string => {
 
   try {
     const urlObj = new URL(url);
+    console.log("getSafeImageUrl", urlObj);
     const isAllowedDomain = ALLOWED_IMAGE_DOMAINS.includes(
       urlObj.hostname as any,
     );
