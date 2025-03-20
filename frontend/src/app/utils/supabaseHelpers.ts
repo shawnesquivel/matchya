@@ -63,66 +63,58 @@ export interface SupabaseTherapistProfile {
 export interface TherapistProfile {
   id: string;
   first_name: string;
+  middle_name: string | null;
   last_name: string;
-  title?: string;
-  bio: string;
-  areas_of_focus: string[];
-  education: string[];
-  experience: Array<{
-    position: string;
-    organization: string;
-    startYear: number;
-    endYear?: number;
-  }>;
+  pronouns: string | null;
+  ethnicity: string[];
+  gender: "female" | "male" | "non_binary";
+  sexuality: string[];
+  faith: string[];
+  initial_price: string;
+  subsequent_price: string;
+  availability: string;
   languages: string[];
-  profile_img_url?: string;
-  location: {
-    city: string;
-    province: string;
-    country: string;
-  };
-  available_online: boolean;
-  booking_link: string | null;
+  areas_of_focus: string[];
   approaches: string[];
-  short_summary: string;
-  qualifications: string[];
-  clinic: string;
-  gender: string;
-  clinic_profile_url?: string | null;
-  bio_link?: string | null;
-  profile_link?: string | null;
-  licenses: Array<{
+  similarity: number;
+  ai_summary: string | null;
+  bio: string | null;
+  profile_img_url: string | null;
+  video_intro_link: string | null; // This will be deprecated eventually
+  clinic_profile_url: string | null;
+  clinic_booking_url: string | null;
+  booking_link: string | null;
+  therapist_email: string | null;
+  therapist_phone: string | null;
+  clinic_name: string;
+  clinic_street: string;
+  clinic_city: string;
+  clinic_province: string;
+  clinic_postal_code: string;
+  clinic_country: string;
+  clinic_phone: string | null;
+  education: string[];
+  certifications: string[];
+  licenses: {
     id: string;
-    title: string;
     license_number: string;
     state: string;
-    issuing_body?: string;
-    is_verified?: boolean;
-    expiry_date?: string;
-    last_verified_date?: string;
-  }>;
-  fees: Array<{
+    title: string;
+    issuing_body: string | null;
+    expiry_date: string | null;
+    is_verified: boolean;
+  }[];
+  fees: {
     session_type: string;
     session_category: string;
     delivery_method: string;
     duration_minutes: number;
     price: number;
     currency: string;
-  }>;
+  }[];
 
-  // Additional fields from Supabase
-  pronouns?: string;
-  sexuality?: string[];
-  ethnicity?: string[];
-  faith?: string[];
-  therapist_email?: string;
-  therapist_phone?: string;
-  clinic_phone?: string;
-  clinic_street?: string;
-  clinic_postal_code?: string;
-  video_intro_link?: string;
-  is_verified?: boolean;
-  ai_summary?: string;
+  // Add the new videos field
+  videos?: TherapistVideo[];
 }
 
 // Add import for mock data
@@ -130,6 +122,9 @@ import {
   mockTherapistProfile,
   shouldUseMockDataForSlug,
 } from "./mockTherapistData";
+
+// Update import
+import { TherapistVideo } from "../components/VideoEmbed";
 
 /**
  * Fetch a therapist profile by name from the Supabase edge function
@@ -258,46 +253,37 @@ export function nameFromSlug(slug: string): string {
 export function mapSupabaseToTherapistProfile(
   profile: SupabaseTherapistProfile,
 ): TherapistProfile {
-  // Create a basic experience entry from available data
-  const createDefaultExperience = () => {
-    return [
-      {
-        position: profile.title || "Therapist",
-        organization: profile.clinic_name || "Private Practice",
-        startYear: new Date().getFullYear() - 3,
-        endYear: undefined, // Present
-      },
-    ];
-  };
-
   return {
     id: profile.id,
     first_name: profile.first_name,
+    certifications: profile.certifications || [],
+    middle_name: null,
     last_name: profile.last_name,
-    title: profile.title,
     bio: profile.bio || "",
     areas_of_focus: profile.areas_of_focus || [],
-    education: profile.education || [], // Keep as string array directly from database
-    experience: createDefaultExperience(),
+    education: profile.education || [],
     languages: profile.languages || [],
     profile_img_url: profile.profile_img_url || undefined,
-    location: {
-      city: profile.clinic_city || "",
-      province: profile.clinic_province || "",
-      country: profile.clinic_country || "",
-    },
-    available_online: profile.availability === "online" ||
-      profile.availability === "both",
     booking_link: profile.clinic_booking_url,
     approaches: profile.approaches || [],
-    short_summary: profile.ai_summary || "",
-    qualifications: profile.certifications || [],
-    clinic: profile.clinic_name || "",
-    gender: profile.gender || "",
+    clinic_name: profile.clinic_name || "",
+    gender:
+      (profile.gender?.toLowerCase() === "female"
+        ? "female"
+        : profile.gender?.toLowerCase() === "male"
+        ? "male"
+        : "non_binary") as "female" | "male" | "non_binary",
     clinic_profile_url: profile.clinic_profile_url,
-    bio_link: profile.clinic_profile_url,
-    profile_link: profile.profile_img_url,
-    licenses: profile.licenses || [],
+    clinic_booking_url: profile.clinic_booking_url,
+    licenses: (profile.licenses || []).map((license) => ({
+      id: license.id,
+      license_number: license.license_number,
+      state: license.state,
+      title: license.title,
+      issuing_body: license.issuing_body || null,
+      expiry_date: license.expiry_date || null,
+      is_verified: license.is_verified === true,
+    })),
     fees: profile.fees?.map((fee) => ({
       session_type: fee.session_type,
       session_category: fee.session_category,
@@ -316,7 +302,14 @@ export function mapSupabaseToTherapistProfile(
     clinic_street: profile.clinic_street,
     clinic_postal_code: profile.clinic_postal_code,
     video_intro_link: profile.video_intro_link,
-    is_verified: profile.is_verified,
+    initial_price: "",
+    subsequent_price: "",
+    availability: profile.availability || "both",
+    similarity: 0,
+    ai_summary: profile.ai_summary,
+    clinic_city: profile.clinic_city || "",
+    clinic_province: profile.clinic_province || "",
+    clinic_country: profile.clinic_country || "",
   };
 }
 

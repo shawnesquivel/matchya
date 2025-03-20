@@ -88,10 +88,7 @@ const saveFiltersToStorage = (filters: TherapistFilters) => {
   try {
     localStorage.setItem("therapist_filters", JSON.stringify(filters));
   } catch (error) {
-    console.error(
-      "[TherapistContext] Error saving filters to localStorage:",
-      error
-    );
+    console.error("[TherapistContext] Error saving filters to localStorage:", error);
   }
 };
 
@@ -606,6 +603,9 @@ export function TherapistProvider({ children }) {
 
   // New unified update function
   const updateTherapists = async (update: TherapistUpdate) => {
+    /**
+     *  Update the UI to reflect results from chat/filter components.
+     */
     try {
       dispatch({ type: ACTIONS.SET_LOADING_STATE, payload: true });
 
@@ -764,9 +764,7 @@ export function TherapistProvider({ children }) {
 
         // If skipSearch is true, don't make the API call for therapists
         if (update.skipSearch) {
-          console.log(
-            "TherapistContext: Skipping therapist search - location only update"
-          );
+          console.log("TherapistContext: Skipping therapist search - location only update");
           dispatch({ type: ACTIONS.SET_LOADING_STATE, payload: false });
           return;
         }
@@ -859,14 +857,11 @@ export function TherapistProvider({ children }) {
         console.error("[fetchFollowUpQuestions] Invalid response format:", data);
         return;
       }
-
       if (data.questions && Array.isArray(data.questions)) {
         // Add unique IDs to the questions to track them
         const questionsWithIds = data.questions.map((q) => ({
           ...q,
-          id: `followup-${Date.now()}-${Math.random()
-            .toString(36)
-            .slice(2, 11)}`, // Replaced substr with slice
+          id: `followup-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`, // Replaced substr with slice
         }));
 
         dispatch({

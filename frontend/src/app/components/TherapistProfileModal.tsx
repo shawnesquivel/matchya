@@ -13,6 +13,7 @@ import GlobeIcon from "../../components/icons/GlobeIcon";
 import CalendarIcon from "../../components/icons/CalendarIcon";
 import { trackOutboundLink } from "../utils/analytics";
 import CollapsibleAreasOfFocus from "@/app/components/CollapsibleAreasOfFocus";
+import { TherapistVideos } from "./TherapistVideos";
 
 // Add utility function to check image domains
 const validateImageUrl = (url: string | null | undefined, therapistInfo: string): string => {
@@ -312,6 +313,13 @@ export default function TherapistProfileModal({
                   <div className="flex flex-col gap-2">
                     <h2 className="font-medium text-xl">About {displayTherapist.first_name}</h2>
                     <p className="text-mblack">{displayTherapist.bio || "No bio available"}</p>
+
+                    {/* Add videos section right after the bio */}
+                    {displayTherapist.videos && displayTherapist.videos.length > 0 && (
+                      <div className="mt-8">
+                        <TherapistVideos videos={displayTherapist.videos} variant="modal" />
+                      </div>
+                    )}
 
                     <div className="mt-8 flex flex-col gap-2">
                       <h2 className="font-medium text-xl">Areas of Practice</h2>

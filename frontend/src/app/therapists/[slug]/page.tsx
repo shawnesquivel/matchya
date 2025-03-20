@@ -20,6 +20,7 @@ import TherapistLocation from "@/app/components/TherapistLocation";
 import TherapistFees from "@/app/components/TherapistFees";
 import TherapistLicenses from "@/app/components/TherapistLicenses";
 import TherapistQualifications from "@/app/components/TherapistQualifications";
+import { TherapistVideos } from "../../components/TherapistVideos";
 
 // Dynamically import client components
 const TherapistProfileTracker = dynamic(() => import("../../components/TherapistProfileTracker"), {
@@ -163,29 +164,29 @@ function generateJsonLd(therapist: TherapistProfile) {
     "@type": "Person",
     name: `${therapist.first_name} ${therapist.last_name}`,
     description: therapist.bio,
-    jobTitle: therapist.title || "Therapist",
+    jobTitle: therapist.licenses[0].title || "Therapist",
     url: `https://matchya.app/therapists/${encodeURIComponent(
       `${therapist.first_name.toLowerCase()}-${therapist.last_name.toLowerCase()}`
     )}`,
     address: {
       "@type": "PostalAddress",
-      addressLocality: therapist.location.city,
-      addressRegion: therapist.location.province,
-      addressCountry: therapist.location.country,
+      addressLocality: therapist?.clinic_city,
+      addressRegion: therapist?.clinic_province,
+      addressCountry: therapist?.clinic_country,
     },
     hasCredential: therapist.education.map((edu) => ({
       "@type": "EducationalOccupationalCredential",
       name: edu,
     })),
-    workExperience: therapist.experience.map((exp) => ({
+    workExperience: therapist.licenses.map((exp) => ({
       "@type": "OccupationalExperience",
-      title: exp.position,
+      title: exp.title,
       employedIn: {
         "@type": "Organization",
-        name: exp.organization,
+        name: exp.issuing_body,
       },
-      startDate: exp.startYear.toString(),
-      endDate: exp.endYear?.toString() || "Present",
+      startDate: exp.expiry_date,
+      endDate: exp.expiry_date,
     })),
     priceRange: `$${initialPrice}-${subsequentPrice}`,
     image: therapist.profile_img_url
@@ -210,9 +211,9 @@ export async function generateMetadata({
     };
   }
 
-  const title = `${therapist.first_name} - ${therapist.title || "Therapist"} | Matchya`;
-  const description = `${therapist.first_name} is a ${therapist.title} in ${
-    therapist.location.city
+  const title = `${therapist.first_name} - ${therapist.licenses[0].title || "Therapist"} | Matchya`;
+  const description = `${therapist.first_name} is a ${therapist.licenses[0].title} in ${
+    therapist.clinic_city
   }, specializing in ${therapist.areas_of_focus.join(", ")}. Book your session today.`;
 
   return {
@@ -314,6 +315,12 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => {
               <div className="flex flex-col gap-2">
                 <h2 className="font-medium text-xl">About {therapist.first_name}</h2>
                 <p className="text-mblack">{therapist.bio || "No bio available"}</p>
+
+                {therapist.videos && therapist.videos.length > 0 && (
+                  <div className="mt-8">
+                    <TherapistVideos videos={therapist.videos} variant="page" />
+                  </div>
+                )}
 
                 <div className="mt-8 flex flex-col gap-2">
                   <h2 className="font-medium text-xl">Areas of Practice</h2>
