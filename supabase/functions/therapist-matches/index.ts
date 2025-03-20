@@ -13,7 +13,7 @@ const openai = new OpenAI({
 // These are automatically injected
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
-const QUERY_LIMIT = 10;
+const QUERY_LIMIT = 20;
 type DetermineUserMessageIntentResponse = {
   isTherapistRequest: boolean;
   answer: string;
