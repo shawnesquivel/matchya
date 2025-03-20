@@ -81,6 +81,16 @@ type TherapistMatch = {
     expiry_date: string | null;
     is_verified: boolean;
   }[];
+  therapist_fees: TherapistFee[];
+  therapist_licenses: {
+    id: string;
+    license_number: string;
+    state: string;
+    title: string;
+    issuing_body: string | null;
+    expiry_date: string | null;
+    is_verified: boolean;
+  }[];
 };
 
 export const corsHeaders = {
@@ -89,6 +99,27 @@ export const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
   "Access-Control-Max-Age": "86400",
 };
+
+// Add this near the top with other utility functions
+function shuffleTherapists(
+  therapists: TherapistMatch[] | null,
+): TherapistMatch[] {
+  // Handle edge cases
+  if (!therapists || !Array.isArray(therapists) || therapists.length === 0) {
+    return [];
+  }
+
+  // Make a copy to avoid mutating the original array
+  const shuffled = [...therapists];
+
+  // Fisher-Yates shuffle
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+
+  return shuffled;
+}
 
 Deno.serve(async (req) => {
   const perf = createPerformanceTracker("therapist-matches");
@@ -294,35 +325,34 @@ Deno.serve(async (req) => {
             details: error.details,
             hint: error.hint,
             code: error.code,
-            query: "SELECT from therapists with filters", // Simple query description
+            query: "SELECT from therapists with filters",
             filters: currentFilters || {},
           }),
           { headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
 
+      // Shuffle the results using our utility function
+      const shuffledTherapists = shuffleTherapists(therapists);
+      console.log(
+        `[therapist-matches] Shuffled ${shuffledTherapists.length} therapists`,
+      );
+
       perf.endEvent("database:filterQuery", {
-        resultCount: therapists?.length || 0,
+        resultCount: shuffledTherapists.length,
       });
 
       // Safely check therapists exists before logging
       console.log(
-        `[therapist-matches] Found ${therapists?.length || 0} therapists`,
+        `[therapist-matches] Found ${shuffledTherapists.length} therapists`,
       );
-      if (therapists && therapists.length > 0) {
-        console.log("[therapist-matches] First therapist sample:", {
-          id: therapists[0].id,
-          name: `${therapists[0].first_name} ${therapists[0].last_name}`,
-          pronouns: therapists[0].pronouns,
-          pronouns_type: typeof therapists[0].pronouns,
-        });
-      } else {
-        console.log(
+      if (shuffledTherapists.length === 0) {
+        console.warn(
           "[therapist-matches] No therapists data returned or empty array",
         );
       }
 
-      if (!therapists || therapists.length === 0) {
+      if (shuffledTherapists.length === 0) {
         console.log("[therapist-matches] No therapists found by filters");
         return new Response(
           JSON.stringify({
@@ -334,41 +364,7 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Format the therapists to include price information
-      console.log("[therapist-matches] Beginning to format therapists");
-
-      // Safe check that therapists is an array before mapping
-      if (!Array.isArray(therapists)) {
-        console.error(
-          "[therapist-matches] therapists is not an array:",
-          therapists,
-        );
-        return new Response(
-          JSON.stringify({
-            error: "Therapists data is not an array",
-            therapists: [],
-            extractedFilters: currentFilters,
-          }),
-          { headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        );
-      }
-
-      // Add some debugging information before mapping
-      therapists.forEach((therapist, index) => {
-        if (therapist) {
-          console.log(`[therapist-matches] Therapist ${index} info:`, {
-            id: therapist.id,
-            has_fees: Array.isArray(therapist.therapist_fees),
-            has_licenses: Array.isArray(therapist.therapist_licenses),
-          });
-        } else {
-          console.log(
-            `[therapist-matches] Therapist ${index} is null or undefined`,
-          );
-        }
-      });
-
-      const formattedTherapists = therapists.map(
+      const formattedTherapists = shuffledTherapists.map(
         ({ fees, licenses, ...t }: TherapistMatch) => {
           return {
             ...t,
