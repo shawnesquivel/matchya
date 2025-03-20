@@ -38,4 +38,5 @@ export const ALLOWED_IMAGE_DOMAINS = [
   "repiphany.com",
   "vancouvercounsellingclinic.com",
   "hippo-ai-public-assets.s3.us-east-1.amazonaws.com",
+  "mlddlxmupu0y.i.optimole.com",
 ] as const;

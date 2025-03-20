@@ -65,7 +65,8 @@ Deno.serve(async (req) => {
       .select(`
         *,
         fees:therapist_fees(*),
-        licenses:therapist_licenses(*)
+        licenses:therapist_licenses(*),
+        videos:therapist_videos(*)
       `)
       .eq("id", therapistId)
       .limit(1);
@@ -149,6 +150,9 @@ Deno.serve(async (req) => {
 
       // Fees - raw data from database
       fees: therapistFees,
+
+      // Videos
+      videos: therapist.videos || [],
     };
 
     return new Response(

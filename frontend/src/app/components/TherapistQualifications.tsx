@@ -41,6 +41,7 @@ export default function TherapistQualifications({
             </ul>
           </div>
         )}
+
         {/* Certifications */}
         {therapist.certifications && therapist.certifications.length > 0 && (
           <div className="flex flex-col gap-2">
@@ -55,6 +56,7 @@ export default function TherapistQualifications({
             </ul>
           </div>
         )}
+
         {/* Languages */}
         {therapist.languages && therapist.languages.length > 0 && (
           <div className="flex flex-col gap-2">
@@ -66,13 +68,13 @@ export default function TherapistQualifications({
                   key={index}
                   className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-beige"
                 >
-                  {/* Assuming a function getFlagIcon(language) that returns the appropriate icon */}
                   {getFlagIcon(language)} {language}
                 </span>
               ))}
             </div>
           </div>
         )}
+
         {/* No qualifications case */}
         {(!therapist.education || therapist.education.length === 0) &&
           (!therapist.certifications || therapist.certifications.length === 0) && (

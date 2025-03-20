@@ -39,6 +39,7 @@ export interface SupabaseTherapistProfile {
   // Verification
   is_verified?: boolean;
 
+  // Licenses structure matches the database
   licenses: Array<{
     id: string;
     title: string;
@@ -46,9 +47,11 @@ export interface SupabaseTherapistProfile {
     state: string;
     issuing_body: string;
     is_verified?: boolean;
-    expiry_date?: string;
+    expiry_date?: string | null;
     last_verified_date?: string;
   }>;
+
+  // Fees structure
   fees: Array<{
     id: string;
     session_category: string;
@@ -57,6 +60,18 @@ export interface SupabaseTherapistProfile {
     duration_minutes: number;
     price: number;
     currency: string;
+  }>;
+
+  // Videos field
+  videos?: Array<{
+    id: string;
+    url: string;
+    platform: "youtube" | "instagram";
+    type: "intro" | "faq" | "testimonial";
+    title: string | null;
+    description: string | null;
+    display_order: number;
+    is_active: boolean;
   }>;
 }
 // Interface matching the frontend's expected structure
@@ -67,7 +82,7 @@ export interface TherapistProfile {
   last_name: string;
   pronouns: string | null;
   ethnicity: string[];
-  gender: "female" | "male" | "non_binary";
+  gender: string;
   sexuality: string[];
   faith: string[];
   initial_price: string;
@@ -80,7 +95,7 @@ export interface TherapistProfile {
   ai_summary: string | null;
   bio: string | null;
   profile_img_url: string | null;
-  video_intro_link: string | null; // This will be deprecated eventually
+  video_intro_link: string | null;
   clinic_profile_url: string | null;
   clinic_booking_url: string | null;
   booking_link: string | null;
@@ -113,8 +128,10 @@ export interface TherapistProfile {
     currency: string;
   }[];
 
-  // Add the new videos field
+  // Add the videos field
   videos?: TherapistVideo[];
+  // Boolean indicating verification status
+  is_verified?: boolean;
 }
 
 // Add import for mock data
@@ -256,26 +273,19 @@ export function mapSupabaseToTherapistProfile(
   return {
     id: profile.id,
     first_name: profile.first_name,
-    certifications: profile.certifications || [],
-    middle_name: null,
+    middle_name: null, // No direct mapping
     last_name: profile.last_name,
     bio: profile.bio || "",
     areas_of_focus: profile.areas_of_focus || [],
     education: profile.education || [],
     languages: profile.languages || [],
-    profile_img_url: profile.profile_img_url || undefined,
+    profile_img_url: profile.profile_img_url,
     booking_link: profile.clinic_booking_url,
-    approaches: profile.approaches || [],
-    clinic_name: profile.clinic_name || "",
-    gender:
-      (profile.gender?.toLowerCase() === "female"
-        ? "female"
-        : profile.gender?.toLowerCase() === "male"
-        ? "male"
-        : "non_binary") as "female" | "male" | "non_binary",
-    clinic_profile_url: profile.clinic_profile_url,
     clinic_booking_url: profile.clinic_booking_url,
-    licenses: (profile.licenses || []).map((license) => ({
+    approaches: profile.approaches || [],
+    gender: profile.gender,
+    clinic_profile_url: profile.clinic_profile_url,
+    licenses: profile.licenses?.map((license) => ({
       id: license.id,
       license_number: license.license_number,
       state: license.state,
@@ -283,7 +293,7 @@ export function mapSupabaseToTherapistProfile(
       issuing_body: license.issuing_body || null,
       expiry_date: license.expiry_date || null,
       is_verified: license.is_verified === true,
-    })),
+    })) || [],
     fees: profile.fees?.map((fee) => ({
       session_type: fee.session_type,
       session_category: fee.session_category,
@@ -298,18 +308,23 @@ export function mapSupabaseToTherapistProfile(
     faith: profile.faith,
     therapist_email: profile.therapist_email,
     therapist_phone: profile.therapist_phone,
-    clinic_phone: profile.clinic_phone,
+    clinic_name: profile.clinic_name,
     clinic_street: profile.clinic_street,
+    clinic_city: profile.clinic_city,
+    clinic_province: profile.clinic_province,
     clinic_postal_code: profile.clinic_postal_code,
+    clinic_country: profile.clinic_country,
+    clinic_phone: profile.clinic_phone,
     video_intro_link: profile.video_intro_link,
+    is_verified: profile.is_verified,
+    availability: profile.availability,
+    certifications: profile.certifications || [],
+    ai_summary: profile.ai_summary,
+    videos: profile.videos || [],
+    // These are derived values
     initial_price: "",
     subsequent_price: "",
-    availability: profile.availability || "both",
     similarity: 0,
-    ai_summary: profile.ai_summary,
-    clinic_city: profile.clinic_city || "",
-    clinic_province: profile.clinic_province || "",
-    clinic_country: profile.clinic_country || "",
   };
 }
 

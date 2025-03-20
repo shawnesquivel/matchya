@@ -46,23 +46,7 @@ export default function TherapistLicenses({
   return (
     <div className={`${containerClasses} ${className}`}>
       <div className="flex flex-col gap-4 text-mblack">
-        <h2 className={`${titleClasses} flex items-center gap-2`}>
-          License{" "}
-          {/* <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5 text-gray-700"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={1.5}
-              d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
-            />
-          </svg> */}
-        </h2>
+        <h2 className={`${titleClasses} flex items-center gap-2`}>License</h2>
 
         {therapist.licenses && therapist.licenses.length > 0 ? (
           <div className="space-y-4">
@@ -107,21 +91,8 @@ export default function TherapistLicenses({
               </div>
             ))}
           </div>
-        ) : therapist?.certifications && therapist?.certifications?.length > 0 ? (
-          <div className="flex flex-col gap-1">
-            <div className="flex flex-col gap-1 pb-2">
-              <h3 className="text-xs font-medium">Professional Qualifications</h3>
-              <ul className="list-disc list-inside pl-2">
-                {therapist?.certifications?.map((qual, index) => (
-                  <li key={index} className="text-sm text-gray-700 mb-1">
-                    {qual}
-                  </li>
-                ))}
-              </ul>
-              <VerificationStatus isVerified={false} />
-            </div>
-          </div>
         ) : (
+          // If no licenses, show placeholder
           <div className="flex flex-col gap-1 pb-2">
             <span className="text-sm text-grey-extraDark">License information not available</span>
           </div>

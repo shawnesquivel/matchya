@@ -53,7 +53,7 @@ export default function TherapistProfileHeader({ therapist }: TherapistProfileHe
 
   // Determine if we have links to show
   const hasWebsite = therapist.clinic_profile_url;
-  const hasBooking = therapist.booking_link;
+  const hasBooking = therapist.booking_link || therapist.clinic_booking_url;
   const websiteUrl = therapist.clinic_profile_url || "";
 
   // Handle analytics tracking for outbound links

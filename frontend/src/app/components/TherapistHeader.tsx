@@ -89,9 +89,9 @@ export default function TherapistHeader({
               View website
             </a>
           )}
-          {therapist.booking_link && (
+          {therapist.clinic_booking_url && (
             <a
-              href={therapist.booking_link}
+              href={therapist.clinic_booking_url}
               target="_blank"
               rel="noopener noreferrer"
               className="rounded-full flex justify-center align-middle px-4 h-fit py-4 bg-green text-white-dark"

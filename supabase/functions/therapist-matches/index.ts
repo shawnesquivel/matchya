@@ -91,6 +91,16 @@ type TherapistMatch = {
     expiry_date: string | null;
     is_verified: boolean;
   }[];
+  videos?: {
+    id: string;
+    url: string;
+    platform: "instagram" | "youtube";
+    type: "intro" | "faq" | "testimonial";
+    title: string | null;
+    description: string | null;
+    display_order: number;
+    is_active: boolean;
+  }[];
 };
 
 export const corsHeaders = {
@@ -218,7 +228,8 @@ Deno.serve(async (req) => {
         education,
         certifications,
         therapist_fees!inner(session_category, session_type, price, currency, delivery_method, duration_minutes),
-        therapist_licenses(*)
+        therapist_licenses(*),
+        therapist_videos(id, url, platform, type, title, description, display_order, is_active)
       `);
 
       // Apply all filters from the currentFilters object
@@ -389,6 +400,7 @@ Deno.serve(async (req) => {
               )?.price
               : null,
             licenses: Array.isArray(licenses) ? licenses : [],
+            videos: Array.isArray(t.videos) ? t.videos : [],
           };
         },
       );
@@ -620,6 +632,7 @@ Deno.serve(async (req) => {
           education: t.education,
           certifications: t.certifications,
           licenses: t.licenses || [],
+          videos: t.videos || [],
         })) || [],
         filters: {
           gender: params.gender_filter || null,
@@ -1002,7 +1015,6 @@ Include reasoning for the extracted preferences and explain any ambiguity in the
         areas_of_focus_filter: resultWithLocation.areas_of_focus_filter !== null
           ? resultWithLocation.areas_of_focus_filter
           : currentFilters.areas_of_focus,
-        // Location always comes from the UI selection
         clinic_city: currentFilters.clinic_city,
         clinic_province: currentFilters.clinic_province,
       };

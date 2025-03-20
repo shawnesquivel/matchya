@@ -23,7 +23,6 @@ export default function TherapistLocation({
 
   const titleClasses = variant === "modal" ? "font-medium text-xl" : "font-medium text-3xl";
 
-  // Format address from individual fields
   const formattedAddress = [
     therapist.clinic_street,
     therapist.clinic_city,
@@ -33,6 +32,9 @@ export default function TherapistLocation({
   ]
     .filter(Boolean)
     .join(", ");
+
+  // Check if therapist supports online sessions based on availability field
+  const supportsOnline = therapist.availability === "online" || therapist.availability === "both";
 
   return (
     <div className={`${containerClasses} ${className}`}>
@@ -51,20 +53,20 @@ export default function TherapistLocation({
         )}
 
         {/* Only show Availability section if availability data exists */}
-        {(therapist.availability || true) && (
+        {therapist.availability && (
           <div className="flex flex-col gap-2">
             <h3 className="text-xs">Availability</h3>
             <div className="flex flex-wrap gap-2">
-              {therapist.availability === "online" || therapist.availability === "both" ? (
+              {supportsOnline && (
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-beige">
                   Online Sessions
                 </span>
-              ) : null}
-              {therapist.availability === "in_person" || therapist.availability === "both" ? (
+              )}
+              {(therapist.availability === "in_person" || therapist.availability === "both") && (
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-beige">
                   In-Person
                 </span>
-              ) : null}
+              )}
             </div>
           </div>
         )}
