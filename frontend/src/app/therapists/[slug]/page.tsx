@@ -243,6 +243,8 @@ export const revalidate = 3600;
 
 // Main server component
 const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => {
+  console.log("Original URL:", therapist.profile_img_url);
+  console.log("Safe URL:", getSafeImageUrl(therapist.profile_img_url));
   return (
     <>
       {/* Client component for tracking views */}
@@ -272,14 +274,16 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => {
               <div className="relative w-[40vw] md:w-full md:left-0 md:translate-x-0">
                 <div className="absolute max-w-[150px] md:max-w-none w-full bottom-0 border border-grey-extraDark aspect-square rounded-full overflow-hidden md:translate-y-[50%]">
                   {therapist.profile_img_url ? (
-                    <Image
-                      src={getSafeImageUrl(therapist.profile_img_url)}
-                      alt={`${therapist.first_name} ${therapist.last_name}`}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 768px) 50vw, 33vw"
-                      priority
-                    />
+                    <>
+                      <Image
+                        src={getSafeImageUrl(therapist.profile_img_url)}
+                        alt={`${therapist.first_name} ${therapist.last_name}`}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 50vw, 33vw"
+                        priority
+                      />
+                    </>
                   ) : (
                     <div className="bg-grey-light h-full w-full flex items-center justify-center"></div>
                   )}
