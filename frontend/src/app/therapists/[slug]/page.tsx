@@ -243,8 +243,6 @@ export const revalidate = 3600;
 
 // Main server component
 const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => {
-  console.log("Original URL:", therapist.profile_img_url);
-  console.log("Safe URL:", getSafeImageUrl(therapist.profile_img_url));
   return (
     <>
       {/* Client component for tracking views */}

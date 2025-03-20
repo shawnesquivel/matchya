@@ -11,20 +11,10 @@ export const getSafeImageUrl = (url: string | undefined | null): string => {
 
   try {
     const urlObj = new URL(url);
-    console.log("[getSafeImageUrl] Checking URL:", {
-      originalUrl: url,
-      hostname: urlObj.hostname,
-      allowedDomains: ALLOWED_IMAGE_DOMAINS,
-    });
 
     const isAllowedDomain = ALLOWED_IMAGE_DOMAINS.includes(
       urlObj.hostname as any,
     );
-
-    console.log("[getSafeImageUrl] Domain check result:", {
-      hostname: urlObj.hostname,
-      isAllowed: isAllowedDomain,
-    });
 
     if (!isAllowedDomain) {
       console.warn(
@@ -33,7 +23,10 @@ export const getSafeImageUrl = (url: string | undefined | null): string => {
     }
     return isAllowedDomain ? url : "/assets/images/default-pp.png";
   } catch (error) {
-    console.error("[getSafeImageUrl] Error processing URL:", error);
+    console.error(
+      "[getSafeImageUrl] Error processing URL, falling back to default.",
+      error,
+    );
     return "/assets/images/default-pp.png";
   }
 };
