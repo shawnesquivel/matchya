@@ -1,6 +1,6 @@
 import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
-import { aspekta } from "./styles/fonts";
+import { inter } from "./styles/fonts";
 import { ClerkProvider } from "@clerk/nextjs";
 
 export const metadata = {
@@ -42,9 +42,7 @@ export default function RootLayout({ children }) {
           />
           {/* End Google Tag Manager */}
         </head>
-        <body
-          className={`max-h-screen h-screen flex flex-col ${aspekta.className}`}
-        >
+        <body className={`${inter.className} max-h-screen h-screen flex flex-col`}>
           {/* Google Tag Manager (noscript) */}
           <noscript
             dangerouslySetInnerHTML={{

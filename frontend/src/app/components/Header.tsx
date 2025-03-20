@@ -1,11 +1,18 @@
 import React from "react";
 import Image from "next/image";
+import LocationDisplay from "./LocationDisplay";
 
 interface HeaderProps {
   className?: string;
+  showLocationDisplay?: boolean;
+  handleResetLocation?: () => void;
 }
 
-export default function Header({ className = "" }: HeaderProps) {
+export default function Header({
+  className = "",
+  showLocationDisplay = false,
+  handleResetLocation,
+}: HeaderProps) {
   return (
     <header
       className={`sticky top-0 z-30 bg-beige-extralight border-b border-grey-light ${className}`}
@@ -26,6 +33,12 @@ export default function Header({ className = "" }: HeaderProps) {
           </div>
           <p className="text-xs text-green font-medium">Find Your Ideal Therapist</p>
         </div>
+
+        {showLocationDisplay && handleResetLocation && (
+          <div className="flex items-center">
+            <LocationDisplay handleResetLocation={handleResetLocation} />
+          </div>
+        )}
       </div>
     </header>
   );

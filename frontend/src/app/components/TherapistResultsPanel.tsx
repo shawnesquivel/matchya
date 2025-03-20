@@ -39,9 +39,7 @@ interface TherapistResultsPanelProps {
   onResetLocation: () => void;
 }
 
-export default function TherapistResultsPanel({
-  onResetLocation,
-}: TherapistResultsPanelProps) {
+export default function TherapistResultsPanel({ onResetLocation }: TherapistResultsPanelProps) {
   const {
     therapists,
     isLoading,
@@ -141,12 +139,10 @@ export default function TherapistResultsPanel({
     <div className="w-full h-full overflow-y-auto bg-white">
       <div className="sm:flex hidden sticky top-0 sm:p-4 p-2 flex-col sm:flex-row sm:justify-between sm:items-center bg-white z-20 border-b border-grey-light">
         <div className="flex items-center gap-4">
-          <h2 className="sm:block hidden text-lg font-medium text-mblack">
-            Matched Therapists
-          </h2>
+          <h2 className="sm:block hidden text-lg font-medium text-mblack">Matched Therapists</h2>
 
           {/* Location Indicator */}
-          <button
+          {/* <button
             onClick={onResetLocation}
             className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-beige-extralight hover:bg-beige-dark transition-colors border border-grey-light text-sm text-mblack"
             title="Click to change location"
@@ -176,7 +172,7 @@ export default function TherapistResultsPanel({
                 ? `${filters.clinic_city}, ${filters.clinic_province}`
                 : "Online Only"}
             </span>
-          </button>
+          </button> */}
         </div>
 
         <div className="flex items-center ml-auto">
@@ -318,14 +314,11 @@ export default function TherapistResultsPanel({
                             </div>
                             <div className="flex items-center text-mblack mt-1">
                               <span className="text-mblack text-xs">
-                                {therapist.clinic_city &&
-                                therapist.clinic_province
+                                {therapist.clinic_city && therapist.clinic_province
                                   ? `${therapist.clinic_city}, ${therapist.clinic_province}`
                                   : "Location Unavailable"}
                               </span>
-                              <span className="mx-2 text-beige-dark text-xs">
-                                |
-                              </span>
+                              <span className="mx-2 text-beige-dark text-xs">|</span>
                               <div className="flex gap-2">
                                 {therapist.availability === "online" ||
                                 therapist.availability === "both" ? (

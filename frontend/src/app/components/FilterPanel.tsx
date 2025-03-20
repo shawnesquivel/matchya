@@ -4,6 +4,7 @@ import { useTherapist } from "../contexts/TherapistContext";
 import Image from "next/image";
 import Link from "next/link";
 import { ClientOnly } from "./ClientOnly";
+import Header from "./Header";
 
 export default function FilterPanel() {
   const {
@@ -138,7 +139,7 @@ export default function FilterPanel() {
   ) : null;
 
   return (
-    <div className="bg-white-dark w-full h-full border sm:p-4 p-2 overflow-y-auto relative">
+    <div className="bg-white-dark w-full h-full border overflow-y-auto relative">
       {formOverlay}
       {isLoading && (
         <div className="absolute inset-0 bg-white/50 flex items-center justify-center">
@@ -146,19 +147,8 @@ export default function FilterPanel() {
         </div>
       )}
       {/* Single subtle logo in top-left */}
-      <div className="z-20 opacity-80 mb-4 md:block hidden">
-        <Link href="https://matchya.app/" target="_blank">
-          <Image
-            src="/assets/images/matchyalogo.png"
-            alt="Matchya Logo"
-            width={80}
-            height={24}
-            priority
-            className="object-contain"
-          />
-        </Link>
-      </div>
-      <div className="flex justify-between items-center mb-4">
+
+      <div className="flex justify-between items-center mb-4 sm:p-4 p-2 ">
         <h2 className="text-lg font-semibold md:block hidden">Filters</h2>
         <button
           onClick={handleReset}
@@ -182,7 +172,7 @@ export default function FilterPanel() {
 
       <ClientOnly>
         {/* Wrap filter sections with ClientOnly to prevent hydration errors */}
-        <div>
+        <div className="sm:p-4 p-2 ">
           {/* Add Pricing Section with PriceDisplay */}
           <div className="mb-6">
             <h3 className="text-sm mb-3 text-grey-medium font-medium">Price Range</h3>

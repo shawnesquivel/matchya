@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useTherapist } from "../contexts/TherapistContext";
 import Header from "./Header";
 import Footer from "./Footer";
@@ -10,17 +10,23 @@ interface WelcomePageProps {
 
 export default function WelcomePage({ onLocationSelected }: WelcomePageProps) {
   const { updateTherapists } = useTherapist();
+  const [selectedLocation, setSelectedLocation] = useState("");
 
-  const handleLocationChange = async (locationValue: string) => {
+  const handleLocationChange = (locationValue: string) => {
     console.log("WelcomePage: Location selected:", locationValue);
+    setSelectedLocation(locationValue);
+  };
+
+  const handleExploreClick = async () => {
+    if (!selectedLocation) return;
 
     // Parse the locationValue to get city and province
     let clinic_city = null;
     let clinic_province = null;
 
-    if (locationValue) {
+    if (selectedLocation) {
       // Split "Vancouver, BC" into ["Vancouver", "BC"]
-      const parts = locationValue.split(", ");
+      const parts = selectedLocation.split(", ");
       if (parts.length === 2) {
         clinic_city = parts[0];
         clinic_province = parts[1];
@@ -46,7 +52,7 @@ export default function WelcomePage({ onLocationSelected }: WelcomePageProps) {
       <Header />
       <main className="flex-1 flex items-center justify-center p-4">
         <div className="w-full space-y-10 text-center">
-          <h1 className="text-5xl font-new-spirit font-light">
+          <h1 className="md:text-5xl text-2xl font-new-spirit font-light">
             Find Your{" "}
             <span className="italic" style={{ position: "relative", display: "inline-block" }}>
               Ideal
@@ -76,7 +82,7 @@ export default function WelcomePage({ onLocationSelected }: WelcomePageProps) {
           <div className="max-w-[800px] mx-auto relative">
             <select
               onChange={(e) => handleLocationChange(e.target.value)}
-              className="w-full py-8 px-6 rounded-lg border border-grey-light text-grey-extraDark bg-white shadow-sm focus:ring-1 focus:ring-green-light focus:border-transparent appearance-none"
+              className="w-full sm:py-8 sm:px-6 py-4 px-4 rounded-lg border border-grey-light text-grey-extraDark bg-white shadow-sm focus:ring-1 focus:ring-green-light focus:border-transparent appearance-none"
               defaultValue=""
             >
               <option value="" disabled>
@@ -104,6 +110,21 @@ export default function WelcomePage({ onLocationSelected }: WelcomePageProps) {
                 </svg>
               </div>{" "}
             </div>
+          </div>
+
+          {/* Explore Providers Button */}
+          <div className="mt-6">
+            <button
+              onClick={handleExploreClick}
+              disabled={!selectedLocation}
+              className={`px-8 py-3 rounded-full text-white font-medium transition-all ${
+                selectedLocation
+                  ? "bg-green hover:bg-green-dark"
+                  : "bg-grey-dark cursor-not-allowed"
+              }`}
+            >
+              Explore Providers
+            </button>
           </div>
 
           {/* Additional Info */}

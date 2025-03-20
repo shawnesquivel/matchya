@@ -7,6 +7,7 @@ import TherapistResultsPanel from "./components/TherapistResultsPanel";
 import WelcomePage from "./components/WelcomePage";
 import LocationDisplay from "./components/LocationDisplay";
 import Image from "next/image";
+import Header from "./components/Header";
 
 const scrollbarStyles = `
   ::-webkit-scrollbar {
@@ -32,6 +33,11 @@ const scrollbarStyles = `
     scrollbar-width: thin;
     scrollbar-color: #DDDBD3 transparent;
   }
+  
+  /* Filter panel preview */
+  .filter-panel-preview * {
+    pointer-events: none;
+  }
 `;
 
 // Mobile detection function
@@ -43,6 +49,7 @@ const isMobileDevice = () => {
 export default function ChatHomePage() {
   const [hasSelectedLocation, setHasSelectedLocation] = useState(false);
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
+  const [isFilterPeeking, setIsFilterPeeking] = useState(false);
   const [isChatExpanded, setIsChatExpanded] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
@@ -493,95 +500,119 @@ export default function ChatHomePage() {
           </div>
         ) : (
           /* Desktop Layout */
-          <div className="flex w-full h-screen gap-4 overflow-hidden">
-            {/* Filters - Collapsible */}
-            <div
-              className={`flex-none transition-all duration-300 ease-in-out ${
-                isFilterExpanded ? "w-1/4 max-w-[300px]" : "w-[50px]"
-              }`}
+          <div className="flex flex-col w-full h-screen overflow-hidden">
+                <Header 
+                  showLocationDisplay={true} 
+                  handleResetLocation={handleResetLocation}
+                />
+                <div className="flex w-full h-screen gap-4 overflow-hidden">
+        {/* Filters - Collapsible */}
+        <div
+          className={`z-30 flex-none transition-all duration-300 ease-in-out ${
+            isFilterExpanded ? "w-1/4 max-w-[300px]" : isFilterPeeking ? "w-[90px]" : "w-[20px]"
+          }`}
+          onMouseEnter={() => !isFilterExpanded && setIsFilterPeeking(true)}
+          onMouseLeave={() => setIsFilterPeeking(false)}
+        >
+          <div className="relative h-full">
+            <button
+              onClick={() => setIsFilterExpanded(!isFilterExpanded)}
+              className={`absolute ${
+                isFilterExpanded ? "left-[300px]" : isFilterPeeking ? "left-[90px]" : "left-[0px]"
+              } top-20 z-10 bg-white shadow-md border px-0.5 py-4 rounded-r-md flex flex-col items-center justify-between transition-all duration-300 w-[26px]`}
             >
-              <div className="relative h-full">
-                <button
-                  onClick={() => setIsFilterExpanded(!isFilterExpanded)}
-                  className="absolute -right-3 top-20 z-10 bg-white rounded-full p-1 shadow-md border"
-                >
-                  <svg
-                    className={`w-4 h-4 transform transition-transform ${
-                      isFilterExpanded ? "rotate-0" : "rotate-180"
-                    }`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 19l-7-7 7-7"
-                    />
-                  </svg>
-                </button>
-
-                {/* Filter Panel with overflow handling */}
-                <div
-                  className={`h-full overflow-hidden transition-all duration-300 ${
-                    isFilterExpanded ? "opacity-100" : "opacity-0"
-                  }`}
-                >
-                  <FilterPanel />
-                </div>
+              <div className="h-[120px] flex items-center">
+                <span className="transform -rotate-90 whitespace-nowrap origin-center text-sm">Filter Options</span>
               </div>
-            </div>
+              <svg
+                className={`w-4 h-4 transform ${
+                  isFilterExpanded ? "" : "rotate-0"
+                }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d={
+                    isFilterExpanded ? "M15 19l-7-7 7-7" : "M9 5l7 7-7 7"
+                  }
+                />
+              </svg>
+            </button>
 
-            {/* Therapist Results - 50% (center) */}
-            <div className="bg-white flex-1 min-w-0">
-              <TherapistResultsPanel onResetLocation={handleResetLocation} />
-            </div>
-
-            {/* Chat - Collapsible */}
+            {/* Filter Panel with overflow handling */}
             <div
-              className={`flex-none transition-all duration-300 ease-in-out ${
-                isChatExpanded ? "w-1/3 max-w-[500px]" : "w-[50px]"
+              className={`h-full transition-all duration-300 overflow-hidden relative ${
+                isFilterExpanded ? "opacity-100" : isFilterPeeking ? "opacity-90" : "opacity-0"
               }`}
             >
-              <div className="relative h-full">
-                {/* Toggle Button */}
-                <button
-                  onClick={() => setIsChatExpanded(!isChatExpanded)}
-                  className="absolute -left-3 top-4 z-10 bg-white rounded-full p-1 shadow-md border"
-                >
-                  <svg
-                    className={`w-4 h-4 transform transition-transform ${
-                      isChatExpanded ? "rotate-180" : "rotate-0"
-                    }`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M15 19l-7-7 7-7"
-                    />
-                  </svg>
-                </button>
-
-                {/* Chat Panel with overflow handling */}
-                <div
-                  className={`h-full overflow-hidden transition-all duration-300 ${
-                    isChatExpanded ? "opacity-100" : "opacity-0"
-                  }`}
-                >
-                  <ChatPanel />
-                </div>
+              {/* Click overlay for peek state */}
+              {isFilterPeeking && !isFilterExpanded && (
+                <div 
+                  className="absolute inset-0 z-20 cursor-pointer bg-transparent" 
+                  onClick={() => setIsFilterExpanded(true)}
+                  aria-label="Expand filter panel"
+                />
+              )}
+              <div className={`w-[300px] h-full overflow-y-auto`}>
+                <FilterPanel />
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Therapist Results - 50% (center) */}
+        <div className="bg-white flex-1 min-w-0">
+              <TherapistResultsPanel onResetLocation={handleResetLocation} />
+        </div>
+
+        {/* Chat - Collapsible */}
+        <div
+          className={`flex-none transition-all duration-300 ease-in-out ${
+            isChatExpanded ? "w-1/3 max-w-[500px]" : "w-[50px]"
+          }`}
+        >
+          <div className="relative h-full">
+            {/* Toggle Button */}
+            <button
+              onClick={() => setIsChatExpanded(!isChatExpanded)}
+              className="absolute -left-3 top-4 z-10 bg-white rounded-full p-1 shadow-md border"
+            >
+              <svg
+                className={`w-4 h-4 transform transition-transform ${
+                  isChatExpanded ? "rotate-180" : "rotate-0"
+                }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+            </button>
+
+            {/* Chat Panel with overflow handling */}
+            <div
+                  className={`h-full overflow-hidden transition-all duration-300 ${
+                isChatExpanded ? "opacity-100" : "opacity-0"
+              }`}
+            >
+              <ChatPanel />
+            </div>
+          </div>
+        </div>     </div>
+      </div>
         )}
-      </TherapistProvider>
+    </TherapistProvider>
     </div>
   );
 }

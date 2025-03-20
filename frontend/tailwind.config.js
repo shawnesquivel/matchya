@@ -13,6 +13,7 @@ module.exports = {
           extralight: "#BCBD88",
           light: "#C9D356",
           DEFAULT: "#466421",
+          dark: "#365216",
         },
         mblack: {
           DEFAULT: "#2A1410",
@@ -48,6 +49,7 @@ module.exports = {
         },
       },
       fontFamily: {
+        sans: ["Inter", "system-ui", "sans-serif"],
         'new-spirit': ['new-spirit', 'serif'],
       },
       backgroundImage: {
