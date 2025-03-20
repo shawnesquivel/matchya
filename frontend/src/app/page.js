@@ -1,9 +1,11 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
-import { TherapistProvider } from "./contexts/TherapistContext";
+import { TherapistProvider, useTherapist } from "./contexts/TherapistContext";
 import FilterPanel from "./components/FilterPanel";
 import ChatPanel from "./components/ChatPanel";
 import TherapistResultsPanel from "./components/TherapistResultsPanel";
+import WelcomePage from "./components/WelcomePage";
+import LocationDisplay from "./components/LocationDisplay";
 import Image from "next/image";
 
 const scrollbarStyles = `
@@ -38,13 +40,14 @@ const isMobileDevice = () => {
   return window.innerWidth < 900; // Common breakpoint for mobile devices
 };
 
-export default function SupaChatContextPage() {
+export default function ChatHomePage() {
+  const [hasSelectedLocation, setHasSelectedLocation] = useState(false);
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
   const [isChatExpanded, setIsChatExpanded] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const lastScrollY = useRef(0);
-  
+
   // Mobile-specific states
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [chatDrawerState, setChatDrawerState] = useState("minimized"); // "closed", "minimized", "open"
@@ -81,16 +84,16 @@ export default function SupaChatContextPage() {
   useEffect(() => {
     // Only apply on mobile
     if (!isMobile) return;
-    
+
     // Prevent body scrolling when chat is open or minimized
     if (chatDrawerState !== "closed") {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = '';
+      document.body.style.overflow = "";
     }
-    
+
     return () => {
-      document.body.style.overflow = '';
+      document.body.style.overflow = "";
     };
   }, [isMobile, chatDrawerState]);
 
@@ -101,20 +104,20 @@ export default function SupaChatContextPage() {
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       const isScrollingDown = currentScrollY > lastScrollY.current;
-      
+
       setIsHeaderVisible(!isScrollingDown);
       lastScrollY.current = currentScrollY;
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
   }, [isMobile]);
 
   // Toggle chat drawer state
   const toggleChatDrawer = () => {
     // Reset custom height when using the toggle button
     setCustomHeight(null);
-    
+
     // Cycle through states: closed -> minimized -> open -> minimized -> closed
     if (chatDrawerState === "closed") {
       setChatDrawerState("minimized");
@@ -124,36 +127,48 @@ export default function SupaChatContextPage() {
       setChatDrawerState("minimized");
     }
   };
-  
+
   // Function to close chat drawer
   const closeChat = (e) => {
     e.stopPropagation();
     setChatDrawerState("closed");
     setCustomHeight(null);
   };
-  
+
   // Toggle filter panel for mobile
   const toggleFilterPanel = () => {
     setIsFilterOpen(!isFilterOpen);
   };
-  
+
   // Get the height style for the chat drawer
   const getChatDrawerHeight = () => {
     if (customHeight !== null) {
       return `${customHeight}px`;
     }
-    
+
     if (chatDrawerState === "closed") return "48px"; // h-12
     if (chatDrawerState === "minimized") return "30vh";
     return "75vh";
   };
+
+  const handleResetLocation = () => {
+    setHasSelectedLocation(false);
+  };
+
+  if (!hasSelectedLocation) {
+    return (
+      <TherapistProvider>
+        <WelcomePage onLocationSelected={() => setHasSelectedLocation(true)} />
+      </TherapistProvider>
+    );
+  }
 
   return (
     <div className="relative min-h-screen w-full bg-white">
       <style jsx global>
         {`
           ${scrollbarStyles}
-          
+
           /* Header transition */
           .sticky-header {
             position: fixed;
@@ -164,20 +179,20 @@ export default function SupaChatContextPage() {
             transition: transform 0.3s ease-in-out;
             background: white;
           }
-          
+
           .sticky-header.hidden {
             transform: translateY(-100%);
           }
-          
+
           /* Prevent zoom on focus */
           @viewport {
             width: device-width;
-            zoom: 1.0;
-            min-zoom: 1.0;
-            max-zoom: 1.0;
+            zoom: 1;
+            min-zoom: 1;
+            max-zoom: 1;
             user-zoom: fixed;
           }
-          
+
           input[type="text"],
           input[type="search"],
           input[type="email"],
@@ -185,7 +200,7 @@ export default function SupaChatContextPage() {
           textarea {
             font-size: 16px !important; /* Prevents zoom on iOS */
           }
-          
+
           /* Drag handle styling */
           .drag-handle {
             touch-action: none !important;
@@ -194,15 +209,15 @@ export default function SupaChatContextPage() {
             user-select: none !important;
             z-index: 100;
           }
-          
+
           .drag-handle .handle-bar {
             transition: background-color 0.2s;
           }
-          
+
           .drag-handle:hover .handle-bar {
             background-color: #999 !important;
           }
-          
+
           /* Prevent page scrolling during drag */
           body.dragging-chat {
             overflow: hidden;
@@ -218,7 +233,9 @@ export default function SupaChatContextPage() {
             {/* Main content area with fixed header */}
             <div className="flex-1 relative">
               {/* Top Bar with Logo and Filter Toggle */}
-              <div className={`sticky-header ${!isHeaderVisible ? 'hidden' : ''}`}>
+              <div
+                className={`sticky-header ${!isHeaderVisible ? "hidden" : ""}`}
+              >
                 <div className="flex items-center justify-between px-2 py-1 border-b shadow-sm bg-white">
                   <div className="sm:h-8 h-6 w-auto">
                     <Image
@@ -230,42 +247,68 @@ export default function SupaChatContextPage() {
                       className="object-contain h-full w-auto"
                     />
                   </div>
-                  
-                  <button 
-                    onClick={toggleFilterPanel}
-                    className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 text-gray-600 focus:outline-none"
-                    aria-label="Toggle filters"
-                  >
-                    <svg 
-                      xmlns="http://www.w3.org/2000/svg" 
-                      className="h-5 w-5" 
-                      fill="none" 
-                      viewBox="0 0 24 24" 
-                      stroke="currentColor"
+
+                  {/* Add location indicator for mobile */}
+                  <div className="flex items-center gap-2">
+                    <LocationDisplay
+                      handleResetLocation={handleResetLocation}
+                    />
+                    <button
+                      onClick={toggleFilterPanel}
+                      className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 text-gray-600 focus:outline-none"
+                      aria-label="Toggle filters"
                     >
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 010 2H4a1 1 0 01-1-1zm3 6a1 1 0 011-1h10a1 1 0 010 2H7a1 1 0 01-1-1zm4 6a1 1 0 011-1h2a1 1 0 010 2h-2a1 1 0 01-1-1z" />
-                    </svg>
-                  </button>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-5 w-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M3 4a1 1 0 011-1h16a1 1 0 010 2H4a1 1 0 01-1-1zm3 6a1 1 0 011-1h10a1 1 0 010 2H7a1 1 0 01-1-1zm4 6a1 1 0 011-1h2a1 1 0 010 2h-2a1 1 0 01-1-1z"
+                        />
+                      </svg>
+                    </button>
+                  </div>
                 </div>
               </div>
-              
+
               {/* Scrollable content area */}
               <div className="absolute inset-0 overflow-y-auto pt-[60px] pb-[60px]">
-                <TherapistResultsPanel />
+                <TherapistResultsPanel onResetLocation={handleResetLocation} />
               </div>
             </div>
-            
+
             {/* Filter Panel Drawer */}
-            <div className={`fixed inset-y-0 left-0 transform ${isFilterOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out z-50 w-11/12 max-w-md bg-white-dark`}>
+            <div
+              className={`fixed inset-y-0 left-0 transform ${
+                isFilterOpen ? "translate-x-0" : "-translate-x-full"
+              } transition-transform duration-300 ease-in-out z-50 w-11/12 max-w-md bg-white-dark`}
+            >
               <div className="h-full flex flex-col">
                 <div className="p-2 flex justify-between items-center border-grey-light">
                   <h2 className="text-lg font-medium">Filters</h2>
-                  <button 
-                    onClick={toggleFilterPanel} 
+                  <button
+                    onClick={toggleFilterPanel}
                     className="w-8 h-8 flex items-center justify-center text-gray-500"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-6 w-6"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -274,26 +317,26 @@ export default function SupaChatContextPage() {
                 </div>
               </div>
             </div>
-            
+
             {/* Overlay when filter is open */}
             {isFilterOpen && (
-              <div 
+              <div
                 className="fixed inset-0 bg-black bg-opacity-50 z-40"
                 onClick={toggleFilterPanel}
               />
             )}
-            
+
             {/* Chat Drawer */}
-            <div 
+            <div
               ref={chatDrawerRef}
               className="z-[21] bg-white-dark chat-drawer fixed bottom-0 left-0 right-0 border border-grey-light rounded-t-xl "
-              style={{ 
+              style={{
                 height: getChatDrawerHeight(),
-                transition: isDragging ? 'none' : 'height 0.3s ease-in-out'
+                transition: isDragging ? "none" : "height 0.3s ease-in-out",
               }}
             >
               {/* Chat Header with drag handle */}
-              <div 
+              <div
                 className="chat-header h-12 border-b select-none relative"
                 onClick={(e) => {
                   // Don't allow toggling while dragging
@@ -303,37 +346,53 @@ export default function SupaChatContextPage() {
                 }}
               >
                 {/* Drag Handle */}
-                <div 
+                <div
                   className="drag-handle absolute top-0 left-0 right-0 h-12 flex flex-col items-center justify-start p-2 cursor-ns-resize"
                   ref={(el) => {
                     if (el) {
-                      el.addEventListener('touchstart', (e) => {
-                        // If chat is closed, open it to minimized first
-                        if (chatDrawerState === "closed") {
-                          setChatDrawerState("minimized");
-                        }
-                        dragStartY.current = e.touches[0].clientY;
-                        startHeight.current = chatDrawerRef.current?.offsetHeight || 200;
-                        setIsDragging(true);
-                      }, { passive: true });
+                      el.addEventListener(
+                        "touchstart",
+                        (e) => {
+                          // If chat is closed, open it to minimized first
+                          if (chatDrawerState === "closed") {
+                            setChatDrawerState("minimized");
+                          }
+                          dragStartY.current = e.touches[0].clientY;
+                          startHeight.current =
+                            chatDrawerRef.current?.offsetHeight || 200;
+                          setIsDragging(true);
+                        },
+                        { passive: true }
+                      );
 
-                      el.addEventListener('touchmove', (e) => {
-                        e.preventDefault();
-                        // Only handle drag if not closed
-                        if (chatDrawerState === "closed") return;
-                        
-                        const currentY = e.touches[0].clientY;
-                        const deltaY = dragStartY.current - currentY;
-                        let newHeight = startHeight.current + deltaY;
-                        const minHeight = 50;
-                        const maxHeight = window.innerHeight * 0.9;
-                        newHeight = Math.max(minHeight, Math.min(newHeight, maxHeight));
-                        setCustomHeight(newHeight);
-                      }, { passive: false });
+                      el.addEventListener(
+                        "touchmove",
+                        (e) => {
+                          e.preventDefault();
+                          // Only handle drag if not closed
+                          if (chatDrawerState === "closed") return;
 
-                      el.addEventListener('touchend', () => {
-                        setIsDragging(false);
-                      }, { passive: true });
+                          const currentY = e.touches[0].clientY;
+                          const deltaY = dragStartY.current - currentY;
+                          let newHeight = startHeight.current + deltaY;
+                          const minHeight = 50;
+                          const maxHeight = window.innerHeight * 0.9;
+                          newHeight = Math.max(
+                            minHeight,
+                            Math.min(newHeight, maxHeight)
+                          );
+                          setCustomHeight(newHeight);
+                        },
+                        { passive: false }
+                      );
+
+                      el.addEventListener(
+                        "touchend",
+                        () => {
+                          setIsDragging(false);
+                        },
+                        { passive: true }
+                      );
                     }
                   }}
                   onMouseDown={(e) => {
@@ -341,48 +400,54 @@ export default function SupaChatContextPage() {
                       setChatDrawerState("minimized");
                       return;
                     }
-                    
+
                     dragStartY.current = e.clientY;
-                    startHeight.current = chatDrawerRef.current?.offsetHeight || 200;
+                    startHeight.current =
+                      chatDrawerRef.current?.offsetHeight || 200;
                     setIsDragging(true);
-                    
+
                     const handleMouseMove = (e) => {
                       if (!isDragging) return;
-                      
+
                       e.preventDefault();
                       const deltaY = dragStartY.current - e.clientY;
-                      
+
                       let newHeight = startHeight.current + deltaY;
                       const minHeight = 50;
                       const maxHeight = window.innerHeight * 0.9;
-                      newHeight = Math.max(minHeight, Math.min(newHeight, maxHeight));
-                      
+                      newHeight = Math.max(
+                        minHeight,
+                        Math.min(newHeight, maxHeight)
+                      );
+
                       setCustomHeight(newHeight);
                     };
-                    
+
                     const handleMouseUp = () => {
                       setIsDragging(false);
-                      document.removeEventListener('mousemove', handleMouseMove);
-                      document.removeEventListener('mouseup', handleMouseUp);
+                      document.removeEventListener(
+                        "mousemove",
+                        handleMouseMove
+                      );
+                      document.removeEventListener("mouseup", handleMouseUp);
                     };
-                    
-                    document.addEventListener('mousemove', handleMouseMove);
-                    document.addEventListener('mouseup', handleMouseUp);
+
+                    document.addEventListener("mousemove", handleMouseMove);
+                    document.addEventListener("mouseup", handleMouseUp);
                   }}
                 >
                   <div className="handle-bar w-10 h-0.5 bg-beige-dark rounded-full"></div>
                 </div>
-                
+
                 {/* Header content */}
                 <div className="h-12 flex items-center justify-between px-4 relative z-10 pointer-events-none">
                   <div className="flex items-center pointer-events-auto">
-
                     <span className="font-medium">Chat with Matchya</span>
                   </div>
-                  
+
                   {/* Control buttons - with pointer-events-auto */}
                   <div className="pointer-events-auto">
-                    <button 
+                    <button
                       onClick={(e) => {
                         e.stopPropagation();
                         if (chatDrawerState === "closed") {
@@ -395,19 +460,29 @@ export default function SupaChatContextPage() {
                       }}
                       className="w-6 h-6 flex items-center justify-center text-gray-500 rounded-full hover:bg-gray-200"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path 
-                          strokeLinecap="round" 
-                          strokeLinejoin="round" 
-                          strokeWidth={2} 
-                          d={chatDrawerState === "open" ? "M19 9l-7 7-7-7" : "M5 15l7-7 7 7"}
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-4 w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d={
+                            chatDrawerState === "open"
+                              ? "M19 9l-7 7-7-7"
+                              : "M5 15l7-7 7 7"
+                          }
                         />
                       </svg>
                     </button>
                   </div>
                 </div>
               </div>
-              
+
               {/* Chat Content */}
               {chatDrawerState !== "closed" && (
                 <div className="chat-content flex-grow overflow-y-auto h-[calc(100%-48px)]">
@@ -461,7 +536,7 @@ export default function SupaChatContextPage() {
 
             {/* Therapist Results - 50% (center) */}
             <div className="bg-white flex-1 min-w-0">
-              <TherapistResultsPanel />
+              <TherapistResultsPanel onResetLocation={handleResetLocation} />
             </div>
 
             {/* Chat - Collapsible */}

@@ -19,6 +19,8 @@ interface TherapistFilters {
   max_price_subsequent: number | null;
   availability: string | null;
   format: string[] | null;
+  clinic_city: string | null;
+  clinic_province: string | null;
 }
 
 // Add license interface
@@ -82,13 +84,14 @@ const WELCOME_CHATBOT_MSG =
 
 // Save filters to localStorage
 const saveFiltersToStorage = (filters: TherapistFilters) => {
+  if (typeof window === "undefined") return;
   try {
-    if (typeof window !== "undefined") {
-      localStorage.setItem(STORAGE_KEYS.FILTERS, JSON.stringify(filters));
-      console.log("[TherapistContext] Saved filters to localStorage");
-    }
+    localStorage.setItem("therapist_filters", JSON.stringify(filters));
   } catch (error) {
-    console.error("[TherapistContext] Error saving filters to localStorage:", error);
+    console.error(
+      "[TherapistContext] Error saving filters to localStorage:",
+      error
+    );
   }
 };
 
@@ -105,18 +108,24 @@ const saveTherapistsToStorage = (therapists: Therapist[]) => {
 
 // Load filters from localStorage
 const loadFiltersFromStorage = (): TherapistFilters | null => {
+  if (typeof window === "undefined") return null;
   try {
-    if (typeof window !== "undefined") {
-      const savedFilters = localStorage.getItem(STORAGE_KEYS.FILTERS);
-      if (savedFilters) {
-        return JSON.parse(savedFilters);
+    const filters = localStorage.getItem("therapist_filters");
+    if (filters) {
+      const parsedFilters = JSON.parse(filters);
+      // Ensure location has a default if not present in storage
+      if (!parsedFilters.clinic_city) {
+        parsedFilters.clinic_city = "Vancouver";
       }
+      if (!parsedFilters.clinic_province) {
+        parsedFilters.clinic_province = "BC";
+      }
+      return parsedFilters;
     }
-    return null;
   } catch (error) {
-    console.error("[TherapistContext] Error loading filters from localStorage:", error);
-    return null;
+    console.error("Error loading filters from local storage", error);
   }
+  return null;
 };
 
 // Load therapists from localStorage
@@ -145,6 +154,8 @@ const defaultFilters = {
   max_price_subsequent: null,
   availability: null,
   format: null,
+  clinic_city: "Vancouver",
+  clinic_province: "BC",
 };
 
 // Initial state without accessing localStorage - this avoids hydration errors
@@ -193,6 +204,7 @@ const TherapistContext = createContext(null);
 type DirectFilterUpdate = {
   type: "DIRECT";
   filters: Partial<TherapistFilters>;
+  skipSearch?: boolean; // Add flag to skip the therapist search
 };
 
 type ChatBasedUpdate = {
@@ -231,6 +243,7 @@ const ACTIONS = {
   SET_FOLLOW_UP_QUESTIONS: "SET_FOLLOW_UP_QUESTIONS",
   SET_LOADING_FOLLOW_UPS: "SET_LOADING_FOLLOW_UPS",
   HYDRATE_FROM_STORAGE: "HYDRATE_FROM_STORAGE",
+  UPDATE_FILTERS: "UPDATE_FILTERS",
 };
 
 // Reducer function with persistence hooks
@@ -413,6 +426,18 @@ function therapistReducer(state, action) {
         filters: action.payload.filters || state.filters,
         therapists: action.payload.therapists || state.therapists,
         isHydrated: true,
+      };
+
+    case ACTIONS.UPDATE_FILTERS:
+      const updatedFilters = {
+        ...state.filters,
+        ...action.payload,
+      };
+      console.log("Reducer - UPDATE_FILTERS:", updatedFilters);
+      saveFiltersToStorage(updatedFilters);
+      return {
+        ...state,
+        filters: updatedFilters,
       };
 
     default:
@@ -623,7 +648,11 @@ export function TherapistProvider({ children }) {
                 ...state.messages.filter((msg) => !msg.isWelcomeMessage),
                 { role: "user", content: update.message },
               ],
-              currentFilters: state.filters,
+              currentFilters: {
+                ...state.filters,
+                clinic_city: state.filters.clinic_city,
+                clinic_province: state.filters.clinic_province,
+              },
               triggerSource: "CHAT",
               lastUserMessage: update.message,
               filterOnly: false,
@@ -724,6 +753,24 @@ export function TherapistProvider({ children }) {
         // Direct filter flow
         const mergedFilters = { ...state.filters, ...update.filters };
 
+        // First, immediately update the filters in state
+        dispatch({
+          type: ACTIONS.UPDATE_FILTERS,
+          payload: update.filters,
+        });
+
+        // Save filters to localStorage immediately
+        saveFiltersToStorage(mergedFilters);
+
+        // If skipSearch is true, don't make the API call for therapists
+        if (update.skipSearch) {
+          console.log(
+            "TherapistContext: Skipping therapist search - location only update"
+          );
+          dispatch({ type: ACTIONS.SET_LOADING_STATE, payload: false });
+          return;
+        }
+
         const response = await fetch(
           `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/therapist-matches`,
           {
@@ -817,7 +864,9 @@ export function TherapistProvider({ children }) {
         // Add unique IDs to the questions to track them
         const questionsWithIds = data.questions.map((q) => ({
           ...q,
-          id: `followup-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          id: `followup-${Date.now()}-${Math.random()
+            .toString(36)
+            .slice(2, 11)}`, // Replaced substr with slice
         }));
 
         dispatch({

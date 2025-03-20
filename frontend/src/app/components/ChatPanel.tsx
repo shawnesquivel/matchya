@@ -36,7 +36,11 @@ export default function ChatPanel() {
       textarea.style.height = "40px";
       setIsExpanded(false);
     }
-    await updateTherapists({ type: "CHAT", message });
+    await updateTherapists({
+      type: "CHAT",
+      message,
+      preserveLocation: true,
+    });
   };
 
   const handleInputChange = (e) => {
@@ -91,7 +95,11 @@ export default function ChatPanel() {
               className={`flex-grow p-2 border text-sm min-h-[40px] max-h-[200px] overflow-y-auto resize-none focus:outline-none focus:ring-1 focus:ring-beige-dark ${
                 isExpanded ? "rounded-md" : "rounded-full"
               } ${isLoading ? "bg-gray-100 cursor-not-allowed" : "bg-white"}`}
-              placeholder={isLoading ? "Loading..." : "The more you share, the better the match"}
+              placeholder={
+                isLoading
+                  ? "Loading..."
+                  : "The more you share, the better the match"
+              }
               value={input}
               onChange={(e) => {
                 handleInputChange(e);

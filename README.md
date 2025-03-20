@@ -1,159 +1,145 @@
-# Project Organization
+# Supabase Local Testing
 
-Machya
+### 0. Open Docker
 
-## Table of Contents
+### 1. Start Supabase
 
-1. [Frontend Setup](#frontend-setup)
-2. [Backend Setup](#backend-setup)
-3. [AWS Credentials Configuration](#aws-credentials-configuration)
-4. [Backend Deployment](#backend-deployment)
-5. [Important URLs](#important-urls)
+```powershell
+npx supabase start
+```
 
-## Frontend Setup
+### 2. Spin up Edge
 
-Our frontend is built with NextJS, a powerful and efficient framework for building modern web applications.
+```powershell
+npx supabase functions serve  --import-map ./supabase/functions/import_map.json
+```
 
-### Prerequisites
+### 3. NextJS in dev mode with  `local` flag.
 
-- Node.js (latest LTS version recommended)
-- npm (comes with Node.js)
+```powershell
+npm run dev:local
+```
 
-### Steps
+### 4. Run Tests
 
-1. Open your terminal.
-2. Navigate to the frontend folder:
-   ```bash
-   cd  frontend
-   ```
-3. Install dependencies:
-   ```bash
-   npm install
-   ```
-4. Start the development server:
-   ```bash
-   npm run dev
-   ```
-5. Open your web browser and visit [http://localhost:3000](http://localhost:3000) to view the application.
+```powershell
+/Users/shawnesquivel/ai-41-start/supabase/tests/sitemap.bash
+```
 
-## Backend Setup
 
-Our backend is developed using Chalice, a framework for creating serverless applications in Python.
 
-### Prerequisites
+# Reset & Redeploy Supabase Production DB (2min)
 
-- Python 3.7 or higher
-- pip (Python package installer)
-- AWS CLI (configured with valid credentials)
+### 1. RESET Production
 
-### Steps
+From CLI, default `yes` to reset remote DB.
 
-1. Verify AWS CLI configuration:
+⚠️ Remember to export tables as CSV.
 
-   ```bash
-   aws configure list
-   ```
+```powershell
+yes | npx supabase db reset --linked
+```
 
-   If you encounter any issues, refer to the [AWS Credentials Configuration](#aws-credentials-configuration) section.
+- Optional SQL Editor
+    
+    ```powershell
+    TRUNCATE therapists CASCADE;
+    ```
+    
 
-2. Navigate to the backend directory:
+### 2. Apply Migration (optional)
 
-   ```bash
-   cd server
-   ```
+```powershell
+npx supabase db push          
+```
 
-3. Create a virtual environment:
+### 3. Redeploy ALL Functions
 
-   ```bash
-   python -m venv env
-   ```
+```powershell
+npx supabase functions deploy --import-map ./supabase/functions/import_map.json
+```
 
-   or
+- Optional: Deploy 1 function
+    
+    ```powershell
+    npx supabase functions deploy gumloop --import-map ./supabase/functions/import_map.json         
+    ```
+    
 
-   ```bash
-   python3 -m venv env
-   ```
+### 4. Re-insert data from CSVs.
 
-4. Activate the virtual environment:
+### 5. Update allowed domains
 
-   - On Unix/macOS:
-     ```bash
-     source env/bin/activate
-     ```
-   - On Windows:
-     ```bash
-     env\Scripts\activate
-     ```
+### 1. Use this SQL to get all the unique domains
 
-5. Install required dependencies:
+https://supabase.com/dashboard/project/joypkrixfrtsyjcsyeeb/sql/a24e51b1-b667-4448-bc08-dde28ccced59
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+### 2.  Export as JSON → Cursor to update domains in `next.config.js`
 
-6. Run the backend locally:
+## 5. View Logs (optional)
 
-   ```bash
-   chalice local
-   ```
+### Embeddings
 
-7. Visit the provided link (usually http://127.0.0.1:8000/) in your browser. You should see:
-   ```json
-   { "hello": "world" }
-   ```
+[Edge Functions | Supabase](https://supabase.com/dashboard/project/joypkrixfrtsyjcsyeeb/functions/embed/invocations)
 
-## AWS Credentials Configuration
+### Optional: View Logs
 
-To deploy the backend, you need properly configured AWS credentials.
+[`https://supabase.com/dashboard/project/joypkrixfrtsyjcsyeeb/functions`](https://supabase.com/dashboard/project/joypkrixfrtsyjcsyeeb/functions)
 
-1. Follow the [Chalice Quickstart Credentials](https://aws.github.io/chalice/quickstart.html#credentials) guide.
+### Optional: View Deployed Functions
 
-2. If you don't have an AWS account, create one at [AWS Management Console](https://aws.amazon.com/marketplace/management/signin).
+```powershell
+npx supabase functions list --project-ref joypkrixfrtsyjcsyeeb
+```
 
-3. Set up your AWS credentials:
 
-   ```bash
-   mkdir ~/.aws
-   cat >> ~/.aws/config
-   ```
 
-   Enter the following, replacing the placeholders with your actual credentials:
+# Project Setup (local → deployment)
 
-   ```
-   [default]
-   aws_access_key_id=YOUR_ACCESS_KEY_HERE
-   aws_secret_access_key=YOUR_SECRET_ACCESS_KEY
-   region=YOUR_REGION (e.g., us-west-2, us-west-1)
-   ```
+### Vercel
 
-4. Verify the configuration:
-   ```bash
-   aws configure list
-   ```
+1. Update the Vercel Console → Add `SUPABASE_URL` AND  `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+2. npm run dev:prod
 
-## Backend Deployment
+### Reset Database
 
-Ensure you have set up an AWS account and configured your credentials before attempting to deploy the backend. The deployment process will be specific to your project and should be detailed here.
+1. npx supabase db reset
+2. npx supabase secrets set OPEN_AI_KEY=….
+3. npx supabase functions deploy --project-ref joypkrixfrtsyjcsyeeb
 
-## Important URLs
+### Supabase Console
 
-- **Local Development**
+1. Create a produciton deployment and link it to the locla one
+2. Push migrations + deployl
+3. npx supbase functions deploy
+4. Update the `create_embed_function` url to not use Docker URL, the Supbase URL instead.
 
-  ```
-  http://127.0.0.1:8000/
-  ```
 
-- **Tutorial API**
 
-  ```
-  https://jk88xtfj1j.execute-api.us-west-2.amazonaws.com/api
-  ```
+# Migrations
+Create new migration 
+```
+npx supabase migration new migration_name
+```
 
-- **Production API** (Example)
-  ```
-  https://dm9k979b9h.execute-api.us-west-2.amazonaws.com/api
-  ```
+Sync migration locally
+```
+npx supabase migration up
 
----
 
-For any issues or additional information, please refer to the project documentation or contact the development team.
+Sync migrations to database.
+```powershell
+npx supabase db push
+```
+
+# Functions
+Serve functions locally
+```powershell
+npx supabase functions serve  --import-map ./supabase/functions/import_map.json
+```
+
+Deploy functions to production
+```powershell
+npx supabase functions deploy --import-map ./supabase/functions/import_map.json
+```
+

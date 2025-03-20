@@ -90,8 +90,16 @@ Deno.serve(async (req) => {
     const corsResponse = handleCors(req);
     if (corsResponse) return corsResponse;
 
-    const { chatId, messages, matchedTherapists, isFollowUp = false } =
-      await req.json();
+    const {
+      chatId,
+      messages,
+      matchedTherapists,
+      isFollowUp = false,
+      location = "Vancouver, BC",
+    } = await req.json();
+
+    // Log the location for debugging
+    console.log("[chat-v3]: User location:", location);
 
     // Safely handle matchedTherapists
     const allTherapists = Array.isArray(matchedTherapists)
@@ -135,9 +143,13 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Create prompt with therapist information
+    // Create prompt with therapist information and location context
     const basePrompt = defaultPrompt;
     let fullPrompt = basePrompt;
+
+    // Add location context to the prompt
+    fullPrompt +=
+      `\n\nUSER LOCATION CONTEXT: The user is looking for therapists in ${location}. Keep this in mind when discussing therapeutic options and resources.`;
 
     // If this is a follow-up question, add special instructions
     if (isFollowUp) {
@@ -219,7 +231,7 @@ Deno.serve(async (req) => {
         "\n\nPlease explain which of these therapists might be the best match for the user's specific needs, focusing on how their expertise and background align with what the user is looking for. Remember to keep your paragraphs short (2-3 sentences maximum) and use simple language when describing each therapist.";
     } else {
       fullPrompt +=
-        "\n\nNo therapists were found matching the user's criteria. Please explain this and suggest broadening their search.";
+        `\n\nNo therapists were found matching the user's criteria in ${location}. Please explain this and suggest broadening their search.`;
     }
 
     console.log("fullPrompt", fullPrompt);

@@ -170,6 +170,7 @@ const VALID_LICENSE_TITLES = [
   "MBA",
   "Practicum Student",
   "MA",
+  "MCP",
 ];
 
 // Helper function to clean markdown formatting from strings
@@ -503,6 +504,31 @@ async function checkForExistingTherapist(
   }
 }
 
+// Add a function to normalize state/province values
+function normalizeState(state: string | null | undefined): string {
+  if (!state) return "BC"; // Default
+
+  const stateValue = String(state).trim();
+
+  // Handle full province/state names
+  const stateMapping: Record<string, string> = {
+    "ontario": "ON",
+    "british columbia": "BC",
+    "california": "CA",
+    "new york": "NY",
+  };
+
+  // Return as-is if already a valid code
+  const upperState = stateValue.toUpperCase();
+  if (VALID_JURISDICTIONS.includes(upperState)) {
+    return upperState;
+  }
+
+  // Try to map from full name
+  const normalized = stateMapping[stateValue.toLowerCase()];
+  return normalized || "BC"; // Default to BC if unknown
+}
+
 Deno.serve(async (req) => {
   // Hardcoded Values
   const clinic_country = "CA";
@@ -655,79 +681,45 @@ Deno.serve(async (req) => {
             continue;
           }
 
-          // Add default state if missing - typically BC for Canadian therapists
-          if (!parsedLicense.state) {
-            const warningMsg =
-              `License missing required 'state' field, defaulting to 'BC'. License: ${
-                JSON.stringify(parsedLicense)
-              }`;
-            log(`Warning: ${warningMsg}`);
-            warnings.push(warningMsg);
-            parsedLicense.state = "BC";
-          }
-
-          // Validate license fields after applying defaults
-          if (!parsedLicense.license_number || !parsedLicense.title) {
-            const errorMsg =
-              "License missing other required fields (after state defaulting)";
-            log(`${errorMsg} - License: ${JSON.stringify(parsedLicense)}`);
-            warnings.push(errorMsg);
-            continue;
-          }
-
           // Process license data (remove # from license number if present)
-          parsedLicense.license_number = String(parsedLicense.license_number)
+          // If license_number is undefined or empty, set to placeholder
+          parsedLicense.license_number = String(
+            parsedLicense.license_number || "",
+          )
             .replace(/^#/, "");
 
-          // Check if license number has at least 5 digits
-          const digitsOnly = parsedLicense.license_number.replace(/\D/g, "");
-          if (digitsOnly.length < 3) {
-            const DEFAULT_LICENSE_NUMBER = "00000";
-            const warningMsg =
-              `Replaced license number ${parsedLicense.license_number} with placeholder: ${DEFAULT_LICENSE_NUMBER}`;
-            log(`Warning: ${warningMsg}`);
-            warnings.push(warningMsg);
-
-            // Set placeholder number
-            parsedLicense.license_number = DEFAULT_LICENSE_NUMBER;
+          if (!parsedLicense.license_number) {
+            parsedLicense.license_number = "placeholder";
+            log(`Empty license number set to "placeholder"`);
           }
 
-          // Validate and clean license data - skip if title is not in allowed list
+          // Normalize the state value - this is critical to prevent database errors
+          parsedLicense.state = normalizeState(parsedLicense.state);
+          log(`Normalized state to: ${parsedLicense.state}`);
+
+          // Log warning for non-standard license title but don't reject it
           if (
             parsedLicense.title &&
             !VALID_LICENSE_TITLES.includes(parsedLicense.title)
           ) {
-            const errorMsg = `Invalid license title: ${parsedLicense.title}`;
-            log(
-              `Warning: ${errorMsg} - License: ${
-                JSON.stringify(parsedLicense)
-              }`,
-            );
-            warnings.push(errorMsg);
-            continue;
+            const warningMsg =
+              `Non-standard license title: ${parsedLicense.title} - will attempt to insert anyway`;
+            log(`Warning: ${warningMsg}`);
+            warnings.push(warningMsg);
+            // Continue processing instead of skipping
           }
 
-          // Validate license state/jurisdiction
-          if (
-            parsedLicense.state &&
-            !VALID_JURISDICTIONS.includes(parsedLicense.state)
-          ) {
-            const errorMsg =
-              `Invalid license jurisdiction: ${parsedLicense.state}`;
-            log(
-              `Warning: ${errorMsg} - License: ${
-                JSON.stringify(parsedLicense)
-              }`,
-            );
-            // Try to find a close match or default to BC
-            parsedLicense.state =
-              findClosestMatch(parsedLicense.state, VALID_JURISDICTIONS) ||
-              "BC";
+          // Accept missing title with warning
+          if (!parsedLicense.title) {
+            parsedLicense.title = "Other";
+            const warningMsg = `Missing license title, defaulting to "Other"`;
+            log(`Warning: ${warningMsg}`);
+            warnings.push(warningMsg);
           }
 
           licenses.push(parsedLicense);
           log(
-            `Successfully processed license: ${parsedLicense.license_number}`,
+            `Successfully processed license: ${parsedLicense.title} (${parsedLicense.state})`,
           );
         } catch (e: unknown) {
           const errorMsg = `Error parsing license: ${(e as Error).message}`;
@@ -752,7 +744,6 @@ Deno.serve(async (req) => {
       const warningMsg =
         "Certifications array exceeds 20 entries, trimming to 20.";
       log(`Warning: ${warningMsg}`);
-      warnings.push(warningMsg);
       certifications = certifications.slice(0, 20);
     }
 

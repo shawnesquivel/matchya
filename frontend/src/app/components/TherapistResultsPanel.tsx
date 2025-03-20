@@ -35,9 +35,22 @@ const validateImageUrl = (url: string | null | undefined, therapistInfo: string)
   }
 };
 
-export default function TherapistResultsPanel() {
-  const { therapists, isLoading, isSendingChat, filters, useMockData, toggleMockData } =
-    useTherapist();
+interface TherapistResultsPanelProps {
+  onResetLocation: () => void;
+}
+
+export default function TherapistResultsPanel({
+  onResetLocation,
+}: TherapistResultsPanelProps) {
+  const {
+    therapists,
+    isLoading,
+    isSendingChat,
+    filters,
+    useMockData,
+    toggleMockData,
+    updateTherapists,
+  } = useTherapist();
   // Add state for the modal - initialize with specific therapist ID
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTherapistId, setSelectedTherapistId] = useState<string | null>(null);
@@ -74,22 +87,6 @@ export default function TherapistResultsPanel() {
       console.log("Verification Status:", therapists[0].is_verified);
     }
   }, [therapists]);
-
-  // Helper to format active filters for display
-  const getActiveFiltersText = () => {
-    const activeFilters = [];
-
-    if (filters.gender) activeFilters.push(`Gender: ${filters.gender}`);
-    if (filters.ethnicity?.length) activeFilters.push(`Ethnicity: ${filters.ethnicity.join(", ")}`);
-    if (filters.sexuality?.length) activeFilters.push(`Sexuality: ${filters.sexuality.join(", ")}`);
-    if (filters.faith?.length) activeFilters.push(`Faith: ${filters.faith.join(", ")}`);
-    if (filters.max_price_initial) activeFilters.push(`Max price: $${filters.max_price_initial}`);
-    if (filters.availability) activeFilters.push(`Availability: ${filters.availability}`);
-
-    return activeFilters.length > 0
-      ? `Current filters: ${activeFilters.join(" • ")}`
-      : "No filters are currently active.";
-  };
 
   // Handle opening the modal with a specific therapist
   const openTherapistModal = (therapistId: string) => {
@@ -142,8 +139,46 @@ export default function TherapistResultsPanel() {
 
   return (
     <div className="w-full h-full overflow-y-auto bg-white">
-      <div className="sm:flex hidden sticky top-0 sm:p-4 p-2 flex-col sm:flex-row sm:justify-between sm:items-center bg-white z-20">
-        <h2 className="sm:block hidden text-lg font-medium text-mblack">Matched Therapists</h2>
+      <div className="sm:flex hidden sticky top-0 sm:p-4 p-2 flex-col sm:flex-row sm:justify-between sm:items-center bg-white z-20 border-b border-grey-light">
+        <div className="flex items-center gap-4">
+          <h2 className="sm:block hidden text-lg font-medium text-mblack">
+            Matched Therapists
+          </h2>
+
+          {/* Location Indicator */}
+          <button
+            onClick={onResetLocation}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-beige-extralight hover:bg-beige-dark transition-colors border border-grey-light text-sm text-mblack"
+            title="Click to change location"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+              />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+              />
+            </svg>
+            <span>
+              {filters.clinic_city && filters.clinic_province
+                ? `${filters.clinic_city}, ${filters.clinic_province}`
+                : "Online Only"}
+            </span>
+          </button>
+        </div>
+
         <div className="flex items-center ml-auto">
           {/* Mock data toggle button (only in development) */}
           {process.env.NODE_ENV !== "production" && (
@@ -283,11 +318,14 @@ export default function TherapistResultsPanel() {
                             </div>
                             <div className="flex items-center text-mblack mt-1">
                               <span className="text-mblack text-xs">
-                                {therapist.clinic_city && therapist.clinic_province
+                                {therapist.clinic_city &&
+                                therapist.clinic_province
                                   ? `${therapist.clinic_city}, ${therapist.clinic_province}`
                                   : "Location Unavailable"}
                               </span>
-                              <span className="mx-2 text-beige-dark text-xs">|</span>
+                              <span className="mx-2 text-beige-dark text-xs">
+                                |
+                              </span>
                               <div className="flex gap-2">
                                 {therapist.availability === "online" ||
                                 therapist.availability === "both" ? (

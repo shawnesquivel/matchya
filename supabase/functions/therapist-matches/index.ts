@@ -254,6 +254,29 @@ Deno.serve(async (req) => {
           .eq("therapist_fees.session_category", "subsequent");
       }
 
+      // Add location filtering - handle the city and province from the welcome page
+      if (currentFilters?.clinic_city && currentFilters?.clinic_province) {
+        console.log(
+          `[therapist-matches] Filtering by city: ${currentFilters.clinic_city}, province: ${currentFilters.clinic_province}`,
+        );
+        // Apply city and province filters directly to the matching columns
+        query = query
+          .eq("clinic_city", currentFilters.clinic_city)
+          .eq("clinic_province", currentFilters.clinic_province);
+      } else if (currentFilters?.clinic_city) {
+        // If only city is provided, filter by city
+        console.log(
+          `[therapist-matches] Filtering by city only: ${currentFilters.clinic_city}`,
+        );
+        query = query.eq("clinic_city", currentFilters.clinic_city);
+      } else if (currentFilters?.clinic_province) {
+        // If only province is provided, filter by province
+        console.log(
+          `[therapist-matches] Filtering by province only: ${currentFilters.clinic_province}`,
+        );
+        query = query.eq("clinic_province", currentFilters.clinic_province);
+      }
+
       // Execute the query with performance tracking
       perf.startEvent("database:filterQuery");
       const { data: therapists, error } = await query.limit(QUERY_LIMIT);
@@ -500,6 +523,8 @@ Deno.serve(async (req) => {
           max_price_initial: effectiveMaxPrice,
           availability_filter: params.availability_filter,
           areas_of_focus_filter: params.areas_of_focus_filter,
+          clinic_city_param: currentFilters?.clinic_city || null,
+          clinic_province_param: currentFilters?.clinic_province || null,
         })
         .limit(QUERY_LIMIT);
 
@@ -559,6 +584,8 @@ Deno.serve(async (req) => {
         max_price_initial: params.max_price_initial,
         availability: params.availability_filter,
         areas_of_focus: params.areas_of_focus_filter,
+        clinic_city: currentFilters?.clinic_city,
+        clinic_province: currentFilters?.clinic_province,
       };
 
       const response = {
@@ -606,6 +633,8 @@ Deno.serve(async (req) => {
           max_price_initial: params.max_price_initial || null,
           availability: params.availability_filter || null,
           areas_of_focus: params.areas_of_focus_filter || null,
+          clinic_city: currentFilters?.clinic_city || null,
+          clinic_province: currentFilters?.clinic_province || null,
         },
         context: {
           triggerSource,
@@ -645,6 +674,8 @@ Deno.serve(async (req) => {
             max_price_initial: null,
             availability: null,
             areas_of_focus: null,
+            clinic_city: null,
+            clinic_province: null,
           },
         }),
         {
@@ -813,6 +844,8 @@ const determineMatchTherapistParameters = async (
     max_price_initial: number | null;
     availability: string | null;
     areas_of_focus: string[] | null;
+    clinic_city: string | null;
+    clinic_province: string | null;
   },
   triggerSource: "CHAT" | "FORM" = "CHAT",
 ): Promise<z.infer<typeof FilterParams>> => {
@@ -883,25 +916,6 @@ Please extract the following if mentioned:
 - availability (online, in_person, both)
 - areas of focus (anxiety, depression, trauma, relationships, addiction, grief, stress, self_esteem, family, anger, career, etc.)
 
-IMPORTANT INSTRUCTIONS FOR AREAS OF FOCUS:
-- For areas_of_focus_filter, extract KEY CONCEPTS even if they're not in the exact format
-- Use simple, common terms that might appear within longer phrases (e.g., "anxiety" rather than "generalized anxiety disorder")
-- This filter works on partial matches, so simpler terms will match more broadly
-- Example: If user says "I need help with my panic attacks", extract "anxiety" as it's likely to match therapists who list anxiety-related specialties
-
-IMPORTANT PRICE INSTRUCTIONS:
-- Only set max_price_initial to a specific number if the user explicitly mentions a price limit (e.g. "$100", "under 150", etc.)
-- ALWAYS set max_price_initial to NULL (not 0) when the user doesn't mention any price preference
-- DO NOT default to 0 - this will exclude all therapists with prices
-- NULL means "no price limit" - the correct default when price isn't mentioned
-
-Be attentive to both explicit and implicit preferences. For example:
-- "looking for a female therapist" → gender_filter: "female"
-- "I'd prefer someone who is LGBT friendly" → Consider sexuality filters
-- "Need someone who understands Asian culture" → ethnicity_filter: ["asian"]
-- "I can only afford $100 per hour" → max_price_initial: 100
-- No mention of price → max_price_initial: null (NOT 0)
-- "I need help with anxiety and depression" → areas_of_focus_filter: ["anxiety", "depression"]
 
 ${
       currentFilters && (triggerSource === "FORM" || triggerSource === "CHAT")
@@ -909,7 +923,9 @@ ${
 Current active filters (HIGH PRIORITY - PRESERVE THESE unless explicitly changed):
 ${
           Object.entries(currentFilters)
-            .filter(([_, value]) => value !== null)
+            .filter(([key, value]) =>
+              value !== null && !key.includes("clinic_")
+            )
             .map(
               ([key, value]) =>
                 `- ${key}: ${Array.isArray(value) ? value.join(", ") : value}`,
@@ -918,6 +934,7 @@ ${
         }
 
 IMPORTANT: For CHAT mode, PRESERVE previous filters and ADD new ones mentioned. Only REPLACE a filter if the user explicitly changes that specific preference.
+The location is already set by the user interface and is not part of this extraction.
 `
         : ""
     }
@@ -945,10 +962,18 @@ Include reasoning for the extracted preferences and explain any ambiguity in the
 
     const result = completion.choices[0].message.parsed;
 
+    // Add clinic_city and clinic_province directly from currentFilters after extraction
+    const resultWithLocation = {
+      ...result,
+      // Add location from UI directly, not from extraction
+      clinic_city: currentFilters?.clinic_city || null,
+      clinic_province: currentFilters?.clinic_province || null,
+    };
+
     perf.endEvent("llm:parameterExtraction", {
       model: "gpt-4o-mini",
       messageLength: userMessage.length,
-      filterCount: Object.values(result).filter(
+      filterCount: Object.values(resultWithLocation).filter(
         (v) => v !== null && (Array.isArray(v) ? v.length > 0 : true),
       ).length - 1, // Subtract one to exclude reasoning which isn't a filter
     });
@@ -959,28 +984,31 @@ Include reasoning for the extracted preferences and explain any ambiguity in the
     if (currentFilters) {
       // First, create a merged version preserving previous filters
       const mergedResult = {
-        ...result,
-        gender_filter: result.gender_filter !== null
-          ? result.gender_filter
+        ...resultWithLocation,
+        gender_filter: resultWithLocation.gender_filter !== null
+          ? resultWithLocation.gender_filter
           : (currentFilters.gender as string),
-        sexuality_filter: result.sexuality_filter !== null
-          ? result.sexuality_filter
+        sexuality_filter: resultWithLocation.sexuality_filter !== null
+          ? resultWithLocation.sexuality_filter
           : currentFilters.sexuality,
-        ethnicity_filter: result.ethnicity_filter !== null
-          ? result.ethnicity_filter
+        ethnicity_filter: resultWithLocation.ethnicity_filter !== null
+          ? resultWithLocation.ethnicity_filter
           : currentFilters.ethnicity,
-        faith_filter: result.faith_filter !== null
-          ? result.faith_filter
+        faith_filter: resultWithLocation.faith_filter !== null
+          ? resultWithLocation.faith_filter
           : currentFilters.faith,
-        max_price_initial: result.max_price_initial !== null
-          ? result.max_price_initial
+        max_price_initial: resultWithLocation.max_price_initial !== null
+          ? resultWithLocation.max_price_initial
           : currentFilters.max_price_initial,
-        availability_filter: result.availability_filter !== null
-          ? result.availability_filter
+        availability_filter: resultWithLocation.availability_filter !== null
+          ? resultWithLocation.availability_filter
           : (currentFilters.availability as string),
-        areas_of_focus_filter: result.areas_of_focus_filter !== null
-          ? result.areas_of_focus_filter
+        areas_of_focus_filter: resultWithLocation.areas_of_focus_filter !== null
+          ? resultWithLocation.areas_of_focus_filter
           : currentFilters.areas_of_focus,
+        // Location always comes from the UI selection
+        clinic_city: currentFilters.clinic_city,
+        clinic_province: currentFilters.clinic_province,
       };
 
       // In FORM mode, give priority to form filters over chat message filters
@@ -988,23 +1016,28 @@ Include reasoning for the extracted preferences and explain any ambiguity in the
         return {
           ...mergedResult,
           gender_filter: (currentFilters.gender as string) ??
-            result.gender_filter,
-          sexuality_filter: currentFilters.sexuality ?? result.sexuality_filter,
-          ethnicity_filter: currentFilters.ethnicity ?? result.ethnicity_filter,
-          faith_filter: currentFilters.faith ?? result.faith_filter,
+            resultWithLocation.gender_filter,
+          sexuality_filter: currentFilters.sexuality ??
+            resultWithLocation.sexuality_filter,
+          ethnicity_filter: currentFilters.ethnicity ??
+            resultWithLocation.ethnicity_filter,
+          faith_filter: currentFilters.faith ?? resultWithLocation.faith_filter,
           max_price_initial: currentFilters.max_price_initial ??
-            result.max_price_initial,
+            resultWithLocation.max_price_initial,
           availability_filter: (currentFilters.availability as string) ??
-            result.availability_filter,
+            resultWithLocation.availability_filter,
           areas_of_focus_filter: currentFilters.areas_of_focus ??
-            result.areas_of_focus_filter,
+            resultWithLocation.areas_of_focus_filter,
+          // Location always comes from the UI
+          clinic_city: currentFilters.clinic_city,
+          clinic_province: currentFilters.clinic_province,
         };
       }
 
       return mergedResult;
     }
 
-    return result;
+    return resultWithLocation;
   } catch (error: unknown) {
     console.error("[determineMatchTherapistParameters] Error:", error);
     perf.endEvent("llm:parameterExtraction", {
