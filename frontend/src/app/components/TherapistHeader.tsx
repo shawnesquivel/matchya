@@ -68,9 +68,9 @@ export default function TherapistHeader({
         </h1>
         {variant === "modal" && (
           <>
-            <p className="text-gray-600">{therapist.title}</p>
+            <p className="text-gray-600">{therapist.certifications?.[0] || "Therapist"}</p>
             <p className="text-gray-600">
-              {therapist.location.city}, {therapist.location.province}
+              {therapist.clinic_city}, {therapist.clinic_province}
             </p>
           </>
         )}
@@ -79,9 +79,9 @@ export default function TherapistHeader({
       {/* Booking buttons - only shown on page variant or if explicitly requested */}
       {variant === "page" && showBookingButton && (
         <div className="md:col-span-2 col-span-6 flex gap-2 mb-6 sm:mb-0 md:justify-end justify-start sm:flex-col lg:flex-row">
-          {therapist.bio_link && (
+          {therapist.clinic_profile_url && (
             <a
-              href={therapist.bio_link}
+              href={therapist.clinic_profile_url}
               target="_blank"
               rel="noopener noreferrer"
               className="rounded-full flex justify-center align-middle px-4 h-fit py-4 text-mblack"

@@ -23,18 +23,16 @@ export default function TherapistLocation({
 
   const titleClasses = variant === "modal" ? "font-medium text-xl" : "font-medium text-3xl";
 
-  // Format address if location exists
-  const formattedAddress = therapist.location
-    ? [
-        therapist.clinic_street,
-        therapist.location.city,
-        therapist.location.province,
-        therapist.clinic_postal_code,
-        therapist.location.country,
-      ]
-        .filter(Boolean)
-        .join(", ")
-    : null;
+  // Format address from individual fields
+  const formattedAddress = [
+    therapist.clinic_street,
+    therapist.clinic_city,
+    therapist.clinic_province,
+    therapist.clinic_postal_code,
+    therapist.clinic_country,
+  ]
+    .filter(Boolean)
+    .join(", ");
 
   return (
     <div className={`${containerClasses} ${className}`}>
@@ -42,29 +40,31 @@ export default function TherapistLocation({
         <h2 className={titleClasses}>Location</h2>
 
         {/* Only show In-Person section if clinic or location data exists */}
-        {(therapist.clinic || formattedAddress) && (
+        {(therapist.clinic_name || formattedAddress) && (
           <div className="flex flex-col gap-1">
             <h3 className="text-xs">In-Person Appointments</h3>
             <div className="flex flex-col gap-0">
-              {therapist.clinic && <p className="font-sm">{therapist.clinic}</p>}
+              {therapist.clinic_name && <p className="font-sm">{therapist.clinic_name}</p>}
               {formattedAddress && <p className="font-sm">{formattedAddress}</p>}
             </div>
           </div>
         )}
 
         {/* Only show Availability section if availability data exists */}
-        {(therapist.available_online || true) && ( // Assuming in-person is always available based on original code
+        {(therapist.availability || true) && (
           <div className="flex flex-col gap-2">
             <h3 className="text-xs">Availability</h3>
             <div className="flex flex-wrap gap-2">
-              {therapist.available_online && (
+              {therapist.availability === "online" || therapist.availability === "both" ? (
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-beige">
                   Online Sessions
                 </span>
-              )}
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-beige">
-                In-Person
-              </span>
+              ) : null}
+              {therapist.availability === "in_person" || therapist.availability === "both" ? (
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-beige">
+                  In-Person
+                </span>
+              ) : null}
             </div>
           </div>
         )}
