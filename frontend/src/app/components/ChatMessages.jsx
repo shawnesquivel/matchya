@@ -1,172 +1,354 @@
 "use client";
-import React, { useState, useEffect, useRef, useCallback, memo } from "react";
+import React, { memo, useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import ReactMarkdown from "react-markdown";
 import styles from "../styles/spinner.module.css";
+import Loader from "./Loader";
+import useTypingEffect from "./useTypingEffect";
 
-// Memo: Do not re-render the component if props havent changed between re-renders
-const MessageItem = memo(({ message, botPngFile, isLast }) => {
-  /**
-   * Render the chat message for user/bots, showing a profile picture.
-   * Optionally, it can play audio clips or show source documents.
-   *
-   * Props:
-   * - message: An object representing the chat message, which includes:
-   *   - type: 'user' or 'bot'.
-   *   - message: Message in text format
-   *   - audio_file_url: (optional) A string URL to an audio file that can be played.
-   *   - sourceDocuments: (optional) An array of document objects related to the message, each containing:
-   *     - pageContent: The text content of the document.
-   *     - metadata: An object containing metadata about the document.
-   *
-   * - botPngFile: A string specifying the filename of the bot's image to use from the `/assets/images` directory.
-   *
-   * - isLast: A boolean indicating if this is the last message in the chat sequence, which can affect styling.
-   *
-   * Example:
-   * <MessageItem
-   *   message={{
-   *     type: "bot",
-   *     message: "Hi, I'm your friendly assistant.",
-   *     audio_file_url: "https://example.com/audio.mp3",
-   *     sourceDocuments: [{
-   *       pageContent: "Four score and seven years ago...",
-   *       metadata: { created: "1863-11-19" }
-   *     }]
-   *   }}
-   *   botPngFile="girlfriend"
-   *   isLast={true}
-   * />
-   */
+const splitIntoParagraphs = (content) => {
+  if (!content) return [];
+  return content.split(/\n\s*\n/).filter((paragraph) => paragraph.trim() !== "");
+};
 
-  /** PHASE 1: Define the URLs for the profile picture for the user and bot */
-  const userImage = "/assets/images/green-square.png";
-  const botImage = `/assets/images/${botPngFile}.png`;
-  const [showSources, setShowSources] = useState(false);
-
-  /* PHASE 2: Play the audio if it's present */
-  const playAudio = useCallback((audioUrl) => {
-    /** Play an audio object from a given URL. Created on first render only. */
-    const audio = new Audio(audioUrl);
-    audio.play().catch((e) => console.error("Playback failed:", e));
-    // console.log({ audioUrl });
-  }, []);
-  // console.log({ message });
-
-  return (
-    <div className={`flex flex-col ${isLast ? "flex-grow" : ""}`}>
-      <div className="flex mb-4 w-full">
-        <div className="rounded mr-4 h-10 w-10 relative overflow-hidden">
-          {/* PHASE 1: How we choose between the user and bot image. */}
-          <Image
-            src={message.role === "user" ? userImage : botImage}
-            alt={`${message.role}'s profile`}
-            width={32}
-            height={32}
-            className="rounded"
-            priority
-            unoptimized
-          />
-        </div>
-        {/* PHASE 1: How we get the messages parameter. */}
-        <div className="flex justify-start align-middle gap-4 w-full">
-          <p className={` max-w-full ${message.role === "user" ? "user" : "bot"}`}>
-            {message.content ? message.content : "No message found."}
-          </p>
-          {/* PHASE 2: Show the audio if it's present */}
-          {message.audio_file_url && (
-            // Repositioned the play button to be inline with the message, making it a part of the message flow
-            <button
-              onClick={() => {
-                console.log("Playing audio");
-                playAudio(message.audio_file_url);
-              }}
-              className="items-center rounded-full bg-gray-200 text-blue-500 hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 h-8 w-8 text-center"
-              aria-label="Play Audio"
-            >
-              🔊
-            </button>
-          )}
+const FollowUpQuestions = ({ questions, onQuestionClick, isLoading }) => {
+  if (isLoading) {
+    return (
+      <div className="mt-2 mb-4">
+        <div className="flex items-center space-x-2 text-gray-400 text-sm">
+          <div className={styles.spinner} style={{ width: "16px", height: "16px" }}></div>
         </div>
       </div>
-      {/* MIMIR: Show source documents */}
-      {message.sourceDocuments && (
-        <div className="mb-6">
+    );
+  }
+
+  if (!questions || questions.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="mt-3 mb-4">
+      <p className="text-sm text-gray-500 mb-1">People also ask</p>
+      <div className="flex flex-col gap-2">
+        {questions.map((question) => (
           <button
-            className="text-gray-600 text-sm font-bold"
-            onClick={() => setShowSources(!showSources)}
+            key={question.id}
+            onClick={() => onQuestionClick(question.text, question.id)}
+            className="text-left px-3 py-2 bg-white hover:bg-beige-extralight text-gray-700 text-sm rounded-lg border border-gray-200 transition-colors cursor-pointer flex items-center"
           >
-            Function Call Results {showSources ? "(Hide)" : "(Show)"}
+            <div className="flex-grow">{question.text}</div>
+            <div className="flex-shrink-0 ml-2 w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="text-gray-500"
+              >
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </div>
           </button>
-          {showSources && (
-            <p className="text-gray-800 text-sm mt-2">
-              {message.sourceDocuments}
-            </p>
-          )}
-        </div>
-      )}
+        ))}
+      </div>
     </div>
   );
-});
+};
 
-const ChatMessages = ({ messages, botPngFile, maxMsgs, isLoadingMessages }) => {
-  /**
-   * 
-   * The useRef hook in React is used to access a DOM element directly and persist values across renders without triggering a re-render of the component.
+const MessageItem = memo(
+  ({
+    message,
+    isLast,
+    onButtonClick,
+    questionStage,
+    followUpQuestions,
+    onFollowUpClick,
+    isLoadingFollowUps,
+    chatId,
+  }) => {
+    // If it's an assistant message, check if we need to split it
+    const shouldSplitMessage = message.role === "assistant" && !message.isTyping;
+    const shouldAnimate = shouldSplitMessage && isLast; // Only animate if it's the last message
+    const paragraphs = shouldSplitMessage
+      ? splitIntoParagraphs(message.content || "")
+      : [message.content];
 
-      In your ChatMessages component, useRef is used to create a ref object (messagesContainerRef) that is attached to the chat messages container DOM element. This allows your code to directly manipulate the DOM element.
+    // State to track which paragraphs are visible
+    const [visibleParagraphs, setVisibleParagraphs] = useState([]);
 
-      The useEffect hook in your code is used to scroll the container to the bottom every time the messages array changes, ensuring the latest message is visible. Here's how it works:
+    // Add staggered animation effect only for the last message
+    useEffect(() => {
+      if (!shouldAnimate) {
+        setVisibleParagraphs(paragraphs.map((_, i) => i)); // Show all paragraphs immediately
+        return;
+      }
 
-      1. A new message is added to the messages array, the component re-renders.
-      2. The useEffect hook runs because its dependency array includes [messages].
-      3. The useEffect hook accesses messagesContainerRef.current, which is the container div.
-      4. It sets the `scrollTop` to the `scrollHeight` of the container -> scrolls to the bottom.
-      
-      There is no other way to directly manipulate the DOM for scrolling purposes in React's declarative paradigm. 
-      The ref persists throughout the life of the component, allowing direct access to the DOM node without causing additional renders, which would happen if you were to use state for this purpose.
-    */
-  const messagesContainerRef = useRef();
+      // Reset visible paragraphs when message changes
+      setVisibleParagraphs([]);
+
+      // Reveal paragraphs one by one with a delay only for the last message
+      paragraphs.forEach((_, index) => {
+        setTimeout(() => {
+          setVisibleParagraphs((prev) => [...prev, index]);
+        }, index * 1000);
+      });
+    }, [message.content, paragraphs.length, shouldAnimate]);
+
+    const typedText = useTypingEffect(
+      message.content || "",
+      message.role === "assistant" && message.isTyping
+    );
+
+    // If message is empty and not typing, return null
+    if (!message.content && !message.isTyping) return null;
+
+    // Special case for typing messages with no content yet
+    if (message.isTyping && !message.content) {
+      return (
+        <div className="flex flex-col mb-2">
+          <div className="rounded flex gap-2 align-center relative overflow-hidden h-fit">
+            <Image
+              src={`/assets/images/matchya.png`}
+              alt={`assistant's profile`}
+              width={32}
+              height={32}
+              className="w-8 h-8 rounded-full assistant"
+              priority
+              unoptimized
+            />
+            <p className="mt-1.5 text-sm">matchya</p>
+          </div>
+          <div className="bg-beige-extralight message p-3 h-fit max-w-full rounded-md text-sm w-fit assistant mt-1">
+            <Loader />
+          </div>
+        </div>
+      );
+    }
+
+    // For non-last assistant messages, show content immediately
+    if (message.role === "assistant" && !isLast && !message.isTyping) {
+      return (
+        <div className="flex flex-col mb-2">
+          <div className="rounded flex gap-2 align-center relative overflow-hidden h-fit">
+            <Image
+              src={`/assets/images/matchya.png`}
+              alt={`assistant's profile`}
+              width={32}
+              height={32}
+              className="w-8 h-8 rounded-full assistant"
+              priority
+              unoptimized
+            />
+            <p className="mt-1.5 text-sm">matchya</p>
+          </div>
+          <div className="bg-beige-extralight message p-3 h-fit max-w-full rounded-md text-sm w-fit assistant mt-1">
+            <div className="flex justify-start align-middle gap-4 w-full h-fit">
+              <div className="sm:mt-[2px] mt-[unset] max-w-full h-fit assistant">
+                <ReactMarkdown>{message.content}</ReactMarkdown>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div
+        className={`flex flex-col mb-2 ${isLast ? "flex-grow" : ""}`}
+        key={`${chatId}-${message.id || Date.now()}`}
+      >
+        {shouldSplitMessage ? (
+          // Render multiple message bubbles for the assistant
+          <>
+            {paragraphs.map((paragraph, index) => (
+              <div
+                key={index}
+                className={`mb-2 last:mb-0 transition-opacity duration-200 ease-in-out ${
+                  visibleParagraphs.includes(index) ? "opacity-100" : "opacity-0"
+                }`}
+              >
+                {index === 0 && (
+                  <div className="rounded flex gap-2 align-center relative overflow-hidden h-fit">
+                    <Image
+                      src={`/assets/images/matchya.png`}
+                      alt={`${message.role}'s profile`}
+                      width={32}
+                      height={32}
+                      className="w-8 h-8 rounded-full assistant"
+                      priority
+                      unoptimized
+                    />
+                    <p className="mt-1.5 text-sm">matchya</p>
+                  </div>
+                )}
+                <div className="bg-beige-extralight flex gap-4 flex-col message p-3 h-fit max-w-full rounded-md text-sm w-fit assistant mt-1">
+                  <div className="flex justify-start align-middle gap-4 w-full h-fit">
+                    <div className="sm:mt-[2px] mt-[unset] max-w-full h-fit assistant">
+                      <ReactMarkdown>{paragraph}</ReactMarkdown>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {/* Show follow-up questions after the last assistant message */}
+            {isLast && (
+              <FollowUpQuestions
+                questions={followUpQuestions}
+                onQuestionClick={onFollowUpClick}
+                isLoading={isLoadingFollowUps}
+              />
+            )}
+          </>
+        ) : (
+          // Regular single bubble for user messages or typing assistant messages
+          <div
+            className={`bg-beige-extralight flex gap-4 flex-col message p-3 h-fit max-w-full rounded-md text-sm w-fit ${
+              message.role === "user" ? "user" : "assistant"
+            }`}
+          >
+            {message.role === "assistant" && (
+              <div className="rounded flex gap-2 align-center relative overflow-hidden h-fit">
+                <Image
+                  src={`/assets/images/matchya.png`}
+                  alt={`${message.role}'s profile`}
+                  width={32}
+                  height={32}
+                  className="w-8 h-8 rounded-full assistant"
+                  priority
+                  unoptimized
+                />
+                <p className="mt-1.5 text-sm">matchya</p>
+              </div>
+            )}
+
+            <div className="flex justify-start align-middle gap-4 w-full h-fit">
+              <div
+                className={`sm:mt-[2px] mt-[unset] max-w-full h-fit ${
+                  message.role === "user" ? "user" : "assistant"
+                }`}
+              >
+                {message.role === "assistant" ? (
+                  <div className="assistant">
+                    <ReactMarkdown>{typedText}</ReactMarkdown>
+                  </div>
+                ) : (
+                  <div className="assistant">
+                    <ReactMarkdown>{message.content}</ReactMarkdown>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+        {message.type === "questionnaire" &&
+          message.buttons &&
+          questionStage === message.questionIndex && (
+            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-5 gap-3">
+              {message.buttons.map((button, index) => (
+                <button
+                  key={index}
+                  onClick={() => {
+                    console.log("button clicked", button.content, button.questionIndex);
+                    onButtonClick(button.value, button.content, button.questionIndex);
+                  }}
+                  className="flex flex-col items-start p-4 bg-white rounded-xl hover:bg-[#F8F8F2] transition-colors shadow-sm border border-gray-200 w-full"
+                >
+                  <div className="w-8 h-8 mb-4">
+                    {button.icon ? (
+                      <Image
+                        src={`/assets/images/${button.icon}.png`}
+                        alt={button.icon}
+                        width={32}
+                        height={32}
+                        className="text-orange-500"
+                        onError={(e) => {
+                          e.target.style.display = "none";
+                        }}
+                      />
+                    ) : (
+                      <div className="w-8 h-8 flex items-center justify-center text-gray-300">
+                        {button.content.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-sm sm:text-base md:text-lg font-normal text-left">
+                    {button.content}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+      </div>
+    );
+  }
+);
+
+const ChatMessages = ({
+  messages,
+  isLoadingMessages,
+  loadingNewMsg,
+  onButtonClick,
+  questionStage,
+  followUpQuestions,
+  isLoadingFollowUps,
+  onFollowUpClick,
+  chatId,
+}) => {
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   useEffect(() => {
-    // On new message, scroll to the bottom.
-    if (messagesContainerRef.current) {
-      const element = messagesContainerRef.current;
-      element.scrollTop = element.scrollHeight;
-    }
-  }, [messages]);
+    scrollToBottom();
+  }, [messages, followUpQuestions]);
 
-  // E.g. If we have less than {5} messages, the messages won'ts take up the full container.
-  //      We add the justify-end property to pushes messages to the bottom
-  const maxMsgToScroll = maxMsgs || 5;
   return (
-    <div
-      ref={messagesContainerRef}
-      className={`bg-white p-10 rounded-3xl shadow-lg mb-8 overflow-y-auto h-[500px] max-h-[500px] flex flex-col space-y-4 ${
-        messages.length < maxMsgToScroll && "justify-end"
-      }`}
-    >
+    <div className="flex-grow pl-4 pr-2 content-end overflow-y-scroll">
       {/* Show loading spinner only when isLoadingMessages is true */}
       {isLoadingMessages && (
         <div className="flex justify-center items-center h-full">
           <div className={styles.spinner}></div> {/* Use the spinner here */}
         </div>
       )}
-
       {/* Display messages if isLoadingMessages is false, regardless of messages count */}
       {!isLoadingMessages &&
-        messages.map((message, index) => {
-          // DEBUG: See every individual message
-          // console.log({ message });
-          return (
-            <MessageItem
-              // Ensuring unique key
-              key={index}
-              message={message}
-              botPngFile={botPngFile}
-            />
-          );
-        })}
+        messages
+          .filter(
+            (message) => (message.content && message.content.trim() !== "") || message.isTyping
+          ) // Include typing messages
+          .map((message, index, filteredMessages) => {
+            const isLastMessage = index === filteredMessages.length - 1;
+
+            return (
+              <MessageItem
+                key={message.id || index}
+                message={message}
+                isLast={isLastMessage}
+                onButtonClick={onButtonClick}
+                questionStage={questionStage}
+                followUpQuestions={
+                  isLastMessage && message.role === "assistant" && !message.isTyping
+                    ? followUpQuestions
+                    : []
+                }
+                onFollowUpClick={onFollowUpClick}
+                isLoadingFollowUps={isLoadingFollowUps}
+                chatId={chatId}
+              />
+            );
+          })}
+      <div ref={messagesEndRef} />
     </div>
   );
 };
+
 export default ChatMessages;

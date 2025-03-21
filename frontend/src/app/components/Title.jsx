@@ -1,14 +1,19 @@
 import React from "react";
 
-const Title = ({ emoji, headingText }) => {
+const Title = () => {
   /**
    * Displays text.
    */
   return (
-    <>
-      <p className="text-center mb-4 text-2xl">{emoji}</p>
-      <p className="text-center mb-8">{headingText.toUpperCase()}</p>
-    </>
+    <div className="py-4">
+      <a href="#">
+        <img
+          className="w-fit sm:h-10 h-6"
+          src="/assets/images/matchyalogo.png"
+          alt=""
+        />
+      </a>
+    </div>
   );
 };
 

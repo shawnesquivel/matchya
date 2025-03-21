@@ -1,18 +1,38 @@
-import { sourceCodePro } from "../styles/fonts";
+import Link from "next/link";
+import { aspekta } from "../styles/fonts";
 
 const Footer = () => {
   return (
     <footer
-      className={`p-4 bg-gray-800 text-white w-full grid grid-cols-3 fixed bottom-0 ${sourceCodePro.className}`}
+      className={`sm:absolute sm:bottom-0 sm:p-4 px-1 py-2 gap-1 bg-white-dark text-mblack w-full flex flex-col-reverse sm:flex-row justify-between align-center text-xs ${aspekta.className}`}
     >
-      <p className={`text-center ${sourceCodePro.className}`}>
-        Taught by Shawn Esquivel
-      </p>
-      <p className={`text-center ${sourceCodePro.className}`}>
-        &copy; Weeknights and Weekends 2024
-      </p>
-      <p className={`text-center ${sourceCodePro.className}`}>
-        Questions? Join the Discord
+      <div className="flex gap-2 m-auto sm:m-0">
+        <p className={`sm:text-left text-center ${aspekta.className}`}>
+          &copy; matchya.
+        </p>
+        <Link href={`/privacy`} className="">
+          Privacy Policy
+        </Link>
+        <Link href={`/tos`} className="">
+          Terms of Service
+        </Link>
+        <Link
+          href={`https://matchya.app/insurance-coverage-calculator/?utm_source=app&utm_medium=internal&utm_campaign=feature_launch&utm_content=general-cta`}
+          className=""
+        >
+          Insurance Coverage Calculator
+        </Link>
+      </div>
+      <p className={`sm:text-right text-center ${aspekta.className}`}>
+        Experiencing a software issue? &nbsp;
+        <a
+          href="#tally-open=nG0l1Z&tally-hide-title=1&tally-emoji-text=🍵&tally-emoji-animation=heart-beat"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-orange transition-colors duration-300 hover:underline hover:underline-offset-2"
+        >
+          Report a Bug
+        </a>
       </p>
     </footer>
   );

@@ -1,4 +1,4 @@
-import { Press_Start_2P, Source_Code_Pro } from "next/font/google";
+import { Press_Start_2P, Source_Code_Pro, Inter } from "next/font/google";
 import localFont from "next/font/local";
 
 /**
@@ -15,10 +15,20 @@ import localFont from "next/font/local";
  *
  */
 
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  preload: true,
+  adjustFontFallback: false,
+});
+
 const pressStart2P = Press_Start_2P({ subsets: ["latin"], weight: "400" });
 const sourceCodePro = Source_Code_Pro({ subsets: ["latin"], weight: "400" });
 const instrumentSans = localFont({
   src: "./InstrumentSans-VariableFont_wdth,wght.ttf",
 });
+const aspekta = localFont({
+  src: "./Aspekta-400.otf",
+});
 
-export { pressStart2P, sourceCodePro, instrumentSans };
+export { pressStart2P, sourceCodePro, instrumentSans, aspekta, inter };

@@ -8,75 +8,298 @@ import {
   setCookiesChatId,
 } from "../utils/chatHelpers";
 
-const useChatbot = (baseUrl = "http://127.0.0.1:8000", debug = false) => {
-  const [chatId, setChatId] = useState(getChatID());
-  // ChatMessages
-  const [userMessage, setUserMessage] = useState("");
+const useChatbot = () => {
   const [messages, setMessages] = useState([]);
+  const [userMessage, setUserMessage] = useState("");
   const [error, setError] = useState(null);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
-  // Chatbot Form
-  const [model, setModel] = useState("gpt-3.5-turbo");
+  const [model, setModel] = useState("gpt-4o");
   const [promptTemplate, setPromptTemplate] = useState("girlfriend");
   const [temperature, setTemperature] = useState(0.5);
+  const [loadingNewMsg, setLoadingNewMsg] = useState(false);
+  const [questionStage, setQuestionStage] = useState(0);
+  const [finishedQuestions, setFinishedQuestions] = useState([]);
+  const [initialChatMsg, setInitialChatMsg] = useState(true);
 
   useEffect(() => {
-    /**
-     *  Fetch old messages on page load.
-     *
-     * 1. When the component is 'mounted' we check if the ChatID is present.
-     * 2. If present, get old from the database.
-     */
-    if (!chatId) {
-      const newChatId = generateUniqueID();
-      console.log({ newChatId });
-      setCookiesChatId(newChatId);
-      setChatId(newChatId);
-    } else {
-      fetchMessages();
-    }
-
-    async function fetchMessages() {
-      /** Fetches previous messages, or makes a new chat */
-      if (chatId && messages.length === 0) {
-        //
-        await fetchPreviousMessages();
-      } else {
-        newChat();
-      }
-    }
-  }, [chatId]);
-
-  useEffect(() => {
-    /**
-     *   Helper function, tests if the server is online..
-     */
-    async function testLambda() {
-      await testEndpoint();
-    }
-    const testEndpoint = async () => {
-      try {
-        console.log(`Testing Chalice Deployed: ${baseUrl}`);
-        const response = await fetch(baseUrl);
-
-        console.log({ response });
-
-        const resJson = await response.json();
-
-        console.log({ resJson });
-      } catch (err) {
-        console.log(`error testing the endpoint: ${err}`);
-      }
-    };
-
-    if (debug) {
-      testLambda();
-    }
+    setMessages([]);
   }, []);
+
+  const [chatId, setChatId] = useState(() => {
+    const newChatId = generateUniqueID();
+    setCookiesChatId(newChatId);
+    return newChatId;
+  });
+
+  const [preferences, setPreferences] = useState({
+    reason: "",
+    frequency: "",
+    preferred_therapy: "",
+    session_type: "",
+    insurance: null,
+    insurance_provider: "",
+    gender: null,
+    location: "Vancouver, BC",
+    additional_preferences: "",
+  });
+
+  const updatePreference = (key, value) => {
+    console.log("updatePreference called", { key, value });
+    setPreferences((prev) => ({
+      ...prev,
+      [key]: value,
+    }));
+  };
 
   const handlePromptChange = (e) => {
     setUserMessage(e.target.value);
   };
+
+  const questions = [
+    {
+      role: "assistant",
+      content:
+        "first, what best describes your main reason for seeking therapy?",
+      type: "questionnaire",
+      questionIndex: 0,
+      buttons: [
+        {
+          content:
+            "i have a specific situational problem i want to address with therapy.",
+          icon: "hazard",
+          value: "specific_problem",
+          questionIndex: 0,
+        },
+        {
+          content:
+            "i have specific characteristics i want to change or improve in therapy.",
+          icon: "brain",
+          value: "improvement",
+          questionIndex: 0,
+        },
+        {
+          content: "i want to become a mentally healthier version of myself.",
+          icon: "heart",
+          value: "growth",
+          questionIndex: 0,
+        },
+        {
+          content:
+            "i don't have an exact reason for why i want to see a therapist.",
+          icon: "question-mark",
+          value: "uncertain",
+          questionIndex: 0,
+        },
+      ],
+    },
+    {
+      role: "assistant",
+      content:
+        "great, thanks for sharing! do you have an idea for how frequently you want to see a therapist?",
+      type: "questionnaire",
+      questionIndex: 1,
+      buttons: [
+        {
+          content: "i want to try therapy and see what would be best for me.",
+          icon: "door",
+          value: "trial",
+          questionIndex: 1,
+        },
+        {
+          content: "i want to see a therapist just one time.",
+          icon: "clock",
+          value: "one_time",
+          questionIndex: 1,
+        },
+        {
+          content: "i want to address a problem in 2-4 sessions.",
+          icon: "hourglass",
+          value: "few_sessions",
+          questionIndex: 1,
+        },
+        {
+          content: "i'm looking for a longer term therapist.",
+          icon: "chat",
+          value: "long_term",
+          questionIndex: 1,
+        },
+        {
+          content:
+            "i have low insurance coverage and a limited number of sessions.",
+          icon: "money",
+          value: "low_coverage",
+          questionIndex: 1,
+        },
+      ],
+    },
+    {
+      role: "assistant",
+      content:
+        "very helpful, thanks! you're doing great :) there are many types of therapy. which of the following resonates best with you?",
+      type: "questionnaire",
+      questionIndex: 2,
+      buttons: [
+        {
+          content:
+            'structured and goal-oriented. "i like structure and a clear outcome"',
+          icon: "target",
+          value: "structured",
+          questionIndex: 2,
+        },
+        {
+          content:
+            'exploratory and insight-oriented. "i want to explore my thoughts and emotions"',
+          icon: "compass",
+          value: "exploratory",
+          questionIndex: 2,
+        },
+        {
+          content:
+            'skill-building and mindfulness-focused. "i want to build skills and healthy habits"',
+          icon: "mind",
+          value: "skill_building",
+          questionIndex: 2,
+        },
+        {
+          content:
+            'flexible and client-centered. "i\'m not sure what i need yet"',
+          icon: "expand",
+          value: "client_centered",
+          questionIndex: 2,
+        },
+      ],
+    },
+    {
+      role: "assistant",
+      content:
+        "awesome! do you have a type of therapy setting you prefer? don't worry, you can always change this later :)",
+      type: "questionnaire",
+      questionIndex: 3,
+      buttons: [
+        {
+          content: "i prefer one-on-one sessions.",
+          icon: "one-on-one",
+          value: "one_on_one",
+          questionIndex: 3,
+        },
+        {
+          content: "i'm open to group sessions.",
+          icon: "group",
+          value: "group",
+          questionIndex: 3,
+        },
+        {
+          content: "i'd like online/remote sessions.",
+          icon: "video",
+          value: "remote",
+          questionIndex: 3,
+        },
+        {
+          content: "i prefer in-person sessions.",
+          icon: "in-person",
+          value: "in_person",
+          questionIndex: 3,
+        },
+      ],
+    },
+    {
+      role: "assistant",
+      content:
+        "let's talk about insurance coverage. do you have extended health benefits?",
+      type: "questionnaire",
+      questionIndex: 4,
+      buttons: [
+        {
+          content: "yes, i have insurance coverage",
+          icon: "checkmark",
+          value: "has_insurance",
+          questionIndex: 4,
+        },
+        {
+          content: "no insurance coverage",
+          icon: "x-mark",
+          value: "no_insurance",
+          questionIndex: 4,
+        },
+        {
+          content: "i'm not sure about my coverage",
+          icon: "question",
+          value: "unknown_insurance",
+          questionIndex: 4,
+        },
+      ],
+    },
+    {
+      role: "assistant",
+      content: "which insurance provider do you have?",
+      type: "questionnaire",
+      questionIndex: 5,
+      buttons: [
+        {
+          content: "Blue Cross",
+          icon: "blue-cross",
+          value: "blue_cross",
+          questionIndex: 5,
+        },
+        {
+          content: "Sun Life",
+          icon: "sun-life",
+          value: "sun_life",
+          questionIndex: 5,
+        },
+        {
+          content: "Manulife",
+          icon: "manulife",
+          value: "manulife",
+          questionIndex: 5,
+        },
+        {
+          content: "Desjardins",
+          icon: "desjardins",
+          value: "desjardins",
+          questionIndex: 5,
+        },
+        {
+          content: "GMS",
+          icon: "gms",
+          value: "gms",
+          questionIndex: 5,
+        },
+        {
+          content: "Greenshield",
+          icon: "greenshield",
+          value: "greenshield",
+          questionIndex: 5,
+        },
+        {
+          content: "Other Provider",
+          icon: "other",
+          value: "other_insurance",
+          questionIndex: 5,
+        },
+      ],
+    },
+    {
+      role: "assistant",
+      content: `lastly ~ do you have any other preferences you'd like to share? some users share experience with specific issues, preferences for gender/ethnicity/sexuality, language(s), faith. you can enter it in the chat below.`,
+      type: "chat",
+      questionIndex: 6,
+    },
+  ];
+
+  let initialChatMessages = [
+    {
+      role: "assistant",
+      content:
+        "hihi. i'm matchya. i'm here to help you find your ideal therapist!",
+    },
+    {
+      role: "assistant",
+      content:
+        "to help match you with the right therapist, i'll ask you some questions. it'll be quick and 100% confidential.",
+    },
+    questions[0],
+  ];
 
   const handleSubmit = async () => {
     /**
@@ -89,67 +312,96 @@ const useChatbot = (baseUrl = "http://127.0.0.1:8000", debug = false) => {
     try {
       const chatId = getChatID();
       const timestamp = generateTimeStamp();
+      setLoadingNewMsg(true);
 
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        {
-          content: userMessage,
-          role: "user",
-          sourceDocuments: null,
-          timestamp: timestamp,
-          chat_id: chatId,
-        },
-      ]);
+      console.log("Messages before adding user message:", messages);
 
-      const body = JSON.stringify({
-        // message settings
-        chat_id: chatId,
-        timestamp: timestamp,
-        message: userMessage,
-        // chatbot settings
-        model: model,
-        prompt_template: promptTemplate,
-        temperature: temperature,
-        // additional settings, add as necesary.
-        apiKey: null,
+      setMessages((prevMessages) => {
+        const newMessages = [
+          ...prevMessages,
+          {
+            content: userMessage,
+            role: "user",
+            sourceDocuments: null,
+            timestamp: timestamp,
+            chat_id: chatId,
+            preferences: preferences,
+          },
+        ];
+        console.log("Messages after adding user message:", newMessages);
+        return newMessages;
       });
 
-      console.log("sending request", { body });
+      const request = {
+        chat_id: chatId,
+        message: userMessage,
+        questionnaire: finishedQuestions,
+        preferences: preferences, // pass on our structured preferences
+      };
+
+      const requestBody = JSON.stringify(request);
+
+      console.log("sending CHAT request", { requestBody });
 
       setUserMessage("");
 
-      const url = `${baseUrl}/chat`;
+      // Production
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/chat`;
+
+      // Local
+      // const url = "http://127.0.0.1:3000/chat";
 
       const response = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: body,
+        body: requestBody,
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        try {
+          const errorJson = JSON.parse(errorText);
+          throw new Error(
+            errorJson.error || `HTTP error! status: ${response.status}`
+          );
+        } catch (err) {
+          // If JSON parsing fails, use the plain text error response:
+          throw new Error(
+            errorText || `HTTP error! status: ${response.status}`
+          );
+        }
       }
 
       const resJson = await response.json();
 
       console.log(`Response from ${url}`, { resJson });
 
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        {
-          content: resJson?.content,
-          role: "assistant",
-          audio_file_url: resJson?.audio_file_url,
-          sourceDocuments: resJson?.source_documents,
-        },
-      ]);
+      // Add assistant message to the local state
+      setMessages((prevMessages) => {
+        const newMessages = [
+          ...prevMessages,
+          {
+            content: resJson.content,
+            role: resJson.role,
+            audio_file_url: resJson.audio_file_url,
+            sourceDocuments: resJson.source_documents,
+            timestamp: resJson.timestamp,
+            chat_id: resJson.chat_id,
+          },
+        ];
+        console.log("Messages after adding bot response:", newMessages);
+        return newMessages;
+      });
 
+      setInitialChatMsg(false);
       setError("");
+      setLoadingNewMsg(false);
     } catch (err) {
+      setLoadingNewMsg(false);
       console.error(err);
-      setError("Error fetching transcript. Please try again.");
+      setError(err.message || "Error fetching messages. Please try again.");
     }
   };
 
@@ -177,63 +429,117 @@ const useChatbot = (baseUrl = "http://127.0.0.1:8000", debug = false) => {
     setCookiesChatId(newChatId);
     setChatId(newChatId);
 
-    // Reset messages
     if (messages.length > 0) {
       setMessages([]);
     }
+
+    // Reset the structured preferences to defaults.
+    setPreferences({
+      reason: "",
+      frequency: "",
+      preferred_therapy: "",
+      session_type: "",
+      insurance: null,
+      insurance_provider: "",
+      gender: null,
+      location: "Vancouver, BC",
+      additional_preferences: "",
+    });
   };
 
-  const fetchPreviousMessages = async () => {
-    /** Phase 1: No need to use. */
-    return;
-  };
-  // const fetchPreviousMessages = async () => {
-  //   /**
-  //    * Get old messages based on the current ChatID, then update the `messages` state.
-  //    *
-  //    *  Note: This will not work unless the endpoint is created and running.
-  //    */
-  //   try {
-  //     // Get the messages using the ChatID
-  //     setIsLoadingMessages(true);
-  //     const chatId = getChatID();
-  //     const response = await fetch(`${baseUrl}/chat/messages/${chatId}`, {
-  //       method: "GET",
-  //     });
-  //     if (!response.ok) {
-  //       throw new Error(`HTTP error! status: ${response.status}`);
-  //     }
-  //     const resJson = await response.json();
-
-  //     if (debug) {
-  //       console.log("useChatbot, fetchPreviousMessages");
-  //       console.log({ response });
-  //       console.log("chat/messages response", { resJson });
-  //       console.log(`Retrieved messages: ${resJson.data}`);
-  //     }
-
-  //     // Update messages array, and turn off loading state.
-  //     setMessages(resJson.data);
-  //     setError("");
-  //     setIsLoadingMessages(false);
-  //   } catch (err) {
-  //     console.error(err);
-  //     setError("Error fetching messages.");
-  //   }
-  // };
-
-  useEffect(() => {
-    /** Helper function to check a ChatID is set. */
-    if (debug) {
-      console.log(`Found messages for ${chatId}`, { messages });
+  const handleButtonClick = async (value, content, clickedQuestionIndex) => {
+    switch (clickedQuestionIndex) {
+      case 0: {
+        // For question 0, update the "reason"
+        console.log("Updating reason with", value);
+        updatePreference("reason", value);
+        break;
+      }
+      case 1: {
+        // For question 1, update the "frequency"
+        console.log("Updating frequency with", value);
+        updatePreference("frequency", value);
+        break;
+      }
+      case 2: {
+        // For question 2, update "preferred_therapy"
+        console.log("Updating preferred_therapy with", value);
+        updatePreference("preferred_therapy", value);
+        break;
+      }
+      case 3: {
+        // For question 3, update "session_type"
+        console.log("Updating session_type with", value);
+        updatePreference("session_type", value);
+        break;
+      }
+      case 4: {
+        // For question 4, update insurance status.
+        const hasInsurance = value === "has_insurance";
+        console.log("Updating insurance with", hasInsurance);
+        updatePreference("insurance", hasInsurance);
+        // Depending on the answer, you may want to show or skip question 5.
+        break;
+      }
+      case 5: {
+        // For question 5, update "insurance_provider"
+        console.log("Updating insurance_provider with", value);
+        updatePreference("insurance_provider", value);
+        break;
+      }
+      default:
+        console.log(
+          "Unhandled question index in handleButtonClick:",
+          clickedQuestionIndex
+        );
     }
-  }, [chatId, messages]);
+    try {
+      setLoadingNewMsg(true);
+      const newQuestionIndex = clickedQuestionIndex + 1;
+      if (questions[newQuestionIndex]) {
+        const nextMsg = questions[newQuestionIndex];
+        setMessages((prev) => [
+          ...prev,
+          { ...nextMsg, content: nextMsg.content, isTyping: true },
+        ]);
+        // Update questionStage to trigger the UI to render the next question.
+        console.log("Advancing to question stage:", newQuestionIndex);
+        setQuestionStage(newQuestionIndex);
+      }
+      await new Promise((resolve) => setTimeout(resolve, content.length * 10));
+      setMessages((prev) =>
+        prev.map((msg, index) =>
+          index === prev.length - 1 ? { ...msg, isTyping: false } : msg
+        )
+      );
+      setLoadingNewMsg(false);
+    } catch (err) {
+      console.error(err);
+      setError("Error processing your choice. Please try again.");
+      setLoadingNewMsg(false);
+    }
+  };
+
+  // Add health check function
+  const checkHealth = async () => {
+    try {
+      const url = `${process.env.NEXT_PUBLIC_API_URL}/health`;
+      const response = await fetch(url);
+      const data = await response.json();
+      console.log("Health check response:", url, data);
+      return data;
+    } catch (err) {
+      console.error("Health check failed:", err);
+      return null;
+    }
+  };
 
   return {
     userMessage,
     messages,
     error,
     isLoadingMessages,
+    loadingNewMsg,
     handlePromptChange,
     handleSubmit,
     handleClearChat,
@@ -243,9 +549,13 @@ const useChatbot = (baseUrl = "http://127.0.0.1:8000", debug = false) => {
     setPromptTemplate,
     temperature,
     setTemperature,
-    fetchPreviousMessages,
     chatId,
     newChat,
+    handleButtonClick,
+    questionStage,
+    preferences,
+    updatePreference,
+    checkHealth,
   };
 };
 

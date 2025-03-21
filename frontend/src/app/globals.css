@@ -12,6 +12,73 @@ body {
   /* Add any other styles you want to apply globally */
 }
 
+/* Custom Animated Link Classes */
+.animated-link {
+  position: relative;
+  display: inline-block;
+}
+
+.animated-link::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 1px;
+  bottom: 0;
+  left: 0;
+  background-color: currentColor;
+  transition: width 0.3s ease-in-out;
+}
+
+.animated-link:hover::after {
+  width: 100%;
+}
+
+/* Variations */
+.animated-link--thick::after {
+  height: 2px;
+}
+
+.animated-link--fast::after {
+  transition: width 0.15s ease-in-out;
+}
+
+.animated-link--slow::after {
+  transition: width 0.5s ease-in-out;
+}
+
+/* Pen Circle Highlight Animation */
+@keyframes drawCircle {
+  0% {
+    stroke-dashoffset: 283;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.highlight-circle-container {
+  position: relative;
+  display: inline-block;
+}
+
+.highlight-circle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.highlight-circle circle {
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 283;
+  stroke-dashoffset: 283;
+  animation: drawCircle 1s ease forwards;
+}
+
 .codeblock-chatgpt {
   font-family: 'Söhne Mono', Monaco, Andale Mono, Ubuntu Mono, monospace;
   font-size: 0.875em;
@@ -35,13 +102,13 @@ body {
   text-transform: uppercase;
 } */
 
-
+/* 
 h1,
 h2,
 h3 {
   font-family: 'OpenSans', sans-serif;
   font-weight: 400;
-}
+} */
 
 .Button {
   display: flex;
@@ -61,4 +128,90 @@ h3 {
   flex: none;
   order: 0;
   flex-grow: 0;
+}
+
+div.message.user {
+  margin-left: auto;
+  background-color: #F7F7F7;
+
+}
+
+div.message.bot {
+  background-color: #F8F8F2;
+}
+
+html {
+  box-sizing: border-box;
+}
+
+.profile-field {
+  display: flex;
+  flex-direction: column;
+  gap:.25rem;
+}
+.profile-field label{
+  font-size: .70rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.profile-field textarea{
+  border-radius: 1rem;
+  padding: 1rem;
+  border: 1px solid #E9E9E9;
+  color: #454140;
+  background-color: #FCFCFC;
+  height: 100%;
+}
+.profile-field textarea::placeholder{
+  color: #E9E9E9;
+}
+.profile-field input[type='text'],
+.profile-field input[type='email']{
+  border-radius: 1rem;
+  padding: .5rem 1rem;
+  border: 1px solid #E9E9E9;
+  color: #454140;
+  background-color: #FCFCFC;
+  border-radius: 9999px;
+}
+.profile-field input[type='text']::placeholder{
+  color: #E9E9E9;
+}
+
+.profile-field .chips {
+  display: flex;
+  gap: .25rem;
+  width: 100%;
+  flex-wrap: wrap;
+}
+.profile-field .chips-container {
+  border-radius: 1rem;
+  padding: .25rem;
+  border: 1px solid #E9E9E9;
+  color: #454140;
+  background-color: #FCFCFC;
+  border-radius: 1rem;
+}
+
+.profile-field > div input[type='text'] {
+  /* Adjust styles as needed */
+  border-radius: initial; /* Reset border-radius */
+  padding: initial; /* Reset padding */
+  border: initial; /* Reset border */
+  color: initial; /* Reset color */
+}
+
+.cl-userButtonAvatarBox {
+  width: 3rem;
+  height: 3rem;
+}
+
+
+/* Add spacing in "assistant" messages in ChatMessages */
+.assistant p {
+  margin-bottom: 15px;
+}
+
+.assistant p:last-child {
+  margin-bottom: 0;
 }
