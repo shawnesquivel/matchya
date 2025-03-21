@@ -596,6 +596,53 @@ export function TherapistProvider({ children }) {
     });
   };
 
+  // Function to update location with smart comparison
+  const updateLocation = async (
+    newCity: string | null,
+    newProvince: string | null
+  ): Promise<boolean> => {
+    // Get current location from state
+    const currentCity = state.filters.clinic_city;
+    const currentProvince = state.filters.clinic_province;
+
+    // Check if location is changing
+    const isLocationChanged = newCity !== currentCity || newProvince !== currentProvince;
+
+    console.log(`[TherapistContext] Location comparison: 
+      Current: ${currentCity}, ${currentProvince}
+      New: ${newCity}, ${newProvince}
+      Changed: ${isLocationChanged}`);
+
+    if (isLocationChanged) {
+      // If location is different, reset chat first
+      console.log("[TherapistContext] Location changed, resetting chat and filters");
+      resetChat();
+
+      // Then update to new location (skip the therapist search for now)
+      await updateTherapists({
+        type: "DIRECT",
+        filters: {
+          clinic_city: newCity,
+          clinic_province: newProvince,
+        },
+        skipSearch: true,
+      });
+    } else {
+      // If location is the same, just make sure filters reflect the correct location
+      console.log("[TherapistContext] Location unchanged, preserving chat and filters");
+      await updateTherapists({
+        type: "DIRECT",
+        filters: {
+          clinic_city: newCity,
+          clinic_province: newProvince,
+        },
+        skipSearch: true,
+      });
+    }
+
+    return isLocationChanged;
+  };
+
   const deduplicateTherapists = (therapists: Therapist[]): Therapist[] => {
     if (!therapists || !therapists.length) return [];
     return Array.from(new Map(therapists.map((therapist) => [therapist.id, therapist])).values());
@@ -920,6 +967,7 @@ export function TherapistProvider({ children }) {
         addMessage,
         resetChat,
         updateTherapists,
+        updateLocation,
         toggleMockData,
         normalizeMessage,
         isTherapistLoading: state.isTherapistLoading,

@@ -9,7 +9,7 @@ interface WelcomePageProps {
 }
 
 export default function WelcomePage({ onLocationSelected }: WelcomePageProps) {
-  const { updateTherapists } = useTherapist();
+  const { updateLocation } = useTherapist();
   const [selectedLocation, setSelectedLocation] = useState("");
 
   const handleLocationChange = (locationValue: string) => {
@@ -33,17 +33,10 @@ export default function WelcomePage({ onLocationSelected }: WelcomePageProps) {
       }
     }
 
-    // Just update the location filter without triggering a search
-    await updateTherapists({
-      type: "DIRECT",
-      filters: {
-        clinic_city,
-        clinic_province,
-      },
-      skipSearch: true, // Skip the therapist search
-    });
+    // Use the new updateLocation function which handles comparison internally
+    await updateLocation(clinic_city, clinic_province);
 
-    // Then trigger the callback to show the main app
+    // Always trigger the callback to show the main app
     onLocationSelected();
   };
 
@@ -90,7 +83,6 @@ export default function WelcomePage({ onLocationSelected }: WelcomePageProps) {
               </option>
               <option value="Vancouver, BC">Vancouver</option>
               <option value="Toronto, ON">Toronto</option>
-              <option value="">All Locations (Virtual Sessions Only)</option>
             </select>
             <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none">
               <div className="w-8 h-8 rounded-full bg-purple flex items-center justify-center">

@@ -140,39 +140,6 @@ export default function TherapistResultsPanel({ onResetLocation }: TherapistResu
       <div className="sm:flex hidden sticky top-0 sm:p-4 p-2 flex-col sm:flex-row sm:justify-between sm:items-center bg-white z-20 border-b border-grey-light">
         <div className="flex items-center gap-4">
           <h2 className="sm:block hidden text-lg font-medium text-mblack">Matched Therapists</h2>
-
-          {/* Location Indicator */}
-          {/* <button
-            onClick={onResetLocation}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-beige-extralight hover:bg-beige-dark transition-colors border border-grey-light text-sm text-mblack"
-            title="Click to change location"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-4 w-4"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-              />
-            </svg>
-            <span>
-              {filters.clinic_city && filters.clinic_province
-                ? `${filters.clinic_city}, ${filters.clinic_province}`
-                : "Online Only"}
-            </span>
-          </button> */}
         </div>
 
         <div className="flex items-center ml-auto">
