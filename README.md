@@ -1,4 +1,4 @@
- ## Warning
+ ## AI Generative Masterclass
 
  If you are coming from the AI Generative Masterclass, please see the `tutorial` branch. 
 
