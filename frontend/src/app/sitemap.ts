@@ -1,8 +1,9 @@
 import { MetadataRoute } from "next";
 import {
-  generateProfileSlug,
   fetchTherapistNames,
+  generateProfileSlug,
 } from "./utils/supabaseHelpers";
+import { COUNTRIES, REGIONS } from "./utils/locationData";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL; // localhost or https://www.matchya.app
 
@@ -72,7 +73,36 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         changeFrequency: "monthly" as const,
         priority: 0.5,
       },
+      // Add therapist directory routes
+      {
+        url: `${BASE_URL}/therapists/browse`,
+        lastModified: lastModifiedDate,
+        changeFrequency: "daily" as const,
+        priority: 0.9,
+      },
     ] as MetadataRoute.Sitemap;
+
+    // Add country-level routes
+    Object.keys(COUNTRIES).forEach((countryCode) => {
+      routes.push({
+        url: `${BASE_URL}/therapists/browse/${countryCode}`,
+        lastModified: lastModifiedDate,
+        changeFrequency: "daily" as const,
+        priority: 0.9,
+      });
+
+      // Add region-level routes for each country
+      if (REGIONS[countryCode]) {
+        Object.keys(REGIONS[countryCode]).forEach((regionCode) => {
+          routes.push({
+            url: `${BASE_URL}/therapists/browse/${countryCode}/${regionCode}`,
+            lastModified: lastModifiedDate,
+            changeFrequency: "daily" as const,
+            priority: 0.9,
+          });
+        });
+      }
+    });
 
     // Process all therapist routes in chunks
     const CHUNK_SIZE = 60; // Smaller chunks for testing
@@ -96,16 +126,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       processedCount += chunk.length;
       const chunkTime = Date.now() - chunkStartTime;
 
-      console.log(`[SITEMAP_NEXT] Processing chunk ${
-        Math.floor(i / CHUNK_SIZE) + 1
-      }:
+      console.log(
+        `[SITEMAP_NEXT] Processing chunk ${Math.floor(i / CHUNK_SIZE) + 1}:
       - Processed: ${processedCount}/${allNames.length}
       - Chunk time: ${(chunkTime / 1000).toFixed(3)}s
-      - Sample URLs: ${JSON.stringify(
-        therapistRoutes.slice(0, 2),
-        null,
-        2
-      )}...`);
+      - Sample URLs: ${
+          JSON.stringify(
+            therapistRoutes.slice(0, 2),
+            null,
+            2,
+          )
+        }...`,
+      );
 
       routes.push(...therapistRoutes);
     }
@@ -124,9 +156,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       stack: error instanceof Error ? error.stack : undefined,
       stage: "sitemap generation",
       timeElapsed: `${((Date.now() - startTime) / 1000).toFixed(2)}s`,
-      memoryUsage: `${Math.round(
-        process.memoryUsage().heapUsed / 1024 / 1024
-      )}MB`,
+      memoryUsage: `${
+        Math.round(
+          process.memoryUsage().heapUsed / 1024 / 1024,
+        )
+      }MB`,
     });
     return []; // Return empty sitemap on error
   }
