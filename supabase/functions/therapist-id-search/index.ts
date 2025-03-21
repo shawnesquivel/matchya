@@ -127,6 +127,9 @@ Deno.serve(async (req) => {
       profile_img_url: therapist.profile_img_url,
       video_intro_link: therapist.video_intro_link,
 
+      // Availability & Status
+      is_accepting_clients: therapist.is_accepting_clients,
+
       // Location
       clinic_name: therapist.clinic_name || "",
       clinic_city: therapist.clinic_city || "",

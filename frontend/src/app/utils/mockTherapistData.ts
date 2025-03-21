@@ -106,6 +106,7 @@ export const mockTherapistProfile: TherapistProfile = {
     "EMDR",
   ],
   similarity: 0.89,
+  is_accepting_clients: true,
   bio:
     "As a licensed psychologist with over 15 years of experience, I specialize in helping adults navigate anxiety, depression, and trauma. My approach is collaborative, empathetic, and evidence-based. I believe therapy is a journey we take together, and I'm committed to creating a safe, non-judgmental space where you can explore your challenges and strengths. Outside of my practice, I enjoy hiking, reading, and spending time with my family and golden retriever, Charlie.",
   profile_img_url: "https://randomuser.me/api/portraits/women/25.jpg",
@@ -216,7 +217,8 @@ export const mockTherapistProfile: TherapistProfile = {
       platform: "youtube",
       type: "faq",
       title: "How long does therapy usually take?",
-      description: "Information about therapy duration and what factors influence it",
+      description:
+        "Information about therapy duration and what factors influence it",
       display_order: 2,
       is_active: true,
     },
@@ -226,7 +228,8 @@ export const mockTherapistProfile: TherapistProfile = {
       platform: "youtube",
       type: "faq",
       title: "What's the difference between CBT and psychodynamic therapy?",
-      description: "Explaining different therapy approaches and who they might be right for",
+      description:
+        "Explaining different therapy approaches and who they might be right for",
       display_order: 3,
       is_active: true,
     },
@@ -267,7 +270,8 @@ export const mockTherapistProfile: TherapistProfile = {
       platform: "instagram",
       type: "testimonial",
       title: "My depression journey",
-      description: "A client discusses their experience working through depression",
+      description:
+        "A client discusses their experience working through depression",
       display_order: 3,
       is_active: true,
     },

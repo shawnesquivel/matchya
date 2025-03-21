@@ -40,6 +40,7 @@ interface TherapistData {
 
   // Availability
   availability: "online" | "in_person" | "both";
+  is_accepting_clients?: boolean;
 
   // Professional Details
   education?: string[];
@@ -901,6 +902,7 @@ Deno.serve(async (req) => {
       therapist_email: profileData.therapist_email || null,
       therapist_phone: profileData.therapist_phone || null,
       availability: availability,
+      is_accepting_clients: profileData.is_accepting_clients || true,
       education: education,
       certifications: certifications,
       approaches: approaches,
@@ -932,6 +934,7 @@ Deno.serve(async (req) => {
           gender: "error_placeholder",
           clinic_name: "Error record",
           availability: "online",
+          is_accepting_clients: true,
           creation_log: JSON.stringify({
             timestamp: new Date().toISOString(),
             error: "Database error during therapist insertion",
@@ -1168,6 +1171,7 @@ Deno.serve(async (req) => {
         gender: "error_placeholder",
         clinic_name: "Critical Error Record",
         availability: "online",
+        is_accepting_clients: true,
         creation_log: JSON.stringify({
           timestamp: new Date().toISOString(),
           error: "Critical unexpected error in edge function",

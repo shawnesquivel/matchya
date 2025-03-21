@@ -26,6 +26,7 @@ export interface SupabaseTherapistProfile {
   certifications: string[];
   areas_of_focus: string[];
   approaches: string[];
+  is_accepting_clients: boolean;
 
   // Contact details
   therapist_email?: string;
@@ -110,6 +111,7 @@ export interface TherapistProfile {
   clinic_phone: string | null;
   education: string[];
   certifications: string[];
+  is_accepting_clients: boolean;
   licenses: {
     id: string;
     license_number: string;
@@ -321,6 +323,7 @@ export function mapSupabaseToTherapistProfile(
     certifications: profile.certifications || [],
     ai_summary: profile.ai_summary,
     videos: profile.videos || [],
+    is_accepting_clients: profile.is_accepting_clients === false ? false : true, // Explicitly handle the boolean
     // These are derived values
     initial_price: "",
     subsequent_price: "",

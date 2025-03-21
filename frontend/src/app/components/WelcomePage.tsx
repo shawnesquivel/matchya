@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useTherapist } from "../contexts/TherapistContext";
 import Header from "./Header";
 import Footer from "./Footer";
@@ -13,7 +13,6 @@ export default function WelcomePage({ onLocationSelected }: WelcomePageProps) {
   const [selectedLocation, setSelectedLocation] = useState("");
 
   const handleLocationChange = (locationValue: string) => {
-    console.log("WelcomePage: Location selected:", locationValue);
     setSelectedLocation(locationValue);
   };
 
@@ -77,6 +76,7 @@ export default function WelcomePage({ onLocationSelected }: WelcomePageProps) {
               onChange={(e) => handleLocationChange(e.target.value)}
               className="w-full sm:py-8 sm:px-6 py-4 px-4 rounded-lg border border-grey-light text-grey-extraDark bg-white shadow-sm focus:ring-1 focus:ring-green-light focus:border-transparent appearance-none"
               defaultValue=""
+              value={selectedLocation}
             >
               <option value="" disabled>
                 Select your location

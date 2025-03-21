@@ -326,7 +326,9 @@ export default function TherapistProfileModal({
                         </div>
                       )}
 
-                    <h2 className="font-new-spirit font-light text-xl mb-2">About {displayTherapist.first_name}</h2>
+                    <h2 className="font-new-spirit font-light text-xl mb-2">
+                      About {displayTherapist.first_name}
+                    </h2>
                     <p className="text-mblack">{displayTherapist.bio || "No bio available"}</p>
 
                     {/* FAQ videos after bio in accordion style */}

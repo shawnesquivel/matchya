@@ -149,6 +149,9 @@ Deno.serve(async (req) => {
       profile_img_url: therapist.profile_img_url,
       video_intro_link: therapist.video_intro_link,
 
+      // Availability
+      is_accepting_clients: therapist.is_accepting_clients,
+
       // Location
       clinic_name: therapist.clinic_name || "",
       clinic_city: therapist.clinic_city || "",
@@ -186,15 +189,15 @@ Deno.serve(async (req) => {
         status: 200,
       },
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error("[profile-search] Error:", error);
 
     return new Response(
       JSON.stringify({
-        error: error.message,
+        error: error.message || "Unknown error occurred",
         debug: {
-          type: error.name,
-          stack: error.stack,
+          type: error.name || "UnknownErrorType",
+          stack: error.stack || "No stack trace available",
         },
       }),
       {
