@@ -311,15 +311,50 @@ export default function TherapistProfileModal({
               <div className="container mx-auto gap-8 grid md:grid-cols-3 sm:grid-cols-1 md:py-14 sm:py-8">
                 <div className="md:col-span-2 sm:col-span-2 gap-8">
                   <div className="flex flex-col gap-2">
-                    <h2 className="font-medium text-xl">About {displayTherapist.first_name}</h2>
+                    {/* Introduction videos above bio */}
+                    {displayTherapist.videos &&
+                      displayTherapist.videos.filter((v) => v.type === "intro").length > 0 && (
+                        <div className="mb-6">
+                          <h2 className="font-new-spirit font-light text-xl mb-2">
+                            Meet {displayTherapist.first_name}
+                          </h2>
+                          <TherapistVideos
+                            videos={displayTherapist.videos}
+                            variant="modal"
+                            type="intro"
+                          />
+                        </div>
+                      )}
+
+                    <h2 className="font-new-spirit font-light text-xl mb-2">About {displayTherapist.first_name}</h2>
                     <p className="text-mblack">{displayTherapist.bio || "No bio available"}</p>
 
-                    {/* Add videos section right after the bio */}
-                    {displayTherapist.videos && displayTherapist.videos.length > 0 && (
-                      <div className="mt-8">
-                        <TherapistVideos videos={displayTherapist.videos} variant="modal" />
-                      </div>
-                    )}
+                    {/* FAQ videos after bio in accordion style */}
+                    {displayTherapist.videos &&
+                      displayTherapist.videos.filter((v) => v.type === "faq").length > 0 && (
+                        <div className="mt-8">
+                          <h2 className="font-new-spirit font-light text-xl mb-6">FAQs</h2>
+                          <TherapistVideos
+                            videos={displayTherapist.videos}
+                            variant="modal"
+                            type="faq"
+                          />
+                        </div>
+                      )}
+
+                    {/* Testimonial videos below FAQ in carousel style */}
+                    {displayTherapist.videos &&
+                      displayTherapist.videos.filter((v) => v.type === "testimonial").length >
+                        0 && (
+                        <div className="mt-8">
+                          <h2 className="font-new-spirit font-light text-xl mb-6">Testimonials</h2>
+                          <TherapistVideos
+                            videos={displayTherapist.videos}
+                            variant="modal"
+                            type="testimonial"
+                          />
+                        </div>
+                      )}
 
                     <div className="mt-8 flex flex-col gap-2">
                       <h2 className="font-medium text-xl">Areas of Practice</h2>

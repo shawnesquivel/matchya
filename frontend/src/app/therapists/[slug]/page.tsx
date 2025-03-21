@@ -311,24 +311,53 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => {
         {/* Main Content */}
         <div className="bg-white sm:px-8 px-3">
           <div className="container mx-auto gap-8 grid md:grid-cols-3 sm:grid-cols-1 md:py-14 sm:py-8">
-            <div className="md:col-span-2 sm:col-span-2 gap-8">
+            <div className="md:col-span-2 sm:col-span-2 gap-10">
               <div className="flex flex-col gap-2">
-                <h2 className="font-medium text-xl">About {therapist.first_name}</h2>
+                {/* Introduction videos above bio */}
+                {therapist.videos &&
+                  therapist.videos.filter((v) => v.type === "intro").length > 0 && (
+                    <div className="mb-6">
+                      <h2 className="font-new-spirit font-light text-2xl mb-2">
+                        Meet {therapist.first_name}
+                      </h2>
+                      <TherapistVideos videos={therapist.videos} variant="page" type="intro" />
+                    </div>
+                  )}
+
+                <h2 className="font-new-spirit font-light text-2xl mb-2">
+                  About {therapist.first_name}
+                </h2>
                 <p className="text-mblack">{therapist.bio || "No bio available"}</p>
 
-                {therapist.videos && therapist.videos.length > 0 && (
-                  <div className="mt-8">
-                    <TherapistVideos videos={therapist.videos} variant="page" />
-                  </div>
-                )}
+                {/* FAQ videos after bio in accordion style */}
+                {therapist.videos &&
+                  therapist.videos.filter((v) => v.type === "faq").length > 0 && (
+                    <div className="mt-8">
+                      <h2 className="font-new-spirit font-light text-2xl mb-6">FAQs</h2>
+                      <TherapistVideos videos={therapist.videos} variant="page" type="faq" />
+                    </div>
+                  )}
+
+                {/* Testimonial videos below FAQ in carousel style */}
+                {therapist.videos &&
+                  therapist.videos.filter((v) => v.type === "testimonial").length > 0 && (
+                    <div className="mt-8">
+                      <h2 className="font-new-spirit font-light text-2xl mb-6">Testimonials</h2>
+                      <TherapistVideos
+                        videos={therapist.videos}
+                        variant="page"
+                        type="testimonial"
+                      />
+                    </div>
+                  )}
 
                 <div className="mt-8 flex flex-col gap-2">
-                  <h2 className="font-medium text-xl">Areas of Practice</h2>
+                  <h2 className="font-light font-new-spirit text-2xl">Areas of Practice</h2>
                   <CollapsibleAreasOfFocus areasOfFocus={therapist.areas_of_focus || []} />
                 </div>
 
                 <div className="mt-8 flex flex-col gap-2">
-                  <h2 className="font-medium text-xl">Therapeutic Approaches</h2>
+                  <h2 className="font-light font-new-spirit text-2xl">Therapeutic Approaches</h2>
                   <CollapsibleApproaches approaches={therapist.approaches || []} />
                 </div>
 

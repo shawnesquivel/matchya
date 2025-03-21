@@ -21,7 +21,7 @@ export default function TherapistQualifications({
       ? "border border-grey-dark rounded-lg sm:p-8 p-4 flex flex-col gap-6"
       : "border border-grey-dark rounded-lg sm:p-8 p-4 flex flex-col gap-6";
 
-  const titleClasses = variant === "modal" ? "font-medium text-xl" : "font-medium text-2xl";
+  const titleClasses = variant === "modal" ? "font-light font-new-spirit text-xl" : "font-light font-new-spirit text-2xl";
 
   return (
     <div className={`${containerClasses} ${className}`}>

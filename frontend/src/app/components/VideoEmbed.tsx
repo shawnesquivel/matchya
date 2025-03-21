@@ -63,7 +63,7 @@ export default function VideoEmbed(props: VideoEmbedProps) {
   if (platformLower === "instagram") {
     return (
       <div className={className}>
-        {title && <h4 className="font-medium mb-1">{title}</h4>}
+        {title && <h4 className="mb-1">{title}</h4>}
         {description && <p className="text-gray-600 mb-2 text-sm">{description}</p>}
         <InstagramEmbed url={url} onError={handleError} className="mb-4" />
       </div>
@@ -74,7 +74,7 @@ export default function VideoEmbed(props: VideoEmbedProps) {
   if (platformLower === "youtube") {
     return (
       <div className={className}>
-        {title && <h4 className="font-medium mb-1">{title}</h4>}
+        {title && <h4 className="mb-1">{title}</h4>}
         {description && <p className="text-gray-600 mb-2 text-sm">{description}</p>}
         <YouTubeEmbed url={url} onError={handleError} className="mb-4" />
       </div>

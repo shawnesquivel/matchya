@@ -22,7 +22,10 @@ export default function TherapistFees({
       ? "border border-grey-dark rounded-lg sm:p-8 p-4 flex flex-col gap-4"
       : "border border-grey-dark rounded-lg sm:p-8 p-4 flex flex-col gap-4";
 
-  const titleClasses = variant === "modal" ? "font-medium text-xl" : "font-medium mb-4 text-2xl";
+  const titleClasses =
+    variant === "modal"
+      ? "font-light font-new-spirit text-xl"
+      : "font-light font-new-spirit text-2xl";
 
   // Get fees by session type
   const getFeesBySessionType = (sessionType: string) => {

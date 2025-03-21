@@ -54,16 +54,18 @@ export default function YouTubeEmbed({ url, onError, className = "" }: YouTubeEm
   }
 
   return (
-    <div className={`youtube-embed aspect-video ${className}`}>
-      <iframe
-        src={`https://www.youtube.com/embed/${videoId}`}
-        title="YouTube video player"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        allowFullScreen
-        className="w-full h-full rounded-lg"
-        loading="lazy"
-        onError={() => onError?.()}
-      ></iframe>
+    <div className={`youtube-embed relative overflow-hidden ${className}`}>
+      <div className="aspect-video w-full">
+        <iframe
+          src={`https://www.youtube.com/embed/${videoId}`}
+          title="YouTube video player"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowFullScreen
+          className="absolute top-0 left-0 w-full h-full rounded-lg"
+          loading="lazy"
+          onError={() => onError?.()}
+        ></iframe>
+      </div>
     </div>
   );
 }

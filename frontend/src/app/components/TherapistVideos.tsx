@@ -1,19 +1,26 @@
 "use client";
 import React, { useEffect } from "react";
 import VideoEmbed, { TherapistVideo } from "@/app/components/VideoEmbed";
+import VideoAccordion from "@/app/components/VideoAccordion";
+import VideoCarousel from "@/app/components/VideoCarousel";
 
 interface TherapistVideosProps {
   videos: TherapistVideo[];
   variant?: "modal" | "page";
+  type?: "intro" | "faq" | "testimonial";
 }
 
 /**
  * Component to display therapist videos organized by type
- * All videos are now shown by default without collapsible sections
+ * Different UI treatments for different video types:
+ * - Intro videos: Simple list, displayed above bio
+ * - FAQ videos: Accordion style, displayed after bio
+ * - Testimonial videos: Carousel with 2 columns, displayed after FAQ
  */
 export const TherapistVideos: React.FC<TherapistVideosProps> = ({
   videos = [],
   variant = "page",
+  type,
 }) => {
   // Add debug logging
   useEffect(() => {
@@ -24,55 +31,77 @@ export const TherapistVideos: React.FC<TherapistVideosProps> = ({
     return null;
   }
 
-  // Group videos by type
-  const introVideos = videos.filter((v) => v.type === "intro");
-  const faqVideos = videos.filter((v) => v.type === "faq");
-  const testimonialVideos = videos.filter((v) => v.type === "testimonial");
+  // If specific type is requested, only render that type
+  const filteredVideos = type ? videos.filter((v) => v.type === type) : videos;
 
-  // Sort videos by display order
-  const sortByOrder = (a: TherapistVideo, b: TherapistVideo) => a.display_order - b.display_order;
+  if (filteredVideos.length === 0) {
+    return null;
+  }
 
-  return (
-    <div className={`therapist-videos ${variant === "modal" ? "px-0" : "px-4"}`}>
-      {/* Introduction videos */}
-      {introVideos.length > 0 && (
-        <div className="mb-6">
-          <h3 className="font-medium text-xl mb-3">Introduction</h3>
-          <div className="space-y-6">
-            {introVideos.sort(sortByOrder).map((video) => (
+  // Group videos by type if no specific type is requested
+  if (!type) {
+    const introVideos = videos.filter((v) => v.type === "intro");
+    const faqVideos = videos.filter((v) => v.type === "faq");
+    const testimonialVideos = videos.filter((v) => v.type === "testimonial");
+
+    // If we're showing all types, we're likely in a content area with sections
+    return (
+      <div>
+        {/* Do not render intro videos here - they should be above the bio */}
+
+        {/* FAQ videos with accordion */}
+        {faqVideos.length > 0 && (
+          <div className="mb-8">
+            <h3 className="font-medium text-xl mb-4">Frequently Asked Questions</h3>
+            <VideoAccordion videos={faqVideos} />
+          </div>
+        )}
+
+        {/* Testimonial videos with carousel */}
+        {testimonialVideos.length > 0 && (
+          <div className="mb-8">
+            <h3 className="font-medium text-xl mb-4">Testimonials</h3>
+            <VideoCarousel videos={testimonialVideos} />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // For specific type rendering:
+
+  // Intro videos: Simple list
+  if (type === "intro") {
+    return (
+      <div className={`mb-6 ${variant === "modal" ? "px-0" : ""}`}>
+        <div className="space-y-6">
+          {filteredVideos
+            .sort((a, b) => a.display_order - b.display_order)
+            .map((video) => (
               <VideoEmbed key={video.id} video={video} className="w-full" />
             ))}
-          </div>
         </div>
-      )}
+      </div>
+    );
+  }
 
-      {/* FAQ videos */}
-      {faqVideos.length > 0 && (
-        <div className="mb-6">
-          <h3 className="font-medium text-xl mb-3">Frequently Asked Questions</h3>
-          <div className={`grid grid-cols-1 ${faqVideos.length > 1 ? "md:grid-cols-2" : ""} gap-4`}>
-            {faqVideos.sort(sortByOrder).map((video) => (
-              <VideoEmbed key={video.id} video={video} className="w-full" />
-            ))}
-          </div>
-        </div>
-      )}
+  // FAQ videos: Accordion
+  if (type === "faq") {
+    return (
+      <div className={`mb-6 ${variant === "modal" ? "px-0" : ""}`}>
+        <VideoAccordion videos={filteredVideos} />
+      </div>
+    );
+  }
 
-      {/* Testimonial videos */}
-      {testimonialVideos.length > 0 && (
-        <div className="mb-6">
-          <h3 className="font-medium text-xl mb-3">Testimonials</h3>
-          <div
-            className={`grid grid-cols-1 ${
-              testimonialVideos.length > 1 ? "md:grid-cols-2" : ""
-            } gap-4`}
-          >
-            {testimonialVideos.sort(sortByOrder).map((video) => (
-              <VideoEmbed key={video.id} video={video} className="w-full" />
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
+  // Testimonial videos: Carousel
+  if (type === "testimonial") {
+    return (
+      <div className={`mb-6 ${variant === "modal" ? "px-0" : ""}`}>
+        <VideoCarousel videos={filteredVideos} />
+      </div>
+    );
+  }
+
+  return null;
 };
