@@ -5,16 +5,11 @@ export async function generateMetadata({
   params,
   searchParams,
 }: {
-  params: Promise<{ country: string; region: string; city: string }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
+  params: { country: string; region: string; city: string };
+  searchParams: { name?: string };
 }): Promise<Metadata> {
-  const { country, region, city } = await params;
-  const resolvedSearchParams = await searchParams;
-
-  // Handle name search parameter with extra safeguards against undefined
-  const nameParam = resolvedSearchParams?.name;
-  const name =
-    typeof nameParam === "string" ? nameParam : Array.isArray(nameParam) ? nameParam[0] : "";
+  const { country, region, city } = params;
+  const { name } = searchParams || {};
 
   // Validate region
   if (!isValidRegion(country.toLowerCase(), region.toLowerCase())) {
