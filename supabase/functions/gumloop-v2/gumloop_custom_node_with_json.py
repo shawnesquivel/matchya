@@ -170,6 +170,7 @@ if __name__ == "__main__":
         "clinic_province": "BC",
         "clinic_country": "CA",
         "availability": "both",
+        "is_accepting_clients": True,
         "education": [
           "Bachelor of Science at UBC in biopsychology, Master of Counselling degree from City University of Canada"
         ],
