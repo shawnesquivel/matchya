@@ -3,14 +3,14 @@ import { isValidRegion, getCountryName, getRegionName } from "@/app/utils/locati
 
 export async function generateMetadata({
   params,
-  searchParams,
+  searchParams = {},
 }: {
   params: { country: string; region: string; city: string };
-  searchParams: Record<string, string | string[] | undefined>;
+  searchParams?: Record<string, string | string[] | undefined>;
 }): Promise<Metadata> {
   const { country, region, city } = params;
-  // Handle name search parameter, which could be a string or array
-  const nameParam = searchParams.name;
+  // Handle name search parameter with extra safeguards against undefined
+  const nameParam = searchParams?.name;
   const name =
     typeof nameParam === "string" ? nameParam : Array.isArray(nameParam) ? nameParam[0] : "";
 
