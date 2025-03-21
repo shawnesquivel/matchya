@@ -1,3 +1,13 @@
+ ## Warning
+
+ If you are coming from the AI Generative Masterclass, please see the `tutorial` branch. 
+
+ Clone the `tutorial` branch:
+
+```
+git clone -b tutorial https://github.com/shawnesquivel/ai-41-start.git
+```
+
 # Supabase Local Testing
 
 ### 0. Open Docker
