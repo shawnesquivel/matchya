@@ -28,19 +28,19 @@ export default function TherapistNameSearch({
 
   return (
     <form onSubmit={handleSearch} className="mb-8">
-      <div className="flex w-full max-w-md mx-auto">
+      <div className="flex w-full mx-auto">
         <div className="relative flex-grow">
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Search therapists by name..."
-            className="w-full px-4 py-2 border border-gray-300 rounded-l-md focus:ring-blue-500 focus:border-blue-500"
+            className="w-full px-4 py-4 border border-beige-dark rounded-l-full focus:ring-green-light"
           />
         </div>
         <button
           type="submit"
-          className="px-4 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          className="pl-4 pr-6 py-4 bg-purple text-mblack rounded-r-full hover:bg-purple-dark focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all"
         >
           Search
         </button>

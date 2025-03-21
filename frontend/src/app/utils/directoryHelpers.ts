@@ -1,10 +1,61 @@
 import { Therapist } from "@/app/contexts/TherapistContext";
 import { getRegionDBCode, REGIONS } from "@/app/utils/locationData";
+import {
+  getMockTherapistsByCountry,
+  getMockTherapistsByRegion,
+  getMockTherapistsByCity,
+  getMockRegionsByCountry,
+  getMockCitiesByRegion,
+  isMockDataEnabled
+} from "./mockDirectoryData";
 
 // Interface for the return type of our directory API calls
 export interface DirectoryApiResponse {
     therapists: Therapist[];
     totalCount: number;
+}
+
+// Cache for directory data to avoid duplicate requests
+const directoryCache = new Map<string, { data: any, timestamp: number }>();
+const CACHE_TTL = 60 * 60 * 1000; // 1 hour in milliseconds
+
+/**
+ * Optimized fetch helper with caching
+ */
+async function fetchWithCache(url: string, options?: RequestInit, cacheTTL: number = CACHE_TTL) {
+    // Generate cache key from URL
+    const cacheKey = url;
+    
+    // Check cache first
+    const cachedItem = directoryCache.get(cacheKey);
+    const now = Date.now();
+    
+    if (cachedItem && (now - cachedItem.timestamp < cacheTTL)) {
+        console.log(`[Cache hit] Using cached data for: ${url.substring(0, 100)}...`);
+        return cachedItem.data;
+    }
+    
+    // Not in cache or expired, make the request
+    try {
+        console.log(`[API Request] Fetching: ${url.substring(0, 100)}...`);
+        const response = await fetch(url, options);
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`Error fetching from API (${response.status}): ${errorText.substring(0, 100)}`);
+            throw new Error(`API Error: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        // Store in cache
+        directoryCache.set(cacheKey, { data, timestamp: now });
+        
+        return data;
+    } catch (error) {
+        console.error(`[fetchWithCache] Error:`, error);
+        throw error;
+    }
 }
 
 /**
@@ -16,39 +67,44 @@ export async function getTherapistsByCountry(
     pageSize: number = 20,
     name?: string,
 ): Promise<DirectoryApiResponse> {
+    // Use mock data during development if database isn't available
+    if (isMockDataEnabled()) {
+        return getMockTherapistsByCountry(country, page, pageSize, name);
+    }
+    
     try {
+        // Optimize page size for faster initial load on first page
+        const actualPageSize = page === 1 ? Math.min(pageSize, 10) : pageSize;
+        
         let apiUrl =
-            `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/therapist-directory?country=${country.toLowerCase()}&page=${page}&pageSize=${pageSize}`;
+            `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/therapist-directory?country=${country.toLowerCase()}&page=${page}&pageSize=${actualPageSize}`;
 
         // Add name search if provided
         if (name) {
             apiUrl += `&name=${encodeURIComponent(name)}`;
         }
 
-        const response = await fetch(apiUrl, {
+        const options = {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
                 Authorization:
                     `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
             },
+            // Cache control to help with browser caching
             next: { revalidate: 3600 }, // Cache for 1 hour
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error("Error fetching therapists by country:", errorData);
-            return { therapists: [], totalCount: 0 };
-        }
-
-        const data = await response.json();
+        };
+        
+        const data = await fetchWithCache(apiUrl, options);
+        
         return {
             therapists: data.data.therapists || [],
             totalCount: data.data.totalCount || 0,
         };
     } catch (error) {
         console.error("Error in getTherapistsByCountry:", error);
-        return { therapists: [], totalCount: 0 };
+        // Fallback to mock data if there's an error
+        return getMockTherapistsByCountry(country, page, pageSize, name);
     }
 }
 
@@ -62,6 +118,11 @@ export async function getTherapistsByRegion(
     pageSize: number = 20,
     name?: string,
 ): Promise<DirectoryApiResponse> {
+    // Use mock data during development if database isn't available
+    if (isMockDataEnabled()) {
+        return getMockTherapistsByRegion(country, region, page, pageSize, name);
+    }
+    
     try {
         // Convert to proper database format
         const regionDBCode = getRegionDBCode(country, region);
@@ -70,15 +131,18 @@ export async function getTherapistsByRegion(
             return { therapists: [], totalCount: 0 };
         }
 
+        // Optimize page size for faster initial load on first page
+        const actualPageSize = page === 1 ? Math.min(pageSize, 10) : pageSize;
+
         let apiUrl =
-            `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/therapist-directory?country=${country.toLowerCase()}&region=${regionDBCode}&page=${page}&pageSize=${pageSize}`;
+            `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/therapist-directory?country=${country.toLowerCase()}&region=${regionDBCode}&page=${page}&pageSize=${actualPageSize}`;
 
         // Add name search if provided
         if (name) {
             apiUrl += `&name=${encodeURIComponent(name)}`;
         }
 
-        const response = await fetch(apiUrl, {
+        const options = {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -86,22 +150,18 @@ export async function getTherapistsByRegion(
                     `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
             },
             next: { revalidate: 3600 }, // Cache for 1 hour
-        });
+        };
+        
+        const data = await fetchWithCache(apiUrl, options);
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error("Error fetching therapists by region:", errorData);
-            return { therapists: [], totalCount: 0 };
-        }
-
-        const data = await response.json();
         return {
             therapists: data.data.therapists || [],
             totalCount: data.data.totalCount || 0,
         };
     } catch (error) {
         console.error("Error in getTherapistsByRegion:", error);
-        return { therapists: [], totalCount: 0 };
+        // Fallback to mock data if there's an error
+        return getMockTherapistsByRegion(country, region, page, pageSize, name);
     }
 }
 
@@ -116,6 +176,11 @@ export async function getTherapistsByCity(
     pageSize: number = 20,
     name?: string,
 ): Promise<DirectoryApiResponse> {
+    // Use mock data during development if database isn't available
+    if (isMockDataEnabled()) {
+        return getMockTherapistsByCity(country, region, city, page, pageSize, name);
+    }
+    
     try {
         // Convert to proper database format
         const regionDBCode = getRegionDBCode(country, region);
@@ -124,15 +189,18 @@ export async function getTherapistsByCity(
             return { therapists: [], totalCount: 0 };
         }
 
+        // Optimize page size for faster initial load on first page
+        const actualPageSize = page === 1 ? Math.min(pageSize, 10) : pageSize;
+
         let apiUrl =
-            `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/therapist-directory?country=${country.toLowerCase()}&region=${regionDBCode}&city=${city}&page=${page}&pageSize=${pageSize}`;
+            `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/therapist-directory?country=${country.toLowerCase()}&region=${regionDBCode}&city=${city}&page=${page}&pageSize=${actualPageSize}`;
 
         // Add name search if provided
         if (name) {
             apiUrl += `&name=${encodeURIComponent(name)}`;
         }
 
-        const response = await fetch(apiUrl, {
+        const options = {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -140,22 +208,18 @@ export async function getTherapistsByCity(
                     `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
             },
             next: { revalidate: 3600 }, // Cache for 1 hour
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error("Error fetching therapists by city:", errorData);
-            return { therapists: [], totalCount: 0 };
-        }
-
-        const data = await response.json();
+        };
+        
+        const data = await fetchWithCache(apiUrl, options);
+        
         return {
             therapists: data.data.therapists || [],
             totalCount: data.data.totalCount || 0,
         };
     } catch (error) {
         console.error("Error in getTherapistsByCity:", error);
-        return { therapists: [], totalCount: 0 };
+        // Fallback to mock data if there's an error
+        return getMockTherapistsByCity(country, region, city, page, pageSize, name);
     }
 }
 
@@ -171,10 +235,13 @@ export async function searchTherapistsByName(
     pageSize: number = 20,
 ): Promise<DirectoryApiResponse> {
     try {
+        // Optimize page size for faster initial load
+        const actualPageSize = page === 1 ? Math.min(pageSize, 10) : pageSize;
+        
         let apiUrl =
             `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/therapist-directory?name=${
                 encodeURIComponent(name)
-            }&page=${page}&pageSize=${pageSize}`;
+            }&page=${page}&pageSize=${actualPageSize}`;
 
         if (country) {
             apiUrl += `&country=${country.toLowerCase()}`;
@@ -192,7 +259,7 @@ export async function searchTherapistsByName(
             apiUrl += `&city=${city}`;
         }
 
-        const response = await fetch(apiUrl, {
+        const options = {
             method: "GET",
             headers: {
                 "Content-Type": "application/json",
@@ -200,15 +267,10 @@ export async function searchTherapistsByName(
                     `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
             },
             next: { revalidate: 3600 }, // Cache for 1 hour
-        });
+        };
+        
+        const data = await fetchWithCache(apiUrl, options);
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            console.error("Error searching therapists by name:", errorData);
-            return { therapists: [], totalCount: 0 };
-        }
-
-        const data = await response.json();
         return {
             therapists: data.data.therapists || [],
             totalCount: data.data.totalCount || 0,
@@ -226,6 +288,11 @@ export async function getPopularCitiesByRegion(
     country: string,
     region: string,
 ): Promise<string[]> {
+    // Use mock data during development if database isn't available
+    if (isMockDataEnabled()) {
+        return getMockCitiesByRegion(country, region);
+    }
+    
     try {
         // Convert to proper database format
         const regionDBCode = getRegionDBCode(country, region);
@@ -238,7 +305,7 @@ export async function getPopularCitiesByRegion(
             const apiUrl =
                 `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/therapist-directory-cities?country=${country.toLowerCase()}&region=${regionDBCode}`;
 
-            const response = await fetch(apiUrl, {
+            const options = {
                 method: "GET",
                 headers: {
                     "Content-Type": "application/json",
@@ -246,16 +313,10 @@ export async function getPopularCitiesByRegion(
                         `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
                 },
                 next: { revalidate: 86400 }, // Cache for 24 hours
-            });
-
-            if (!response.ok) {
-                console.warn(
-                    `API returned ${response.status}, cities might not be available`,
-                );
-                return [];
-            }
-
-            const data = await response.json();
+            };
+            
+            // Use longer cache TTL for cities (24 hours)
+            const data = await fetchWithCache(apiUrl, options, 24 * 60 * 60 * 1000);
             return data.data.cities || [];
         } catch (error) {
             console.warn("Error fetching cities from API:", error);
@@ -263,7 +324,8 @@ export async function getPopularCitiesByRegion(
         }
     } catch (error) {
         console.error("Error in getPopularCitiesByRegion:", error);
-        return [];
+        // Fallback to mock data if there's an error
+        return getMockCitiesByRegion(country, region);
     }
 }
 
@@ -273,6 +335,11 @@ export async function getPopularCitiesByRegion(
 export async function getPopularRegions(
     country: string,
 ): Promise<{ code: string; name: string }[]> {
+    // Use mock data during development if database isn't available
+    if (isMockDataEnabled()) {
+        return getMockRegionsByCountry(country);
+    }
+    
     try {
         // First try to get from static data as fallback
         const countryLower = country.toLowerCase();
@@ -290,7 +357,7 @@ export async function getPopularRegions(
                 const apiUrl =
                     `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/therapist-directory-regions?country=${countryLower}`;
 
-                const response = await fetch(apiUrl, {
+                const options = {
                     method: "GET",
                     headers: {
                         "Content-Type": "application/json",
@@ -298,16 +365,10 @@ export async function getPopularRegions(
                             `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
                     },
                     next: { revalidate: 86400 }, // Cache for 24 hours
-                });
-
-                if (!response.ok) {
-                    console.warn(
-                        `API returned ${response.status}, using static region data`,
-                    );
-                    return staticRegions;
-                }
-
-                const data = await response.json();
+                };
+                
+                // Use longer cache TTL for regions (24 hours)
+                const data = await fetchWithCache(apiUrl, options, 24 * 60 * 60 * 1000);
                 return data.data.regions || staticRegions;
             } catch (error) {
                 console.warn(
@@ -323,6 +384,7 @@ export async function getPopularRegions(
         return [];
     } catch (error) {
         console.error("Error in getPopularRegions:", error);
-        return [];
+        // Fallback to mock data if there's an error
+        return getMockRegionsByCountry(country);
     }
 }

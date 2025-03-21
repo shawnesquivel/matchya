@@ -29,10 +29,7 @@ const EditProfilePage = () => {
     e.preventDefault();
     if (user) {
       try {
-        console.log(
-          "updating user.unsafeMetadata.profileStarted: ",
-          profileStarted
-        );
+        console.log("updating user.unsafeMetadata.profileStarted: ", profileStarted);
         user.update({
           unsafeMetadata: {
             profileStarted: profileStarted,
