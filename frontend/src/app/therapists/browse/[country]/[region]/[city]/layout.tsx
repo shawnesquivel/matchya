@@ -3,13 +3,13 @@ import { isValidRegion, getCountryName, getRegionName } from "@/app/utils/locati
 
 export async function generateMetadata({
   params,
-  searchParams,
+  searchParams = {},
 }: {
   params: { country: string; region: string; city: string };
-  searchParams: { name?: string };
+  searchParams?: { name?: string };
 }): Promise<Metadata> {
   const { country, region, city } = params;
-  const { name } = searchParams || {};
+  const name = searchParams?.name;
 
   // Validate region
   if (!isValidRegion(country.toLowerCase(), region.toLowerCase())) {
