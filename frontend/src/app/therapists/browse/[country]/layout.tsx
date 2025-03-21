@@ -3,13 +3,10 @@ import { isValidCountry, getCountryName } from "@/app/utils/locationData";
 
 export async function generateMetadata({
   params,
-  searchParams = {},
 }: {
   params: { country: string };
-  searchParams?: { name?: string };
 }): Promise<Metadata> {
   const { country } = params;
-  const name = searchParams?.name;
 
   // Validate country code
   if (!isValidCountry(country.toLowerCase())) {
@@ -20,19 +17,6 @@ export async function generateMetadata({
   }
 
   const countryName = getCountryName(country);
-
-  // Customize metadata based on search term
-  if (name) {
-    return {
-      title: `${name} - Therapists in ${countryName} | Matchya`,
-      description: `Find therapists named ${name} in ${countryName}. Browse and connect with qualified mental health professionals.`,
-      openGraph: {
-        title: `${name} - Therapists in ${countryName} | Matchya`,
-        description: `Find therapists named ${name} in ${countryName}. Browse and connect with qualified mental health professionals.`,
-        type: "website",
-      },
-    };
-  }
 
   return {
     title: `${countryName} Therapists | Find Mental Health Professionals | Matchya`,
