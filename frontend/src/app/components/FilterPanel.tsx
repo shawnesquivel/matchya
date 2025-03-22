@@ -120,6 +120,7 @@ export default function FilterPanel() {
         format: null,
         areas_of_focus: null,
       },
+      skipSearch: true,
     });
   };
 
@@ -348,6 +349,7 @@ export default function FilterPanel() {
                 updateTherapists({
                   type: "DIRECT",
                   filters: { areas_of_focus: null },
+                  skipSearch: true, // Skip API call when clearing areas of focus
                 });
               }}
             >

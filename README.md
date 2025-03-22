@@ -135,8 +135,7 @@ npx supabase migration new migration_name
 Sync migration locally
 ```
 npx supabase migration up
-
-
+```
 Sync migrations to database.
 ```powershell
 npx supabase db push
