@@ -960,6 +960,28 @@ export function TherapistProvider({ children }) {
     content: msg.content || (msg.parts?.[0]?.text ?? null),
   });
 
+  // Add a function to clear therapist results but keep chat history
+  const clearResults = () => {
+    // Clear therapists from localStorage
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.removeItem(STORAGE_KEYS.THERAPISTS);
+        console.log("[TherapistContext] Cleared therapists from localStorage");
+      } catch (error) {
+        console.error("[TherapistContext] Error clearing therapists from localStorage:", error);
+      }
+    }
+
+    // Reset filters to default and clear therapist results
+    dispatch({
+      type: ACTIONS.UPDATE_FILTER_RESULTS,
+      payload: {
+        therapists: [], // Empty array = no results
+        filters: defaultFilters, // Reset to default filters
+      },
+    });
+  };
+
   return (
     <TherapistContext.Provider
       value={{
@@ -979,6 +1001,7 @@ export function TherapistProvider({ children }) {
         followUpQuestions: state.followUpQuestions,
         isLoadingFollowUps: state.isLoadingFollowUps,
         sendFollowUpQuestion,
+        clearResults,
       }}
     >
       {children}
