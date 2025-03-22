@@ -16,6 +16,7 @@ export default function FilterPanel() {
     isFormDisabled,
     isTherapistLoading,
     isChatLoading,
+    clearResults,
   } = useTherapist();
 
   // Local state for price inputs
@@ -57,6 +58,7 @@ export default function FilterPanel() {
       newValues = [...filters[key], value];
     }
 
+    // Don't skip search for areas_of_focus - we want to search for this immediately
     updateTherapists({
       type: "DIRECT",
       filters: { [key]: newValues },
@@ -107,27 +109,10 @@ export default function FilterPanel() {
   // Handle reset with disabled check
   const handleReset = () => {
     if (isFormDisabled) return;
-    updateTherapists({
-      type: "DIRECT",
-      filters: {
-        gender: null,
-        sexuality: null,
-        ethnicity: null,
-        faith: null,
-        max_price_initial: null,
-        max_price_subsequent: null,
-        availability: null,
-        format: null,
-        areas_of_focus: null,
-      },
-      skipSearch: true,
-    });
-  };
 
-  // Format timestamp for display
-  const lastRequestTimeStr = lastRequestTime
-    ? new Date(lastRequestTime).toLocaleTimeString()
-    : "None";
+    // Clear all filters and therapist results
+    clearResults();
+  };
 
   // Apply a disabled overlay if the form is disabled
   const formOverlay = isFormDisabled ? (
@@ -346,10 +331,10 @@ export default function FilterPanel() {
               className="text-blue-500 text-sm mt-2 hover:underline"
               onClick={() => {
                 if (isFormDisabled) return;
+                // Only clear the areas_of_focus filter, but keep other filters intact
                 updateTherapists({
                   type: "DIRECT",
                   filters: { areas_of_focus: null },
-                  skipSearch: true, // Skip API call when clearing areas of focus
                 });
               }}
             >

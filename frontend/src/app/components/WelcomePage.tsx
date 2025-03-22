@@ -11,32 +11,40 @@ interface WelcomePageProps {
 export default function WelcomePage({ onLocationSelected }: WelcomePageProps) {
   const { updateLocation } = useTherapist();
   const [selectedLocation, setSelectedLocation] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLocationChange = (locationValue: string) => {
     setSelectedLocation(locationValue);
   };
 
   const handleExploreClick = async () => {
-    if (!selectedLocation) return;
+    if (!selectedLocation || isLoading) return;
 
-    // Parse the locationValue to get city and province
-    let clinic_city = null;
-    let clinic_province = null;
+    setIsLoading(true);
 
-    if (selectedLocation) {
-      // Split "Vancouver, BC" into ["Vancouver", "BC"]
-      const parts = selectedLocation.split(", ");
-      if (parts.length === 2) {
-        clinic_city = parts[0];
-        clinic_province = parts[1];
+    try {
+      // Parse the locationValue to get city and province
+      let clinic_city = null;
+      let clinic_province = null;
+
+      if (selectedLocation) {
+        // Split "Vancouver, BC" into ["Vancouver", "BC"]
+        const parts = selectedLocation.split(", ");
+        if (parts.length === 2) {
+          clinic_city = parts[0];
+          clinic_province = parts[1];
+        }
       }
+
+      // Use the new updateLocation function which handles comparison internally
+      await updateLocation(clinic_city, clinic_province);
+
+      // Always trigger the callback to show the main app
+      onLocationSelected();
+    } catch (error) {
+      console.error("Error updating location:", error);
+      setIsLoading(false);
     }
-
-    // Use the new updateLocation function which handles comparison internally
-    await updateLocation(clinic_city, clinic_province);
-
-    // Always trigger the callback to show the main app
-    onLocationSelected();
   };
 
   return (
@@ -108,14 +116,21 @@ export default function WelcomePage({ onLocationSelected }: WelcomePageProps) {
           <div className="mt-6">
             <button
               onClick={handleExploreClick}
-              disabled={!selectedLocation}
+              disabled={!selectedLocation || isLoading}
               className={`px-8 py-3 rounded-full text-white font-medium transition-all ${
-                selectedLocation
+                selectedLocation && !isLoading
                   ? "bg-green hover:bg-green-dark"
                   : "bg-grey-dark cursor-not-allowed"
               }`}
             >
-              Explore Providers
+              {isLoading ? (
+                <span className="flex items-center">
+                  <span className="animate-spin h-4 w-4 border-2 border-white rounded-full border-t-transparent mr-2"></span>
+                  Loading...
+                </span>
+              ) : (
+                "Explore Providers"
+              )}
             </button>
           </div>
 
