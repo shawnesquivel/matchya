@@ -83,7 +83,6 @@ export default function WelcomePage({ onLocationSelected }: WelcomePageProps) {
             <select
               onChange={(e) => handleLocationChange(e.target.value)}
               className="w-full sm:py-8 sm:px-6 py-4 px-4 rounded-lg border border-grey-light text-grey-extraDark bg-white shadow-sm focus:ring-1 focus:ring-green-light focus:border-transparent appearance-none"
-              defaultValue=""
               value={selectedLocation}
             >
               <option value="" disabled>

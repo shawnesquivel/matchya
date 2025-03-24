@@ -33,11 +33,41 @@ export default function TherapistList({
     <div>
       <div className="grid grid-cols-1 md:grid-cols-2 sm:gap-6 gap-3">
         {therapists.map((therapist) => {
-          const profileSlug = generateProfileSlug(`${therapist.first_name} ${therapist.last_name}`);
+          // Use the slug from the database or generate a fallback if missing
+          const profileSlug =
+            therapist.slug ||
+            `${therapist.first_name.toLowerCase()}-${therapist.last_name.toLowerCase()}-${therapist.id.substring(
+              0,
+              6
+            )}`;
+
+          // Log the slug to help with debugging
+          if (process.env.NODE_ENV === "development") {
+            console.log(
+              `Using slug for ${therapist.first_name} ${therapist.last_name}: ${profileSlug}`
+            );
+          }
+
+          // Extract proper country/region codes
+          // Sometimes therapist.clinic_country might be "Canada" instead of "ca"
+          let countryCode = therapist.clinic_country?.toLowerCase() || "ca";
+          let regionCode = therapist.clinic_province?.toLowerCase();
+
+          // Convert full country/region names to codes if needed
+          if (countryCode === "canada") countryCode = "ca";
+          if (countryCode === "united states") countryCode = "us";
+
+          // Common province/state conversions
+          if (regionCode === "ontario") regionCode = "on";
+          if (regionCode === "british columbia") regionCode = "bc";
+          if (regionCode === "quebec") regionCode = "qc";
+          if (regionCode === "alberta") regionCode = "ab";
+          if (regionCode === "california") regionCode = "ca";
+          if (regionCode === "new york") regionCode = "ny";
 
           return (
             <Link
-              href={`/therapists/${profileSlug}`}
+              href={`/therapists/${countryCode}/${regionCode}/${profileSlug}`}
               key={therapist.id}
               target="_blank"
               className="bg-white rounded-lg hover:shadow-sm transition-shadow duration-300 overflow-hidden flex flex-col justify-between border border-grey-light hover:border-beige-dark group relative"

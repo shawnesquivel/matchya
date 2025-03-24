@@ -72,6 +72,7 @@ export const mockTherapist: Therapist = {
     },
   ],
   is_verified: true,
+  slug: "emma-thompson-mock01",
 };
 
 // Mock data for TherapistProfileModal
@@ -296,11 +297,12 @@ export const mockTherapistProfile: TherapistProfile = {
       is_active: true,
     },
   ],
+  slug: "emma-thompson-mock123",
 };
 
 // Helper functions for mock data
 export const getNameFromMockSlug = (slug: string): string => {
-  if (slug === "test-user" || slug === "emma-thompson") {
+  if (slug === "test-user" || slug === "emma-thompson-mock123") {
     return "Dr. Emma Thompson";
   }
   return slug;
@@ -308,6 +310,8 @@ export const getNameFromMockSlug = (slug: string): string => {
 
 // Helper function to check if we should use mock data for a slug
 export const shouldUseMockDataForSlug = (slug: string): boolean => {
-  const shouldUseMock = slug === "test-user" || slug === "emma-thompson";
+  const shouldUseMock = slug === "test-user" ||
+    slug === "emma-thompson-mock123" ||
+    slug === "emma-thompson-test123";
   return shouldUseMock;
 };

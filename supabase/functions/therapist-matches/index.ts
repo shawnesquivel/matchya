@@ -306,9 +306,7 @@ Deno.serve(async (req) => {
     // HANDLE FILTER-ONLY REQUESTS
     // -------------------------
     if (filterOnly === true) {
-      console.log("[therapist-matches] User requested filters only", {
-        filterOnly,
-      });
+      console.log("[therapist-matches] filterOnly: True");
 
       // Check if we have any active filters
       const hasActiveFilters = Object.values(currentFilters || {}).some(
@@ -502,15 +500,10 @@ Deno.serve(async (req) => {
         query = query.eq("clinic_province", currentFilters.clinic_province);
       }
 
-      // Execute the query with performance tracking
-      perf.startEvent("database:filterQuery");
       const { data: therapists, error } = await query.limit(QUERY_LIMIT);
 
-      console.log("[therapist-matches] Query completed", currentFilters);
+      console.log("[therapist-matches] Success:", currentFilters);
       if (error) {
-        perf.endEvent("database:filterQuery", {
-          error: error.message,
-        });
         console.error(
           "[therapist-matches] Query error:",
           error,
@@ -532,18 +525,11 @@ Deno.serve(async (req) => {
 
       // Shuffle the results using our utility function
       const shuffledTherapists = shuffleTherapists(therapists);
-      console.log(
-        `[therapist-matches] Shuffled ${shuffledTherapists.length} therapists`,
-      );
 
       perf.endEvent("database:filterQuery", {
         resultCount: shuffledTherapists.length,
       });
 
-      // Safely check therapists exists before logging
-      console.log(
-        `[therapist-matches] Found ${shuffledTherapists.length} therapists`,
-      );
       if (shuffledTherapists.length === 0) {
         console.warn(
           "[therapist-matches] No therapists data returned or empty array",

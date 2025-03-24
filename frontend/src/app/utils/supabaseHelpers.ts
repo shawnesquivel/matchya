@@ -74,7 +74,11 @@ export interface SupabaseTherapistProfile {
     display_order: number;
     is_active: boolean;
   }>;
+
+  // Add the slug field
+  slug?: string;
 }
+
 // Interface matching the frontend's expected structure
 export interface TherapistProfile {
   id: string;
@@ -134,6 +138,8 @@ export interface TherapistProfile {
   videos?: TherapistVideo[];
   // Boolean indicating verification status
   is_verified?: boolean;
+  // Add the slug field
+  slug: string;
 }
 
 // Add import for mock data
@@ -204,6 +210,7 @@ export async function fetchTherapistNames(
   pageToken?: string,
 ): Promise<{
   therapistNames: string[];
+  therapists?: { name: string; slug: string | null; id?: string }[];
   nextPageToken?: string;
 }> {
   try {
@@ -212,6 +219,8 @@ export async function fetchTherapistNames(
     if (pageToken) {
       url += `&pageToken=${pageToken}`;
     }
+
+    console.log(`Fetching therapist names from: ${url}`);
 
     const response = await fetch(url, {
       method: "GET",
@@ -228,9 +237,52 @@ export async function fetchTherapistNames(
     }
 
     const data = await response.json();
+
+    // Log the raw data received from the endpoint
+    console.log("Raw response from profile-names-sitemap:");
+    console.log(JSON.stringify(data).substring(0, 500) + "...");
+
+    // Extract the nested data structure correctly
+    const therapistData = data.data?.therapists || [];
+    const therapistNames = data.data?.therapistNames || [];
+    const nextPageToken = data.debug?.nextPageToken;
+
+    // Log what we found to debug
+    console.log(`Found ${therapistData.length} therapists with data`);
+    console.log(
+      "Sample therapists:",
+      JSON.stringify(therapistData.slice(0, 3)),
+    );
+
+    // Validate that each therapist has a proper slug if we found any
+    if (therapistData.length > 0) {
+      const therapistsWithValidation = therapistData.map(
+        (therapist: any) => {
+          // Check if slug is in correct format (contains name and ID segment)
+          const hasValidSlug = therapist.slug &&
+            /^[a-z0-9-]+-[a-z0-9]{6}$/.test(therapist.slug);
+
+          if (!hasValidSlug) {
+            console.error(
+              `Therapist missing valid slug: ${therapist.name} (${therapist.id})`,
+            );
+          }
+
+          return therapist;
+        },
+      );
+
+      return {
+        therapistNames: therapistNames,
+        therapists: therapistsWithValidation,
+        nextPageToken: nextPageToken,
+      };
+    }
+
+    // Fallback to old format
     return {
-      therapistNames: data.data.therapistNames || [],
-      nextPageToken: data.debug.nextPageToken,
+      therapistNames: therapistNames,
+      nextPageToken: nextPageToken,
     };
   } catch (error) {
     console.error("Error fetching therapist names:", error);
@@ -241,15 +293,25 @@ export async function fetchTherapistNames(
 /**
  * Generate a URL-friendly slug from a therapist name
  */
-export function generateProfileSlug(name: string | null | undefined): string {
+export function generateProfileSlug(
+  name: string | null | undefined,
+  uuid?: string,
+): string {
   if (!name) return "";
 
-  return name
+  const baseSlug = name
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, "") // Remove special characters
     .replace(/\s+/g, "-") // Replace spaces with hyphens
     .replace(/-+/g, "-") // Replace multiple hyphens with a single one
     .trim(); // Remove leading/trailing whitespace
+
+  // If UUID is provided, append first 6 characters
+  if (uuid && uuid.length >= 6) {
+    return `${baseSlug}-${uuid.substring(0, 6)}`;
+  }
+
+  return baseSlug;
 }
 
 /**
@@ -323,11 +385,17 @@ export function mapSupabaseToTherapistProfile(
     certifications: profile.certifications || [],
     ai_summary: profile.ai_summary,
     videos: profile.videos || [],
-    is_accepting_clients: profile.is_accepting_clients === false ? false : true, // Explicitly handle the boolean
+    is_accepting_clients: profile.is_accepting_clients === false ? false : true,
     // These are derived values
     initial_price: "",
     subsequent_price: "",
     similarity: 0,
+    // Add the slug field - use stored slug or generate one if not available
+    slug: profile.slug ||
+      generateProfileSlug(
+        `${profile.first_name} ${profile.last_name}`,
+        profile.id,
+      ),
   };
 }
 
@@ -378,40 +446,117 @@ export async function fetchTherapistById(
 }
 
 /**
+ * Add a new function to fetch a therapist by slug
+ */
+export async function fetchTherapistBySlug(
+  slug: string,
+): Promise<TherapistProfile | null> {
+  try {
+    console.log("fetchTherapistBySlug: searching for slug:", slug);
+
+    // Strictly validate slug format - must include UUID suffix
+    const hasValidFormat = /^[a-z0-9-]+-[a-z0-9]{6}$/.test(slug);
+
+    if (!hasValidFormat) {
+      console.error(
+        `Invalid slug format: "${slug}" - must be in format "name-xxxxxx" where xxxxxx is the ID prefix`,
+      );
+      return null; // Immediately fail for invalid slug formats
+    }
+
+    // If the slug format is valid, proceed with search
+    const apiUrl =
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/profile-search?slug=${
+        encodeURIComponent(slug)
+      }`;
+
+    console.log("API URL for slug search:", apiUrl);
+
+    // Call the profile-search edge function with slug parameter
+    const response = await fetch(apiUrl, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Error fetching therapist by slug:", errorData);
+      return null;
+    }
+
+    const data = await response.json();
+    if (!data.data) {
+      console.error("No data returned from slug search API");
+      return null;
+    }
+
+    return mapSupabaseToTherapistProfile(data.data as SupabaseTherapistProfile);
+  } catch (error) {
+    console.error("Error fetching therapist by slug:", error);
+    return null;
+  }
+}
+
+/**
  * Get a therapist profile by name or ID.
  */
 export async function getTherapistProfile(
-  nameOrId: string,
+  nameOrSlugOrId: string,
 ): Promise<TherapistProfile | null> {
-  console.log("getTherapistProfile: fetching for name/id:", nameOrId);
+  console.log("getTherapistProfile: fetching for:", nameOrSlugOrId);
 
   // Check if this is our test user
   if (
-    shouldUseMockDataForSlug(nameOrId) ||
-    (nameOrId === "Dr. Emma Thompson" || nameOrId === "Emma Thompson")
+    shouldUseMockDataForSlug(nameOrSlugOrId) ||
+    (nameOrSlugOrId === "Dr. Emma Thompson" ||
+      nameOrSlugOrId === "Emma Thompson")
   ) {
     console.log(
       "getTherapistProfile: Using mock therapist data for:",
-      nameOrId,
+      nameOrSlugOrId,
     );
-    return mockTherapistProfile;
+    return mockTherapistProfile; // No need to add slug as it's now already in the mock data
   }
 
   try {
     // Check if the input looks like a UUID
     const isUuid =
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-        nameOrId,
+        nameOrSlugOrId,
       );
 
     if (isUuid) {
       // Use the new ID-based search
-      return await fetchTherapistById(nameOrId);
+      return await fetchTherapistById(nameOrSlugOrId);
+    } else if (nameOrSlugOrId.includes("-")) {
+      // Verify it's a proper slug with UUID suffix
+      const hasValidSlugFormat = /^[a-z0-9-]+-[a-z0-9]{6}$/.test(
+        nameOrSlugOrId,
+      );
+
+      if (!hasValidSlugFormat) {
+        console.error(
+          `getTherapistProfile: Invalid slug format: "${nameOrSlugOrId}"`,
+        );
+        console.error(
+          "Slugs must have format: name-part-xxxxxx where xxxxxx is the ID prefix",
+        );
+        return null;
+      }
+
+      // If valid slug format, use slug-based search
+      return await fetchTherapistBySlug(nameOrSlugOrId);
     } else {
       // Use the existing name-based search for URLs/slugs
-      const profile = await fetchTherapistProfile(nameOrId);
+      const profile = await fetchTherapistProfile(nameOrSlugOrId);
       if (!profile) {
-        console.error("getTherapistProfile: No profile found for:", nameOrId);
+        console.error(
+          "getTherapistProfile: No profile found for:",
+          nameOrSlugOrId,
+        );
         return null;
       }
       return mapSupabaseToTherapistProfile(profile);
@@ -419,5 +564,61 @@ export async function getTherapistProfile(
   } catch (error) {
     console.error("getTherapistProfile: Error fetching therapist:", error);
     return null;
+  }
+}
+
+/**
+ * Fetch therapist slugs directly for the sitemap
+ */
+export async function fetchTherapistSlugs(
+  pageSize: number = 100,
+  pageToken?: string,
+): Promise<{
+  slugs: {
+    slug: string;
+    id: string;
+    clinic_country: string;
+    clinic_province: string;
+  }[];
+  nextPageToken?: string;
+}> {
+  try {
+    let url =
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/profile-slugs?pageSize=${pageSize}`;
+    if (pageToken) {
+      url += `&pageToken=${pageToken}`;
+    }
+
+    console.log(`Fetching therapist slugs from: ${url}`);
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Error fetching therapist slugs:", errorData);
+      return { slugs: [] };
+    }
+
+    const data = await response.json();
+
+    // Log what we found to debug
+    console.log(`Received ${data.count || 0} valid slugs from endpoint`);
+    if (data.slugs?.length > 0) {
+      console.log("Sample slugs:", JSON.stringify(data.slugs.slice(0, 3)));
+    }
+
+    return {
+      slugs: data.slugs || [],
+      nextPageToken: data.next_page_token,
+    };
+  } catch (error) {
+    console.error("Error fetching therapist slugs:", error);
+    return { slugs: [] };
   }
 }

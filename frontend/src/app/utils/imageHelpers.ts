@@ -24,7 +24,7 @@ export const getSafeImageUrl = (url: string | undefined | null): string => {
     return isAllowedDomain ? url : "/assets/images/default-pp.png";
   } catch (error) {
     console.error(
-      "[getSafeImageUrl] Error processing URL, falling back to default.",
+      `[getSafeImageUrl] Error processing domain ${url}, falling back to default.`,
       error,
     );
     return "/assets/images/default-pp.png";

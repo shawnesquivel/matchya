@@ -4,37 +4,33 @@ import Image from "next/image";
 import Script from "next/script";
 import dynamic from "next/dynamic";
 import { Suspense } from "react";
-import type { TherapistProfile } from "../../utils/supabaseHelpers";
-import {
-  getTherapistProfile,
-  nameFromSlug,
-  generateProfileSlug,
-  fetchTherapistNames,
-} from "../../utils/supabaseHelpers";
+import type { TherapistProfile } from "@/app/utils/supabaseHelpers";
+import { getTherapistProfile } from "@/app/utils/supabaseHelpers";
 import Loading from "./loading";
 import { getSafeImageUrl } from "@/app/utils/imageHelpers";
 import CollapsibleAreasOfFocus from "@/app/components/CollapsibleAreasOfFocus";
 import CollapsibleApproaches from "@/app/components/CollapsibleApproaches";
-import { mockTherapistProfile, shouldUseMockDataForSlug } from "../../utils/mockTherapistData";
+import { mockTherapistProfile, shouldUseMockDataForSlug } from "@/app/utils/mockTherapistData";
 import TherapistLocation from "@/app/components/TherapistLocation";
 import TherapistFees from "@/app/components/TherapistFees";
 import TherapistLicenses from "@/app/components/TherapistLicenses";
 import TherapistQualifications from "@/app/components/TherapistQualifications";
-import { TherapistVideos } from "../../components/TherapistVideos";
+import { TherapistVideos } from "@/app/components/TherapistVideos";
+import { isValidRegion, getCountryName, getRegionName } from "@/app/utils/locationData";
+import DirectoryBreadcrumbs from "@/app/components/DirectoryBreadcrumbs";
 
 // Dynamically import client components
-const TherapistProfileTracker = dynamic(() => import("../../components/TherapistProfileTracker"), {
+const TherapistProfileTracker = dynamic(() => import("@/app/components/TherapistProfileTracker"), {
   ssr: false,
 });
 
-const TherapistProfileHeader = dynamic(() => import("../../components/TherapistProfileHeader"), {
+const TherapistProfileHeader = dynamic(() => import("@/app/components/TherapistProfileHeader"), {
   ssr: false,
   loading: () => <div className="h-[60px] bg-white shadow-sm"></div>,
 });
 
 // Define a client component placeholder for where the links should appear
-// This ensures we're not trying to pass event handlers to server components
-const LinkPlaceholder = dynamic(() => import("../../components/OutboundLinkTracker"), {
+const LinkPlaceholder = dynamic(() => import("@/app/components/OutboundLinkTracker"), {
   ssr: false,
   loading: () => (
     <div className="md:col-span-2 col-span-6 flex gap-2 mb-6 sm:mb-0 md:justify-end justify-start flex-col">
@@ -81,20 +77,20 @@ async function getTherapist(slug: string): Promise<TherapistProfile | null> {
         "[getTherapist] Mock data structure:",
         JSON.stringify(mockTherapistProfile).substring(0, 100) + "..."
       );
-      return mockTherapistProfile;
+      return {
+        ...mockTherapistProfile,
+        slug: "emma-thompson-test123", // Add slug to mock data
+      };
     }
 
-    // Convert slug back to name format with decoded characters
-    const nameFromSlugFormat = nameFromSlug(decodedSlug);
-
-    // Get therapist profile using our new Supabase helper
-    const therapistProfile = await getTherapistProfile(nameFromSlugFormat);
+    // Use the slug directly for fetching the therapist profile
+    const therapistProfile = await getTherapistProfile(decodedSlug);
 
     if (therapistProfile) {
       return therapistProfile;
     } else {
       console.log(
-        `[getTherapist] ❌ No profile found for slug: ${slug}, decodedSlug: ${decodedSlug}, nameFromSlugFormat: ${nameFromSlugFormat}`
+        `[getTherapist] ❌ No profile found for slug: ${slug}, decodedSlug: ${decodedSlug}`
       );
       return null;
     }
@@ -103,45 +99,9 @@ async function getTherapist(slug: string): Promise<TherapistProfile | null> {
     return null;
   }
 }
-// Generate static paths
-export async function generateStaticParams() {
-  console.log("[generateStaticParams] Generating static params");
-
-  try {
-    const allNames: string[] = [];
-    let pageToken: string | undefined;
-    const PAGE_SIZE = 60; // Smaller batch size for testing
-
-    // Fetch all pages
-    do {
-      const result = await fetchTherapistNames(PAGE_SIZE, pageToken);
-      if (result.therapistNames.length === 0) {
-        console.warn(
-          `[generateStaticParams] No therapist names found for page with token: ${pageToken}`
-        );
-      } else {
-        allNames.push(...result.therapistNames);
-      }
-      pageToken = result.nextPageToken;
-    } while (pageToken);
-
-    if (allNames.length === 0) {
-      console.warn("[generateStaticParams] No therapist names were fetched.");
-    } else {
-      console.log(`[generateStaticParams] Fetched ${allNames.length} therapist names`);
-    }
-
-    return allNames.map((name) => ({
-      slug: generateProfileSlug(name),
-    }));
-  } catch (error) {
-    console.error("[generateStaticParams] Error:", error);
-    return [];
-  }
-}
 
 // Generate JSON-LD structured data
-function generateJsonLd(therapist: TherapistProfile) {
+function generateJsonLd(therapist: TherapistProfile, country: string, region: string) {
   const getInitialFee = (): number => {
     const initialFee = therapist.fees?.find(
       (fee) => fee.session_type === "individual" && fee.session_category === "initial"
@@ -164,10 +124,13 @@ function generateJsonLd(therapist: TherapistProfile) {
     "@type": "Person",
     name: `${therapist.first_name} ${therapist.last_name}`,
     description: therapist.bio,
-    jobTitle: therapist.licenses[0].title || "Therapist",
-    url: `https://matchya.app/therapists/${encodeURIComponent(
-      `${therapist.first_name.toLowerCase()}-${therapist.last_name.toLowerCase()}`
-    )}`,
+    jobTitle: therapist.licenses[0]?.title || "Therapist",
+    url: `https://matchya.app/therapists/${country.toLowerCase()}/${region.toLowerCase()}/${
+      therapist.slug ||
+      encodeURIComponent(
+        `${therapist.first_name.toLowerCase()}-${therapist.last_name.toLowerCase()}`
+      )
+    }`,
     address: {
       "@type": "PostalAddress",
       addressLocality: therapist?.clinic_city,
@@ -195,60 +158,29 @@ function generateJsonLd(therapist: TherapistProfile) {
   };
 }
 
-// Update metadata generation to include more meta tags
-export async function generateMetadata({
-  params,
-}: {
-  params: { slug: string };
-}): Promise<Metadata> {
-  //  NEVER TOUCH THIS
-  const therapist = await getTherapist(params.slug);
-
-  if (!therapist) {
-    return {
-      title: "Therapist Not Found | Matchya",
-      description: "The requested therapist profile could not be found.",
-    };
-  }
-
-  const title = `${therapist.first_name} - ${therapist.licenses[0].title || "Therapist"} | Matchya`;
-  const description = `${therapist.first_name} is a ${therapist.licenses[0].title} in ${
-    therapist.clinic_city
-  }, specializing in ${therapist.areas_of_focus.join(", ")}. Book your session today.`;
-
-  return {
-    title,
-    description,
-    openGraph: {
-      title,
-      description,
-      type: "profile",
-      images: therapist.profile_img_url
-        ? [
-            {
-              url: therapist.profile_img_url,
-              width: 800,
-              height: 800,
-              alt: therapist.first_name,
-            },
-          ]
-        : undefined,
-      locale: "en_US",
-    },
-    twitter: {
-      card: "summary_large_image",
-      title,
-      description,
-      images: therapist.profile_img_url ? [therapist.profile_img_url] : undefined,
-    },
-  };
-}
-
-// Enable ISR with 1 hour revalidation
-export const revalidate = 3600;
-
 // Main server component
-const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => {
+const TherapistContent = ({
+  therapist,
+  country,
+  region,
+}: {
+  therapist: TherapistProfile;
+  country: string;
+  region: string;
+}) => {
+  const countryCode = country.toLowerCase();
+  const regionCode = region.toLowerCase();
+  const countryName = getCountryName(countryCode);
+  const regionName = getRegionName(countryCode, regionCode);
+
+  const breadcrumbs = [
+    { name: "Home", href: "/" },
+    { name: "Therapists", href: "/therapists/browse" },
+    { name: countryName, href: `/therapists/browse/${countryCode}` },
+    { name: regionName, href: `/therapists/browse/${countryCode}/${regionCode}` },
+    { name: `${therapist.first_name} ${therapist.last_name}`, href: `#` },
+  ];
+
   return (
     <>
       <TherapistProfileHeader therapist={therapist} />
@@ -264,7 +196,7 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => {
         id="json-ld"
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(generateJsonLd(therapist)),
+          __html: JSON.stringify(generateJsonLd(therapist, country, region)),
         }}
       />
 
@@ -273,7 +205,11 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => {
       <div>
         {/* Banner and Header styled like the modal */}
         <div className="bg-beige sm:py-14 py-12 relative"></div>
-        <div className="bg-white pt-8 sm:px-3  sm:pt-4 px-3">
+        <div className="bg-white pt-8 sm:px-3 sm:pt-4 px-3">
+          {/* Add breadcrumbs */}
+          <div className="container mx-auto mb-6">
+            <DirectoryBreadcrumbs breadcrumbs={breadcrumbs} />
+          </div>
           <div className="grid grid-cols-6 sm:gap-8 gap-3 container mx-auto">
             <div className="relative md:col-span-1 sm:col-span-2 col-span-6">
               <div className="relative w-[40vw] md:w-full md:left-0 md:translate-x-0">
@@ -384,8 +320,21 @@ const TherapistContent = ({ therapist }: { therapist: TherapistProfile }) => {
   );
 };
 
-export default async function TherapistProfile({ params }: { params: { slug: string } }) {
-  const therapist = await getTherapist(params.slug);
+export default async function TherapistProfile({
+  params,
+}: {
+  params: { country: string; region: string; slug: string };
+}) {
+  const { country, region, slug } = params;
+  const countryCode = country.toLowerCase();
+  const regionCode = region.toLowerCase();
+
+  // Validate region
+  if (!isValidRegion(countryCode, regionCode)) {
+    notFound();
+  }
+
+  const therapist = await getTherapist(slug);
 
   if (!therapist) {
     notFound();
@@ -394,7 +343,7 @@ export default async function TherapistProfile({ params }: { params: { slug: str
   return (
     <main className="">
       <Suspense fallback={<Loading />}>
-        <TherapistContent therapist={therapist} />
+        <TherapistContent therapist={therapist} country={country} region={region} />
       </Suspense>
     </main>
   );

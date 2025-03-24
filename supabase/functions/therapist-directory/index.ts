@@ -17,7 +17,7 @@ console.log("Therapist Directory: Ready to serve requests");
 
 // Define valid countries and regions
 const VALID_COUNTRIES = ["ca", "us"];
-const VALID_REGIONS = {
+const VALID_REGIONS: Record<string, string[]> = {
   ca: ["BC", "ON"],
   us: ["CA", "NY"],
 };
@@ -105,7 +105,12 @@ Deno.serve(async (req) => {
       .from("therapists")
       .select(
         `
-        *,
+        id, first_name, last_name, slug, title, gender, pronouns, 
+        bio, profile_img_url, clinic_name, clinic_city, 
+        clinic_province, clinic_country, availability, languages, 
+        education, certifications, areas_of_focus, approaches, 
+        is_accepting_clients, therapist_email, therapist_phone, 
+        clinic_phone, clinic_street, clinic_postal_code, is_verified,
         fees:therapist_fees(*),
         licenses:therapist_licenses(*)
       `,
@@ -132,7 +137,7 @@ Deno.serve(async (req) => {
     }
 
     // Execute the count query first to get total results
-    const { count, error: countError } = await query;
+    const { count: countResult, error: countError } = await query;
 
     if (countError) {
       throw countError;
@@ -171,6 +176,8 @@ Deno.serve(async (req) => {
           : "Contact for pricing",
       };
     });
+
+    const count = countResult || 0;
 
     return new Response(
       JSON.stringify({

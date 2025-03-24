@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
   try {
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
     );
 
     // Parse query parameters
@@ -39,10 +39,10 @@ Deno.serve(async (req) => {
     - Page size: ${limitedPageSize} (requested: ${pageSize})
     - Page token: ${pageToken || "None (first page)"}`);
 
-    // Build query with pagination
+    // Build query with pagination - now including the slug field
     let query = supabaseClient
       .from("therapists")
-      .select("id, first_name, last_name, updated_at")
+      .select("id, first_name, last_name, slug, updated_at")
       .order("id", { ascending: true })
       .limit(limitedPageSize);
 
@@ -55,32 +55,53 @@ Deno.serve(async (req) => {
 
     if (error) throw error;
 
-    // Format therapist names (combine first_name and last_name)
-    const therapistNames = therapists.map((t) =>
-      `${t.first_name || ""} ${t.last_name || ""}`.trim()
-    );
+    // Format therapist names and include slugs when available
+    const therapistData = therapists.map((t) => {
+      // Validate slug format (should be name-part-xxxxxx)
+      const slug = t.slug;
+      const hasValidSlug = slug && /^[a-z0-9-]+-[a-z0-9]{6}$/.test(slug);
+
+      if (!hasValidSlug) {
+        console.warn(
+          `[profile-names-sitemap] Warning: Invalid slug format for therapist ${t.id}: "${
+            slug || "null"
+          }"`,
+        );
+      }
+
+      return {
+        name: `${t.first_name || ""} ${t.last_name || ""}`.trim(),
+        slug: t.slug || null,
+        id: t.id, // Always include the ID for reliable slug generation
+      };
+    });
 
     // Determine the next page token
-    const nextPageToken =
-      therapists.length === limitedPageSize
-        ? therapists[therapists.length - 1].id
-        : null;
+    const nextPageToken = therapists.length === limitedPageSize
+      ? therapists[therapists.length - 1].id
+      : null;
 
     // Get last modified timestamp from the most recent update
     const lastModified = Math.floor(Date.now() / 1000).toString();
 
-    console.log(`[profile-names-sitemap] Fetched ${therapistNames.length} names
-    - Next page token: ${nextPageToken || "None (last page)"}`);
+    console.log(
+      `[profile-names-sitemap] Fetched ${therapistData.length} therapists
+    - Next page token: ${nextPageToken || "None (last page)"}
+    - Sample slugs: ${
+        JSON.stringify(therapistData.slice(0, 3).map((t) => t.slug))
+      }`,
+    );
 
-    // Return paginated response in the same format as the Lambda function
+    // Return paginated response with both names and slugs
     return new Response(
       JSON.stringify({
         data: {
-          therapistNames,
+          therapists: therapistData,
+          therapistNames: therapistData.map((t) => t.name), // For backward compatibility
           lastModified,
         },
         debug: {
-          count: therapistNames.length,
+          count: therapistData.length,
           timestamp: Math.floor(Date.now() / 1000).toString(),
           hasMore: nextPageToken !== null,
           nextPageToken: nextPageToken || undefined,
@@ -91,7 +112,7 @@ Deno.serve(async (req) => {
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
-      }
+      },
     );
   } catch (error) {
     console.error("[profile-names-sitemap] Error:", error);
@@ -107,7 +128,7 @@ Deno.serve(async (req) => {
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 500,
-      }
+      },
     );
   }
 });
@@ -121,7 +142,7 @@ Deno.serve(async (req) => {
     --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0'
 
   3. To test with pagination:
-  
+
   curl -i --location --request GET 'http://127.0.0.1:54321/functions/v1/profile-names-sitemap?pageSize=10&pageToken=YOUR_PAGE_TOKEN' \
     --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0'
 

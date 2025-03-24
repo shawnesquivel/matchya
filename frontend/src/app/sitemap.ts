@@ -1,8 +1,5 @@
 import { MetadataRoute } from "next";
-import {
-  fetchTherapistNames,
-  generateProfileSlug,
-} from "./utils/supabaseHelpers";
+import { fetchTherapistSlugs } from "./utils/supabaseHelpers";
 import { COUNTRIES, REGIONS } from "./utils/locationData";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL; // localhost or https://www.matchya.app
@@ -14,9 +11,14 @@ if (!BASE_URL) {
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const startTime = Date.now();
   try {
-    const allNames: string[] = [];
+    const allSlugs: {
+      slug: string;
+      id: string;
+      clinic_country: string;
+      clinic_province: string;
+    }[] = [];
     let pageToken: string | undefined;
-    const PAGE_SIZE = 60; // Smaller batch size for testing
+    const PAGE_SIZE = 100; // Larger batch size for efficiency
     let pageCount = 0;
 
     console.log("[SITEMAP_NEXT] Starting sitemap generation with Supabase...");
@@ -28,26 +30,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
       console.log(`[SITEMAP_NEXT] Fetching page ${pageCount}:
       - Page token: ${pageToken || "None (first page)"}
-      - Names collected so far: ${allNames.length}`);
+      - Slugs collected so far: ${allSlugs.length}`);
 
-      const result = await fetchTherapistNames(PAGE_SIZE, pageToken);
-      const therapistNames = result.therapistNames;
+      const result = await fetchTherapistSlugs(PAGE_SIZE, pageToken);
+      if (result.slugs.length > 0) {
+        allSlugs.push(...result.slugs);
+      }
       pageToken = result.nextPageToken;
 
       const fetchTime = Date.now() - fetchStartTime;
 
       console.log(`[SITEMAP_NEXT] Page ${pageCount} results:
-      - Names received: ${therapistNames.length}
+      - Slugs received: ${result.slugs.length}
       - Fetch time (frontend): ${(fetchTime / 1000).toFixed(2)}s
-      - Sample names: ${JSON.stringify(therapistNames.slice(0, 3))}...`);
-
-      allNames.push(...therapistNames);
+      - Sample data: ${JSON.stringify(result.slugs.slice(0, 3))}...`);
     } while (pageToken);
 
     const totalTime = (Date.now() - startTime) / 1000;
     console.log(`[SITEMAP_NEXT] Fetch phase complete:
       - Total pages: ${pageCount}
-      - Total names: ${allNames.length}
+      - Total slugs: ${allSlugs.length}
       - Total time: ${totalTime.toFixed(2)}s
       - Avg time per page: ${(totalTime / pageCount).toFixed(2)}s`);
 
@@ -105,16 +107,33 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     });
 
     // Process all therapist routes in chunks
-    const CHUNK_SIZE = 60; // Smaller chunks for testing
+    const CHUNK_SIZE = 100; // Larger chunks for efficiency
     const processStartTime = Date.now();
     let processedCount = 0;
+    let errorCount = 0;
 
-    for (let i = 0; i < allNames.length; i += CHUNK_SIZE) {
-      const chunkStartTime = Date.now();
-      const chunk = allNames.slice(i, i + CHUNK_SIZE);
+    for (let i = 0; i < allSlugs.length; i += CHUNK_SIZE) {
+      const chunk = allSlugs.slice(i, i + CHUNK_SIZE);
 
-      const therapistRoutes = chunk.map((name) => {
-        const url = `${BASE_URL}/therapists/${generateProfileSlug(name)}`;
+      const therapistRoutes = chunk.map((item) => {
+        // Extract and normalize country/region codes
+        let countryCode = item.clinic_country?.toLowerCase() || "ca";
+        let regionCode = item.clinic_province?.toLowerCase() || "on";
+
+        // Convert full country/region names to codes if needed
+        if (countryCode === "canada") countryCode = "ca";
+        if (countryCode === "united states") countryCode = "us";
+
+        // Common province/state conversions
+        if (regionCode === "ontario") regionCode = "on";
+        if (regionCode === "british columbia") regionCode = "bc";
+        if (regionCode === "quebec") regionCode = "qc";
+        if (regionCode === "alberta") regionCode = "ab";
+        if (regionCode === "california") regionCode = "ca";
+        if (regionCode === "new york") regionCode = "ny";
+
+        const url =
+          `${BASE_URL}/therapists/${countryCode}/${regionCode}/${item.slug}`;
         return {
           url,
           lastModified: lastModifiedDate,
@@ -124,20 +143,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       });
 
       processedCount += chunk.length;
-      const chunkTime = Date.now() - chunkStartTime;
 
-      console.log(
-        `[SITEMAP_NEXT] Processing chunk ${Math.floor(i / CHUNK_SIZE) + 1}:
-      - Processed: ${processedCount}/${allNames.length}
-      - Chunk time: ${(chunkTime / 1000).toFixed(3)}s
-      - Sample URLs: ${
-          JSON.stringify(
-            therapistRoutes.slice(0, 2),
-            null,
-            2,
-          )
-        }...`,
-      );
+      // Only log progress periodically to reduce verbosity
+      if (processedCount % 300 === 0 || processedCount === allSlugs.length) {
+        console.log(
+          `[SITEMAP_NEXT] Progress: ${processedCount}/${allSlugs.length} (${
+            Math.round((processedCount / allSlugs.length) * 100)
+          }%)`,
+        );
+      }
 
       routes.push(...therapistRoutes);
     }
@@ -157,9 +171,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       stage: "sitemap generation",
       timeElapsed: `${((Date.now() - startTime) / 1000).toFixed(2)}s`,
       memoryUsage: `${
-        Math.round(
-          process.memoryUsage().heapUsed / 1024 / 1024,
-        )
+        Math.round(process.memoryUsage().heapUsed / 1024 / 1024)
       }MB`,
     });
     return []; // Return empty sitemap on error

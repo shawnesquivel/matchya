@@ -71,6 +71,7 @@ export interface Therapist {
   similarity?: number;
   licenses: TherapistLicense[];
   is_verified: boolean;
+  slug?: string;
 }
 
 // Helper functions for localStorage persistence
