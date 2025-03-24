@@ -131,6 +131,140 @@ function shuffleTherapists(
   return shuffled;
 }
 
+/**
+ * Normalizes filter terms by expanding them to include related terminology and synonyms
+ * Especially helpful for LGBTQ+ terminology where many variations exist
+ */
+function normalizeFilterTerms(terms: string[] | null): string[] | null {
+  if (!terms || terms.length === 0) return terms;
+
+  // Map of variations to canonical forms and their synonyms
+  const synonymMap: Record<string, string[]> = {
+    "lgbtq": [
+      "lgbtq",
+      "lgbtq+",
+      "lgbtqia",
+      "lgbtqia+",
+      "lgbtqqiaap",
+      "lgbtq2s",
+      "lgbtq2s+",
+      "2slgbtq",
+      "2slgbtq+",
+      "2s",
+      "two-spirit",
+      "two spirit",
+      "queer",
+      "qtbipoc",
+      // Add more explicit variations for QTBIPOC
+      "qtbipoc community",
+      "the qtbipoc community",
+      "qtbipoc communities",
+    ],
+    "transgender": [
+      "transgender",
+      "trans",
+      "tgnc",
+      "transgender & gender non-conforming",
+      "transgender and gender non-conforming",
+    ],
+    "non-binary": [
+      "non-binary",
+      "nonbinary",
+      "non binary",
+      "nb",
+      "enby",
+      "gender non-conforming",
+      "gender non conforming",
+      "gnc",
+      "genderqueer",
+      "gender fluid",
+      "genderfluid",
+    ],
+    "cbt": [
+      "cbt",
+      "cognitive behavioral therapy",
+      "cognitive behavioural therapy",
+      "cognitive behavior therapy",
+      "cognitive-behavioral therapy",
+      "cognitive-behavioural therapy",
+    ],
+    "dbt": [
+      "dbt",
+      "dialectical behavior therapy",
+      "dialectical behavioural therapy",
+      "dialectical behavioral therapy",
+      "dialectical-behavioral therapy",
+    ],
+    "act": [
+      "act",
+      "acceptance and commitment therapy",
+      "acceptance & commitment therapy",
+    ],
+    "eft": [
+      "eft",
+      "emotion focused therapy",
+      "emotion-focused therapy",
+      "emotionally focused therapy",
+    ],
+    "emdr": [
+      "emdr",
+      "eye movement desensitization and reprocessing",
+      "eye movement desensitization & reprocessing",
+    ],
+    "ifs": [
+      "ifs",
+      "internal family systems",
+      "internal family systems therapy",
+      "parts work",
+    ],
+    "somatic": [
+      "somatic",
+      "somatic experiencing",
+      "somatic therapy",
+      "body-centered therapy",
+      "body centered therapy",
+    ],
+  };
+
+  // Expand each search term to include all its synonyms
+  const expandedTerms = terms.flatMap((term) => {
+    const lowerTerm = term.toLowerCase().trim();
+
+    // Log the original term for debugging
+    console.log(
+      `[normalizeFilterTerms] Processing term: "${term}" (lowercase: "${lowerTerm}")`,
+    );
+
+    // Check if this term is a key in our map
+    if (synonymMap[lowerTerm]) {
+      console.log(
+        `[normalizeFilterTerms] Expanding ${lowerTerm} with synonyms:`,
+        synonymMap[lowerTerm],
+      );
+      return synonymMap[lowerTerm];
+    }
+
+    // Check if this term appears in any of our synonym lists
+    for (const [canonical, variations] of Object.entries(synonymMap)) {
+      if (variations.includes(lowerTerm)) {
+        console.log(
+          `[normalizeFilterTerms] Term ${lowerTerm} found in ${canonical} group, expanding with:`,
+          variations,
+        );
+        return variations;
+      }
+    }
+
+    // No mapping found, return original
+    return [term];
+  });
+
+  // Remove duplicates
+  const uniqueTerms = [...new Set(expandedTerms)];
+  console.log(`[normalizeFilterTerms] Final expanded terms:`, uniqueTerms);
+  return uniqueTerms;
+}
+
 Deno.serve(async (req) => {
   const perf = createPerformanceTracker("therapist-matches");
 
@@ -268,19 +402,80 @@ Deno.serve(async (req) => {
         currentFilters?.areas_of_focus &&
         currentFilters.areas_of_focus.length > 0
       ) {
+        // Normalize the areas of focus terms to expand them with synonyms
+        const expandedAreas =
+          normalizeFilterTerms(currentFilters.areas_of_focus) || [];
+
         // Convert filter terms to uppercase for case-insensitive matching
         // Note: PostgreSQL array operators are case-sensitive
-        const capitalizedAreas = currentFilters.areas_of_focus.map((
+        const capitalizedAreas = expandedAreas.map((
           area: string,
         ) => area.charAt(0).toUpperCase() + area.slice(1));
 
-        console.log(
-          "[therapist-matches] Using capitalized areas:",
-          capitalizedAreas,
+        // Log expanded search terms for LGBTQ-related searches to help debug matching
+        const hasLgbtqRelatedTerms = currentFilters.areas_of_focus.some(
+          (term: string) =>
+            term.toLowerCase().includes("lgbtq") ||
+            term.toLowerCase().includes("queer") ||
+            term.toLowerCase().includes("qtbipoc"),
         );
 
-        // Use array overlap with properly capitalized terms
-        query = query.overlaps("areas_of_focus", capitalizedAreas);
+        if (hasLgbtqRelatedTerms) {
+          console.log(
+            "[therapist-matches] LGBTQ-related search detected. Original terms:",
+            currentFilters.areas_of_focus,
+            "Expanded to:",
+            expandedAreas,
+          );
+
+          // For LGBTQ-related searches, use a more flexible text-based approach
+          console.log(
+            "[therapist-matches] Using enhanced LGBTQ matching with text search",
+          );
+
+          // In PostgREST, we need to use a different approach for text search in arrays
+          // The issue is that direct array_to_string calls in filter don't work
+
+          // First, simplify the search terms to focus on key patterns
+          const keyPatterns = ["lgbtq", "queer", "qtbipoc", "two-spirit", "2s"];
+
+          // We need to make sure our search terms match the case in the database
+          // The database stores values in uppercase, so we'll uppercase all our search terms
+          const keyPatternsUpperCase = keyPatterns.map((pattern) =>
+            pattern.toUpperCase()
+          );
+
+          // Create an array to hold our uppercase search terms
+          const searchTerms: string[] = [];
+
+          // We need to use ALL UPPERCASE terms to match what's stored in the database
+          // Adding both exact matches and variations for robustness
+          keyPatternsUpperCase.forEach((pattern) => {
+            searchTerms.push(pattern);
+          });
+
+          // For expanded areas, also ensure uppercase
+          expandedAreas.forEach((area) => {
+            const upperArea = area.toUpperCase();
+            searchTerms.push(upperArea);
+          });
+
+          console.log(
+            "[therapist-matches] Using these uppercase search terms for array overlaps:",
+            searchTerms,
+          );
+
+          // Use the overlaps operator with the uppercase search terms
+          query = query.overlaps("areas_of_focus", searchTerms);
+
+          console.log(
+            "[therapist-matches] Query after LGBTQ text filtering:",
+            query,
+          );
+        } else {
+          // Standard array overlap for non-LGBTQ searches
+          query = query.overlaps("areas_of_focus", capitalizedAreas);
+        }
       }
 
       // Handle price filters with proper session category filtering
@@ -298,24 +493,12 @@ Deno.serve(async (req) => {
 
       // Add location filtering - handle the city and province from the welcome page
       if (currentFilters?.clinic_city && currentFilters?.clinic_province) {
-        console.log(
-          `[therapist-matches] Filtering by city: ${currentFilters.clinic_city}, province: ${currentFilters.clinic_province}`,
-        );
-        // Apply city and province filters directly to the matching columns
         query = query
           .eq("clinic_city", currentFilters.clinic_city)
           .eq("clinic_province", currentFilters.clinic_province);
       } else if (currentFilters?.clinic_city) {
-        // If only city is provided, filter by city
-        console.log(
-          `[therapist-matches] Filtering by city only: ${currentFilters.clinic_city}`,
-        );
         query = query.eq("clinic_city", currentFilters.clinic_city);
       } else if (currentFilters?.clinic_province) {
-        // If only province is provided, filter by province
-        console.log(
-          `[therapist-matches] Filtering by province only: ${currentFilters.clinic_province}`,
-        );
         query = query.eq("clinic_province", currentFilters.clinic_province);
       }
 
@@ -323,13 +506,17 @@ Deno.serve(async (req) => {
       perf.startEvent("database:filterQuery");
       const { data: therapists, error } = await query.limit(QUERY_LIMIT);
 
-      // Debug logging to help identify issues
-      console.log("[therapist-matches] Query completed");
+      console.log("[therapist-matches] Query completed", currentFilters);
       if (error) {
         perf.endEvent("database:filterQuery", {
           error: error.message,
         });
-        console.error("[therapist-matches] Query error:", error);
+        console.error(
+          "[therapist-matches] Query error:",
+          error,
+          query,
+          currentFilters,
+        );
         return new Response(
           JSON.stringify({
             error: error.message,
@@ -360,6 +547,7 @@ Deno.serve(async (req) => {
       if (shuffledTherapists.length === 0) {
         console.warn(
           "[therapist-matches] No therapists data returned or empty array",
+          { currentFilters },
         );
       }
 
@@ -404,12 +592,6 @@ Deno.serve(async (req) => {
           };
         },
       );
-
-      console.log(
-        `[therapist-matches] Successfully formatted ${formattedTherapists.length} therapists`,
-      );
-
-      console.log(formattedTherapists[0]);
 
       return new Response(
         JSON.stringify({
@@ -971,9 +1153,13 @@ Include reasoning for the extracted preferences and explain any ambiguity in the
 
     const result = completion.choices[0].message.parsed;
 
-    // Add clinic_city and clinic_province directly from currentFilters after extraction
+    // Normalize areas of focus terms to expand them with synonyms
     const resultWithLocation = {
       ...result,
+      // Normalize areas of focus terms to expand them with synonyms
+      areas_of_focus_filter: result.areas_of_focus_filter
+        ? normalizeFilterTerms(result.areas_of_focus_filter)
+        : null,
       // Add location from UI directly, not from extraction
       clinic_city: currentFilters?.clinic_city || null,
       clinic_province: currentFilters?.clinic_province || null,
