@@ -38,10 +38,11 @@ export default function TherapistsRegionPage({
   const [therapists, setTherapists] = useState<Therapist[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [cities, setCities] = useState<string[]>([]);
-  const [isLoadingTherapists, setIsLoadingTherapists] = useState(true);
-  const [isLoadingCities, setIsLoadingCities] = useState(true);
-  const [therapistsError, setTherapistsError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [citiesLoading, setCitiesLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [citiesError, setCitiesError] = useState<string | null>(null);
+  const [apiError, setApiError] = useState<boolean>(false);
 
   // Validate region
   if (!isValidRegion(countryCode, regionCode)) {
@@ -58,7 +59,9 @@ export default function TherapistsRegionPage({
   useEffect(() => {
     const fetchTherapists = async () => {
       try {
-        setIsLoadingTherapists(true);
+        setIsLoading(true);
+        setError(null);
+
         const result = await getTherapistsByRegion(
           countryCode,
           regionCode,
@@ -66,33 +69,44 @@ export default function TherapistsRegionPage({
           pageSize,
           searchName
         );
+
         setTherapists(result.therapists);
         setTotalCount(result.totalCount);
-        setTherapistsError(null);
+
+        // Check for API error flag
+        if (result.apiError) {
+          setError(result.errorMessage || "API Error occurred");
+          setApiError(true);
+        } else {
+          setError(null);
+          setApiError(false);
+        }
       } catch (err) {
         console.error("Error fetching therapists:", err);
-        setTherapistsError("Failed to load therapists. Please try again later.");
+        setError("Failed to load therapists. Please try again later.");
+        setApiError(false);
       } finally {
-        setIsLoadingTherapists(false);
+        setIsLoading(false);
       }
     };
 
     fetchTherapists();
   }, [countryCode, regionCode, page, pageSize, searchName]);
 
-  // Fetch cities on component mount
+  // Display cities for this region
   useEffect(() => {
     const fetchCities = async () => {
       try {
-        setIsLoadingCities(true);
-        const citiesData = await getPopularCitiesByRegion(countryCode, regionCode);
-        setCities(citiesData);
+        setCitiesLoading(true);
+        const cities = await getPopularCitiesByRegion(countryCode, regionCode);
+        setCities(cities);
         setCitiesError(null);
       } catch (err) {
         console.error("Error fetching cities:", err);
         setCitiesError("Failed to load cities. Please try again later.");
+        setCities([]); // Ensure we don't display stale data
       } finally {
-        setIsLoadingCities(false);
+        setCitiesLoading(false);
       }
     };
 
@@ -122,14 +136,16 @@ export default function TherapistsRegionPage({
           <div className="bg-white sm:p-6 p-4 rounded-lg shadow-sm h-fit">
             <h2 className="text-xl font-medium mb-4">Cities in {regionName}</h2>
 
-            {isLoadingCities ? (
+            {citiesLoading ? (
               <div className="space-y-2">
                 {[1, 2, 3, 4].map((i) => (
                   <div key={i} className="h-4 bg-gray-100 rounded w-1/2 animate-pulse"></div>
                 ))}
               </div>
             ) : citiesError ? (
-              <p className="text-red-500">{citiesError}</p>
+              <div className="bg-red-50 border border-red-200 rounded p-3">
+                <p className="text-red-600 text-sm">{citiesError}</p>
+              </div>
             ) : cities.length > 0 ? (
               <ul className="space-y-2">
                 {cities.map((city) => (
@@ -154,7 +170,7 @@ export default function TherapistsRegionPage({
         {/* Desktop layout */}
         <div className="grid md:grid-cols-3 gap-8">
           <div className="md:col-span-2 hidden md:block">
-            {isLoadingTherapists ? (
+            {isLoading ? (
               <div>
                 <div className="h-6 bg-gray-200 rounded w-3/4 mb-8 animate-pulse"></div>
                 <div className="space-y-4">
@@ -163,25 +179,29 @@ export default function TherapistsRegionPage({
                   ))}
                 </div>
               </div>
-            ) : therapistsError ? (
+            ) : error ? (
               <div>
-                <p className="text-red-500 mb-8">{therapistsError}</p>
+                <p className="text-red-500 mb-8">{error}</p>
                 <TherapistNameSearch baseUrl={baseUrl} initialValue={searchName} />
               </div>
             ) : (
               <>
                 <p className="text-gray-700 mb-8">
                   {totalCount > 0
-                    ? `Browse through ${totalCount} therapists in ${regionName}.`
+                    ? `Browse through ${totalCount} therapists in ${regionName}, ${countryName}.`
                     : `No therapists found${
                         searchName ? ` matching "${searchName}"` : ""
-                      } in ${regionName}.`}
+                      } in ${regionName}, ${countryName}.`}
                 </p>
 
                 <TherapistNameSearch baseUrl={baseUrl} initialValue={searchName} />
 
                 <TherapistList
                   therapists={therapists}
+                  isLoading={isLoading}
+                  totalCount={totalCount}
+                  apiError={apiError}
+                  errorMessage={error || ""}
                   currentPage={page}
                   totalPages={Math.ceil(totalCount / pageSize)}
                   baseUrl={
@@ -196,14 +216,16 @@ export default function TherapistsRegionPage({
             <div className="bg-white sm:p-6 p-4 rounded-lg shadow-sm h-fit">
               <h2 className="text-xl font-medium mb-4">Cities in {regionName}</h2>
 
-              {isLoadingCities ? (
+              {citiesLoading ? (
                 <div className="space-y-2">
                   {[1, 2, 3, 4].map((i) => (
                     <div key={i} className="h-4 bg-gray-100 rounded w-1/2 animate-pulse"></div>
                   ))}
                 </div>
               ) : citiesError ? (
-                <p className="text-red-500">{citiesError}</p>
+                <div className="bg-red-50 border border-red-200 rounded p-3">
+                  <p className="text-red-600 text-sm">{citiesError}</p>
+                </div>
               ) : cities.length > 0 ? (
                 <ul className="space-y-2">
                   {cities.map((city) => (
@@ -228,7 +250,7 @@ export default function TherapistsRegionPage({
 
         {/* Mobile therapist results - shown after the promo cards */}
         <div className="md:hidden mt-6">
-          {isLoadingTherapists ? (
+          {isLoading ? (
             <div>
               <div className="h-6 bg-gray-200 rounded w-3/4 mb-8 animate-pulse"></div>
               <div className="space-y-4">
@@ -237,25 +259,29 @@ export default function TherapistsRegionPage({
                 ))}
               </div>
             </div>
-          ) : therapistsError ? (
+          ) : error ? (
             <div>
-              <p className="text-red-500 mb-8">{therapistsError}</p>
+              <p className="text-red-500 mb-8">{error}</p>
               <TherapistNameSearch baseUrl={baseUrl} initialValue={searchName} />
             </div>
           ) : (
             <>
               <p className="text-gray-700 mb-8">
                 {totalCount > 0
-                  ? `Browse through ${totalCount} therapists in ${regionName}.`
+                  ? `Browse through ${totalCount} therapists in ${regionName}, ${countryName}.`
                   : `No therapists found${
                       searchName ? ` matching "${searchName}"` : ""
-                    } in ${regionName}.`}
+                    } in ${regionName}, ${countryName}.`}
               </p>
 
               <TherapistNameSearch baseUrl={baseUrl} initialValue={searchName} />
 
               <TherapistList
                 therapists={therapists}
+                isLoading={isLoading}
+                totalCount={totalCount}
+                apiError={apiError}
+                errorMessage={error || ""}
                 currentPage={page}
                 totalPages={Math.ceil(totalCount / pageSize)}
                 baseUrl={searchName ? `${baseUrl}?name=${encodeURIComponent(searchName)}` : baseUrl}

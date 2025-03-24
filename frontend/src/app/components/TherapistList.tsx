@@ -10,6 +10,10 @@ import TherapistPagination from "@/app/components/TherapistPagination";
 
 interface TherapistListProps {
   therapists: Therapist[];
+  isLoading: boolean;
+  totalCount: number;
+  apiError?: boolean;
+  errorMessage?: string;
   currentPage: number;
   totalPages: number;
   baseUrl: string;
@@ -17,6 +21,10 @@ interface TherapistListProps {
 
 export default function TherapistList({
   therapists,
+  isLoading,
+  totalCount,
+  apiError = false,
+  errorMessage = "",
   currentPage,
   totalPages,
   baseUrl,
@@ -25,6 +33,26 @@ export default function TherapistList({
     return (
       <div className="text-center py-12">
         <p className="text-gray-500">No therapists found matching your criteria.</p>
+      </div>
+    );
+  }
+
+  // Handle API error
+  if (apiError) {
+    return (
+      <div className="w-full py-8 text-center">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 mx-auto max-w-3xl">
+          <h3 className="text-lg font-semibold text-red-700 mb-2">API Error</h3>
+          <p className="text-red-600 mb-4">
+            We're experiencing technical difficulties with our therapist directory. Our team has
+            been notified and is working to fix the issue.
+          </p>
+          {errorMessage && (
+            <div className="bg-red-100 p-3 rounded text-sm text-red-800 font-mono mt-2">
+              Error details: {errorMessage}
+            </div>
+          )}
+        </div>
       </div>
     );
   }

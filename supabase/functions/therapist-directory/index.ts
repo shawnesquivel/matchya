@@ -105,7 +105,7 @@ Deno.serve(async (req) => {
       .from("therapists")
       .select(
         `
-        id, first_name, last_name, slug, title, gender, pronouns, 
+        id, first_name, last_name, slug, gender, pronouns, 
         bio, profile_img_url, clinic_name, clinic_city, 
         clinic_province, clinic_country, availability, languages, 
         education, certifications, areas_of_focus, approaches, 

@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import TherapistDirectoryLayout from "@/app/components/TherapistDirectoryLayout";
 import TherapistList from "@/app/components/TherapistList";
 import DirectoryBreadcrumbs from "@/app/components/DirectoryBreadcrumbs";
@@ -15,29 +14,31 @@ export default async function TherapistsCityPage({
   params: { country: string; region: string; city: string };
   searchParams: { page?: string; name?: string };
 }) {
-  const { country, region, city } = params;
+  const { country, region, city: citySlug } = params;
   const countryCode = country.toLowerCase();
   const regionCode = region.toLowerCase();
-  const citySlug = city.toLowerCase();
 
-  // Convert city slug to display format
-  const cityName = citySlug.charAt(0).toUpperCase() + citySlug.slice(1).replace(/-/g, " ");
+  // Format city name by replacing hyphens with spaces and capitalizing each word
+  const cityName = citySlug
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
 
-  // Validate region
+  // Validate country and region codes
   if (!isValidRegion(countryCode, regionCode)) {
     notFound();
   }
 
   const countryName = getCountryName(countryCode);
-  const regionName = getRegionName(countryCode, regionCode);
+  const regionName = getRegionName(countryCode, regionCode) || regionCode.toUpperCase();
 
-  // Parse search parameters
-  const page = searchParams.page ? parseInt(searchParams.page, 10) : 1;
-  const pageSize = 20;
+  // Get pagination info from search params
+  const page = Number(searchParams.page) || 1;
+  const pageSize = 20; // Default to 20 per page
   const searchName = searchParams.name || "";
 
   // Fetch therapists for this city
-  const { therapists, totalCount } = await getTherapistsByCity(
+  const result = await getTherapistsByCity(
     countryCode,
     regionCode,
     citySlug,
@@ -46,8 +47,10 @@ export default async function TherapistsCityPage({
     searchName
   );
 
+  const { therapists, totalCount, apiError, errorMessage } = result;
+
   // If no therapists found in this city, show 404
-  if (totalCount === 0 && !searchName) {
+  if (totalCount === 0 && !searchName && !apiError) {
     notFound();
   }
 
@@ -81,16 +84,20 @@ export default async function TherapistsCityPage({
         <div>
           <p className="text-gray-700 mb-8">
             {totalCount > 0
-              ? `Browse through ${totalCount} therapists in ${cityName}.`
+              ? `Browse through ${totalCount} therapists in ${cityName}, ${regionName}.`
               : `No therapists found${
                   searchName ? ` matching "${searchName}"` : ""
-                } in ${cityName}.`}
+                } in ${cityName}, ${regionName}.`}
           </p>
 
           <TherapistNameSearch baseUrl={baseUrl} initialValue={searchName} />
 
           <TherapistList
             therapists={therapists}
+            isLoading={false}
+            totalCount={totalCount}
+            apiError={!!apiError}
+            errorMessage={errorMessage || ""}
             currentPage={page}
             totalPages={Math.ceil(totalCount / pageSize)}
             baseUrl={searchName ? `${baseUrl}?name=${encodeURIComponent(searchName)}` : baseUrl}

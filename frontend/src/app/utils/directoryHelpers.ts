@@ -13,6 +13,8 @@ import {
 export interface DirectoryApiResponse {
     therapists: Therapist[];
     totalCount: number;
+    apiError?: boolean;
+    errorMessage?: string;
 }
 
 // Cache for directory data to avoid duplicate requests
@@ -127,7 +129,31 @@ export async function getTherapistsByCountry(
         };
     } catch (error) {
         console.error("Error in getTherapistsByCountry:", error);
-        // Fallback to mock data if there's an error
+
+        // In production, show error instead of silently falling back to mock data
+        if (process.env.NODE_ENV === "production") {
+            console.error(
+                "[CRITICAL] API error in production - not falling back to mock data",
+            );
+            console.error(
+                "This may indicate a database schema mismatch or API issue",
+            );
+
+            // Return empty results with error flag
+            return {
+                therapists: [],
+                totalCount: 0,
+                apiError: true,
+                errorMessage: error instanceof Error
+                    ? error.message
+                    : String(error),
+            };
+        }
+
+        // Only in development, fall back to mock data
+        console.warn(
+            "Development mode: Falling back to mock data due to API error",
+        );
         return getMockTherapistsByCountry(country, page, pageSize, name);
     }
 }
@@ -184,7 +210,31 @@ export async function getTherapistsByRegion(
         };
     } catch (error) {
         console.error("Error in getTherapistsByRegion:", error);
-        // Fallback to mock data if there's an error
+
+        // In production, show error instead of silently falling back to mock data
+        if (process.env.NODE_ENV === "production") {
+            console.error(
+                "[CRITICAL] API error in production - not falling back to mock data",
+            );
+            console.error(
+                "This may indicate a database schema mismatch or API issue",
+            );
+
+            // Return empty results with error flag
+            return {
+                therapists: [],
+                totalCount: 0,
+                apiError: true,
+                errorMessage: error instanceof Error
+                    ? error.message
+                    : String(error),
+            };
+        }
+
+        // Only in development, fall back to mock data
+        console.warn(
+            "Development mode: Falling back to mock data due to API error",
+        );
         return getMockTherapistsByRegion(country, region, page, pageSize, name);
     }
 }
@@ -249,7 +299,31 @@ export async function getTherapistsByCity(
         };
     } catch (error) {
         console.error("Error in getTherapistsByCity:", error);
-        // Fallback to mock data if there's an error
+
+        // In production, show error instead of silently falling back to mock data
+        if (process.env.NODE_ENV === "production") {
+            console.error(
+                "[CRITICAL] API error in production - not falling back to mock data",
+            );
+            console.error(
+                "This may indicate a database schema mismatch or API issue",
+            );
+
+            // Return empty results with error flag
+            return {
+                therapists: [],
+                totalCount: 0,
+                apiError: true,
+                errorMessage: error instanceof Error
+                    ? error.message
+                    : String(error),
+            };
+        }
+
+        // Only in development, fall back to mock data
+        console.warn(
+            "Development mode: Falling back to mock data due to API error",
+        );
         return getMockTherapistsByCity(
             country,
             region,
@@ -362,11 +436,36 @@ export async function getPopularCitiesByRegion(
             return data.data.cities || [];
         } catch (error) {
             console.warn("Error fetching cities from API:", error);
+
+            // In production, don't fall back to mock data
+            if (process.env.NODE_ENV === "production") {
+                console.error(
+                    "[CRITICAL] API error fetching cities in production - not falling back to mock data",
+                );
+                throw error; // Rethrow to be handled by the caller
+            }
+
+            // Only in development, fall back to mock data
+            console.warn(
+                "Development mode: Falling back to mock city data due to API error",
+            );
             return [];
         }
     } catch (error) {
         console.error("Error in getPopularCitiesByRegion:", error);
-        // Fallback to mock data if there's an error
+
+        // In production, don't fall back to mock data
+        if (process.env.NODE_ENV === "production") {
+            console.error(
+                "[CRITICAL] API error in production - not falling back to mock data",
+            );
+            throw error; // Rethrow to be handled by the caller
+        }
+
+        // Only in development, fall back to mock data
+        console.warn(
+            "Development mode: Falling back to mock city data due to API error",
+        );
         return getMockCitiesByRegion(country, region);
     }
 }
@@ -418,8 +517,21 @@ export async function getPopularRegions(
                 return data.data.regions || staticRegions;
             } catch (error) {
                 console.warn(
-                    "Error fetching regions from API, using static data:",
+                    "Error fetching regions from API:",
                     error,
+                );
+
+                // In production, use static data as a backup, not mock data
+                if (process.env.NODE_ENV === "production") {
+                    console.warn(
+                        "[WARNING] Using static region data in production due to API error",
+                    );
+                    return staticRegions;
+                }
+
+                // In development, log warning and use static data
+                console.warn(
+                    "Development mode: Using static region data due to API error",
                 );
                 return staticRegions;
             }
@@ -430,7 +542,19 @@ export async function getPopularRegions(
         return [];
     } catch (error) {
         console.error("Error in getPopularRegions:", error);
-        // Fallback to mock data if there's an error
+
+        // In production, don't fall back to mock data
+        if (process.env.NODE_ENV === "production") {
+            console.error(
+                "[CRITICAL] API error in production - not falling back to mock data",
+            );
+            throw error; // Rethrow to be handled by the caller
+        }
+
+        // Only in development, fall back to mock data
+        console.warn(
+            "Development mode: Falling back to mock region data due to API error",
+        );
         return getMockRegionsByCountry(country);
     }
 }
