@@ -821,7 +821,6 @@ Deno.serve(async (req) => {
       "first_name",
       "last_name",
       "gender",
-      "clinic_name",
       "availability",
     ];
     const missingKeys: string[] = [];
@@ -892,9 +891,9 @@ Deno.serve(async (req) => {
       clinic_profile_url: clinicProfileUrl,
       clinic_booking_url: clinicBookingUrl,
       bio: bio || null,
-      clinic_name: profileData.clinic_name,
+      clinic_name: profileData.clinic_name || "",
       clinic_street: profileData.clinic_street || null,
-      clinic_city: profileData.clinic_city || "Vancouver",
+      clinic_city: profileData.clinic_city || "",
       clinic_postal_code: profileData.clinic_postal_code || null,
       clinic_province: profileData.clinic_province || clinic_province,
       clinic_country: profileData.clinic_country || clinic_country,
