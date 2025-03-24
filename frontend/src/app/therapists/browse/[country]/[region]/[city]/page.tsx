@@ -1,4 +1,7 @@
+"use client";
+
 import { notFound } from "next/navigation";
+import { useEffect, useState } from "react";
 import TherapistDirectoryLayout from "@/app/components/TherapistDirectoryLayout";
 import TherapistList from "@/app/components/TherapistList";
 import DirectoryBreadcrumbs from "@/app/components/DirectoryBreadcrumbs";
@@ -6,17 +9,18 @@ import TherapistNameSearch from "@/app/components/TherapistNameSearch";
 import { getTherapistsByCity } from "@/app/utils/directoryHelpers";
 import { isValidRegion, getCountryName, getRegionName } from "@/app/utils/locationData";
 import DirectoryPromoCards from "@/app/components/DirectoryPromoCards";
+import { Therapist } from "@/app/contexts/TherapistContext";
+import { useSearchParams } from "next/navigation";
 
-export default async function TherapistsCityPage({
+export default function TherapistsCityPage({
   params,
-  searchParams,
 }: {
   params: { country: string; region: string; city: string };
-  searchParams: { page?: string; name?: string };
 }) {
   const { country, region, city: citySlug } = params;
   const countryCode = country.toLowerCase();
   const regionCode = region.toLowerCase();
+  const searchParams = useSearchParams();
 
   // Format city name by replacing hyphens with spaces and capitalizing each word
   const cityName = citySlug
@@ -33,81 +37,114 @@ export default async function TherapistsCityPage({
   const regionName = getRegionName(countryCode, regionCode) || regionCode.toUpperCase();
 
   // Get pagination info from search params
-  const page = Number(searchParams.page) || 1;
+  const page = searchParams.get("page") ? parseInt(searchParams.get("page") as string, 10) : 1;
   const pageSize = 20; // Default to 20 per page
-  const searchName = searchParams.name || "";
+  const searchName = searchParams.get("name") || "";
 
-  // Fetch therapists for this city
-  const result = await getTherapistsByCity(
-    countryCode,
-    regionCode,
-    citySlug,
-    page,
-    pageSize,
-    searchName
-  );
+  const [therapists, setTherapists] = useState<Therapist[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [apiError, setApiError] = useState<boolean>(false);
 
-  const { therapists, totalCount, apiError, errorMessage } = result;
+  useEffect(() => {
+    const fetchTherapists = async () => {
+      try {
+        setIsLoading(true);
+        const result = await getTherapistsByCity(
+          countryCode,
+          regionCode,
+          citySlug,
+          page,
+          pageSize,
+          searchName
+        );
 
-  // If no therapists found in this city, show 404
-  if (totalCount === 0 && !searchName && !apiError) {
+        setTherapists(result.therapists);
+        setTotalCount(result.totalCount);
+
+        // Check for API error flag
+        if (result.apiError) {
+          setError(result.errorMessage || "API Error occurred");
+          setApiError(true);
+        } else {
+          setError(null);
+          setApiError(false);
+        }
+      } catch (err) {
+        console.error("Error fetching therapists:", err);
+        setError("Failed to load therapists. Please try again later.");
+        setApiError(false);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTherapists();
+  }, [countryCode, regionCode, citySlug, page, pageSize, searchName]);
+
+  // If no therapists found in this city and no API error, show 404
+  if (totalCount === 0 && !searchName && !apiError && !isLoading) {
     notFound();
   }
+
+  // Base URL for pagination and search
+  const baseUrl = `/therapists/browse/${countryCode}/${regionCode}/${citySlug}`;
 
   const breadcrumbs = [
     { name: "Home", href: "/" },
     { name: "Therapists", href: "/therapists/browse" },
     { name: countryName, href: `/therapists/browse/${countryCode}` },
     { name: regionName, href: `/therapists/browse/${countryCode}/${regionCode}` },
-    { name: cityName, href: `/therapists/browse/${countryCode}/${regionCode}/${citySlug}` },
+    { name: cityName, href: baseUrl },
   ];
 
-  // Base URL for pagination and search
-  const baseUrl = `/therapists/browse/${countryCode}/${regionCode}/${citySlug}`;
+  if (isLoading) {
+    return (
+      <TherapistDirectoryLayout>
+        <div className="max-w-6xl mx-auto px-4 py-8">
+          <DirectoryBreadcrumbs breadcrumbs={breadcrumbs} />
+          <div className="h-8 bg-gray-200 rounded w-1/2 mb-8 animate-pulse"></div>
+          <div className="space-y-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-32 bg-gray-100 rounded-lg animate-pulse"></div>
+            ))}
+          </div>
+        </div>
+      </TherapistDirectoryLayout>
+    );
+  }
 
   return (
     <TherapistDirectoryLayout>
-      <div className="container mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto px-4 py-8">
         <DirectoryBreadcrumbs breadcrumbs={breadcrumbs} />
-
-        <h1 className="text-3xl font-new-spirit font-light mt-6 mb-3">
-          {searchName
-            ? `Therapists named "${searchName}" in ${cityName}, ${regionName}`
-            : `Therapists in ${cityName}, ${regionName}`}
+        <h1 className="text-3xl font-bold mb-2">
+          Therapists in {cityName}, {regionName}
         </h1>
 
-        {/* Mobile layout: promo cards first */}
-        <div className="md:hidden mb-8">
-          <DirectoryPromoCards layout="horizontal" />
-        </div>
+        <p className="text-gray-700 mb-8">
+          {totalCount > 0
+            ? `Browse through ${totalCount} therapists in ${cityName}, ${regionName}.`
+            : `No therapists found${
+                searchName ? ` matching "${searchName}"` : ""
+              } in ${cityName}, ${regionName}.`}
+        </p>
 
-        <div>
-          <p className="text-gray-700 mb-8">
-            {totalCount > 0
-              ? `Browse through ${totalCount} therapists in ${cityName}, ${regionName}.`
-              : `No therapists found${
-                  searchName ? ` matching "${searchName}"` : ""
-                } in ${cityName}, ${regionName}.`}
-          </p>
+        <TherapistNameSearch baseUrl={baseUrl} initialValue={searchName} />
 
-          <TherapistNameSearch baseUrl={baseUrl} initialValue={searchName} />
+        <TherapistList
+          therapists={therapists}
+          isLoading={isLoading}
+          totalCount={totalCount}
+          apiError={apiError}
+          errorMessage={error || ""}
+          currentPage={page}
+          totalPages={Math.ceil(totalCount / pageSize)}
+          baseUrl={searchName ? `${baseUrl}?name=${encodeURIComponent(searchName)}` : baseUrl}
+        />
 
-          <TherapistList
-            therapists={therapists}
-            isLoading={false}
-            totalCount={totalCount}
-            apiError={!!apiError}
-            errorMessage={errorMessage || ""}
-            currentPage={page}
-            totalPages={Math.ceil(totalCount / pageSize)}
-            baseUrl={searchName ? `${baseUrl}?name=${encodeURIComponent(searchName)}` : baseUrl}
-          />
-
-          {/* Desktop-only promo cards below therapist list */}
-          <div className="hidden md:block mt-12">
-            <DirectoryPromoCards layout="horizontal" />
-          </div>
-        </div>
+        <DirectoryPromoCards />
       </div>
     </TherapistDirectoryLayout>
   );

@@ -185,90 +185,10 @@ function TherapistResults({
   );
 }
 
-async function TherapistsCountryPageInner({
-  countryCode,
-  countryName,
-  page,
-  pageSize,
-  searchName,
-}: {
-  countryCode: string;
-  countryName: string;
-  page: number;
-  pageSize: number;
-  searchName: string;
-}) {
-  // Fetch therapists for this country
-  const result = await getTherapistsByCountry(countryCode, page, pageSize, searchName);
-  const { therapists, totalCount, apiError, errorMessage } = result;
-
-  // Base URL for pagination and search
-  const baseUrl = `/therapists/browse/${countryCode}`;
-
-  return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-2">Therapists in {countryName}</h1>
-
-      <p className="text-gray-700 mb-8">
-        {totalCount > 0
-          ? `Browse through ${totalCount} therapists in ${countryName}.`
-          : `No therapists found${
-              searchName ? ` matching "${searchName}"` : ""
-            } in ${countryName}.`}
-      </p>
-
-      <TherapistNameSearch baseUrl={baseUrl} initialValue={searchName} />
-
-      <TherapistList
-        therapists={therapists}
-        isLoading={false}
-        totalCount={totalCount}
-        apiError={!!apiError}
-        errorMessage={errorMessage || ""}
-        currentPage={page}
-        totalPages={Math.ceil(totalCount / pageSize)}
-        baseUrl={searchName ? `${baseUrl}?name=${encodeURIComponent(searchName)}` : baseUrl}
-      />
-
-      {/* Popular regions */}
-      <div className="mt-12">
-        <h2 className="text-2xl font-bold mb-6">Popular regions in {countryName}</h2>
-        <RegionList countryCode={countryCode} />
-      </div>
-
-      <DirectoryPromoCards />
-    </div>
-  );
-}
-
-async function RegionList({ countryCode }: { countryCode: string }) {
-  // Get regions for this country
-  const regions = await getPopularRegions(countryCode);
-
-  return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-      {regions.map((region) => (
-        <Link
-          key={region.code}
-          href={`/therapists/browse/${countryCode}/${region.code.toLowerCase()}`}
-          className="p-4 border rounded-lg hover:bg-gray-50 transition-colors text-center"
-        >
-          {region.name}
-        </Link>
-      ))}
-    </div>
-  );
-}
-
-export default function TherapistsCountryPage({
-  params,
-  searchParams,
-}: {
-  params: { country: string };
-  searchParams: { page?: string; name?: string };
-}) {
+export default function TherapistsCountryPage({ params }: { params: { country: string } }) {
   const { country } = params;
   const countryCode = country.toLowerCase();
+  const searchParams = useSearchParams();
 
   // Validate country code
   if (!isValidCountry(countryCode)) {
@@ -277,10 +197,10 @@ export default function TherapistsCountryPage({
 
   const countryName = getCountryName(countryCode);
 
-  // Get pagination info from search params
-  const page = Number(searchParams.page) || 1;
-  const pageSize = 20; // Default to 20 per page
-  const searchName = searchParams.name || "";
+  // Parse search parameters
+  const page = searchParams.get("page") ? parseInt(searchParams.get("page") as string, 10) : 1;
+  const pageSize = 20;
+  const searchName = searchParams.get("name") || "";
 
   const breadcrumbs = [
     { name: "Home", href: "/" },
@@ -293,13 +213,44 @@ export default function TherapistsCountryPage({
       <div className="container mx-auto px-4 py-8">
         <DirectoryBreadcrumbs breadcrumbs={breadcrumbs} />
 
-        <TherapistsCountryPageInner
-          countryCode={countryCode}
-          countryName={countryName}
-          page={page}
-          pageSize={pageSize}
-          searchName={searchName}
-        />
+        <h1 className="text-3xl font-new-spirit font-light mt-6 mb-3">
+          {searchName
+            ? `Therapists named "${searchName}" in ${countryName}`
+            : `Therapists in ${countryName}`}
+        </h1>
+
+        {/* Mobile layout: regions first, then promo cards, then therapists */}
+        <div className="md:hidden flex flex-col space-y-6 mb-8">
+          <RegionsList countryCode={countryCode} countryName={countryName} />
+          <DirectoryPromoCards layout="vertical" />
+        </div>
+
+        {/* Desktop layout: therapists and sidebar with regions+promos */}
+        <div className="hidden md:grid md:grid-cols-3 gap-8">
+          <TherapistResults
+            countryCode={countryCode}
+            countryName={countryName}
+            page={page}
+            pageSize={pageSize}
+            searchName={searchName}
+          />
+
+          <div className="flex flex-col space-y-6 h-full">
+            <RegionsList countryCode={countryCode} countryName={countryName} />
+            <DirectoryPromoCards layout="vertical" />
+          </div>
+        </div>
+
+        {/* Mobile therapist results - shown after the promos */}
+        <div className="md:hidden">
+          <TherapistResults
+            countryCode={countryCode}
+            countryName={countryName}
+            page={page}
+            pageSize={pageSize}
+            searchName={searchName}
+          />
+        </div>
       </div>
     </TherapistDirectoryLayout>
   );

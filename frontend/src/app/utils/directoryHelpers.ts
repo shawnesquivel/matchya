@@ -572,3 +572,12 @@ console.log(
             : "N/A"
     }`,
 );
+
+// Clear the directory cache - useful for debugging or when schema changes
+export function clearDirectoryCache(): void {
+    console.log(
+        `[DEBUG] Clearing directory cache with ${directoryCache.size} entries`,
+    );
+    directoryCache.clear();
+    console.log(`Cache cleared. Remaining entries: ${directoryCache.size}`);
+}
