@@ -70,8 +70,8 @@ Deno.serve(async (req) => {
             .map((t) => ({
                 slug: t.slug,
                 id: t.id,
-                clinic_country: t.clinic_country,
-                clinic_province: t.clinic_province,
+                clinic_country: t.clinic_country?.toLowerCase() || "ca",
+                clinic_province: t.clinic_province?.toLowerCase() || "on",
             }));
 
         // Determine the next page token
