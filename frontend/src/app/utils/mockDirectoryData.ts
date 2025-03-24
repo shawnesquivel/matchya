@@ -458,8 +458,17 @@ export const getMockCitiesByRegion = (
 };
 
 export const isMockDataEnabled = (): boolean => {
-  // Check if we're in development mode or if a special localStorage flag is set
-  return process.env.NODE_ENV === "development" ||
-    (typeof window !== "undefined" &&
-      localStorage.getItem("useMockData") === "true");
+  // Only use mock data in development or when explicitly enabled
+  const isDevEnvironment = process.env.NODE_ENV === "development";
+  const isExplicitlyEnabled = typeof window !== "undefined" &&
+    localStorage.getItem("useMockData") === "true";
+
+  // Log environment info in production to help debug
+  if (process.env.NODE_ENV === "production" && isExplicitlyEnabled) {
+    console.warn(
+      "Mock data explicitly enabled in production via localStorage flag",
+    );
+  }
+
+  return isDevEnvironment || isExplicitlyEnabled;
 };

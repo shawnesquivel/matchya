@@ -1,12 +1,12 @@
 import { Therapist } from "@/app/contexts/TherapistContext";
 import { getRegionDBCode, REGIONS } from "@/app/utils/locationData";
 import {
-  getMockTherapistsByCountry,
-  getMockTherapistsByRegion,
-  getMockTherapistsByCity,
-  getMockRegionsByCountry,
-  getMockCitiesByRegion,
-  isMockDataEnabled
+    getMockCitiesByRegion,
+    getMockRegionsByCountry,
+    getMockTherapistsByCity,
+    getMockTherapistsByCountry,
+    getMockTherapistsByRegion,
+    isMockDataEnabled,
 } from "./mockDirectoryData";
 
 // Interface for the return type of our directory API calls
@@ -16,41 +16,51 @@ export interface DirectoryApiResponse {
 }
 
 // Cache for directory data to avoid duplicate requests
-const directoryCache = new Map<string, { data: any, timestamp: number }>();
+const directoryCache = new Map<string, { data: any; timestamp: number }>();
 const CACHE_TTL = 60 * 60 * 1000; // 1 hour in milliseconds
 
 /**
  * Optimized fetch helper with caching
  */
-async function fetchWithCache(url: string, options?: RequestInit, cacheTTL: number = CACHE_TTL) {
+async function fetchWithCache(
+    url: string,
+    options?: RequestInit,
+    cacheTTL: number = CACHE_TTL,
+) {
     // Generate cache key from URL
     const cacheKey = url;
-    
+
     // Check cache first
     const cachedItem = directoryCache.get(cacheKey);
     const now = Date.now();
-    
+
     if (cachedItem && (now - cachedItem.timestamp < cacheTTL)) {
-        console.log(`[Cache hit] Using cached data for: ${url.substring(0, 100)}...`);
+        console.log(
+            `[Cache hit] Using cached data for: ${url.substring(0, 100)}...`,
+        );
         return cachedItem.data;
     }
-    
+
     // Not in cache or expired, make the request
     try {
         console.log(`[API Request] Fetching: ${url.substring(0, 100)}...`);
         const response = await fetch(url, options);
-        
+
         if (!response.ok) {
             const errorText = await response.text();
-            console.error(`Error fetching from API (${response.status}): ${errorText.substring(0, 100)}`);
+            console.error(
+                `Error fetching from API (${response.status}): ${
+                    errorText.substring(0, 100)
+                }`,
+            );
             throw new Error(`API Error: ${response.status}`);
         }
-        
+
         const data = await response.json();
-        
+
         // Store in cache
         directoryCache.set(cacheKey, { data, timestamp: now });
-        
+
         return data;
     } catch (error) {
         console.error(`[fetchWithCache] Error:`, error);
@@ -67,15 +77,29 @@ export async function getTherapistsByCountry(
     pageSize: number = 20,
     name?: string,
 ): Promise<DirectoryApiResponse> {
+    // Debug environment info
+    console.log(`[DEBUG] Environment mode: ${process.env.NODE_ENV}`);
+    console.log(
+        `[DEBUG] Mock data flag in localStorage: ${
+            typeof window !== "undefined"
+                ? localStorage.getItem("useMockData")
+                : "N/A"
+        }`,
+    );
+    console.log(`[DEBUG] isMockDataEnabled() returns: ${isMockDataEnabled()}`);
+
     // Use mock data during development if database isn't available
     if (isMockDataEnabled()) {
+        console.log("[DEBUG] Using MOCK therapist data for country browse");
         return getMockTherapistsByCountry(country, page, pageSize, name);
     }
-    
+
+    console.log("[DEBUG] Using REAL therapist data from API");
+
     try {
         // Optimize page size for faster initial load on first page
         const actualPageSize = page === 1 ? Math.min(pageSize, 10) : pageSize;
-        
+
         let apiUrl =
             `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/therapist-directory?country=${country.toLowerCase()}&page=${page}&pageSize=${actualPageSize}`;
 
@@ -94,9 +118,9 @@ export async function getTherapistsByCountry(
             // Cache control to help with browser caching
             next: { revalidate: 3600 }, // Cache for 1 hour
         };
-        
+
         const data = await fetchWithCache(apiUrl, options);
-        
+
         return {
             therapists: data.data.therapists || [],
             totalCount: data.data.totalCount || 0,
@@ -122,7 +146,7 @@ export async function getTherapistsByRegion(
     if (isMockDataEnabled()) {
         return getMockTherapistsByRegion(country, region, page, pageSize, name);
     }
-    
+
     try {
         // Convert to proper database format
         const regionDBCode = getRegionDBCode(country, region);
@@ -151,7 +175,7 @@ export async function getTherapistsByRegion(
             },
             next: { revalidate: 3600 }, // Cache for 1 hour
         };
-        
+
         const data = await fetchWithCache(apiUrl, options);
 
         return {
@@ -178,9 +202,16 @@ export async function getTherapistsByCity(
 ): Promise<DirectoryApiResponse> {
     // Use mock data during development if database isn't available
     if (isMockDataEnabled()) {
-        return getMockTherapistsByCity(country, region, city, page, pageSize, name);
+        return getMockTherapistsByCity(
+            country,
+            region,
+            city,
+            page,
+            pageSize,
+            name,
+        );
     }
-    
+
     try {
         // Convert to proper database format
         const regionDBCode = getRegionDBCode(country, region);
@@ -209,9 +240,9 @@ export async function getTherapistsByCity(
             },
             next: { revalidate: 3600 }, // Cache for 1 hour
         };
-        
+
         const data = await fetchWithCache(apiUrl, options);
-        
+
         return {
             therapists: data.data.therapists || [],
             totalCount: data.data.totalCount || 0,
@@ -219,7 +250,14 @@ export async function getTherapistsByCity(
     } catch (error) {
         console.error("Error in getTherapistsByCity:", error);
         // Fallback to mock data if there's an error
-        return getMockTherapistsByCity(country, region, city, page, pageSize, name);
+        return getMockTherapistsByCity(
+            country,
+            region,
+            city,
+            page,
+            pageSize,
+            name,
+        );
     }
 }
 
@@ -237,7 +275,7 @@ export async function searchTherapistsByName(
     try {
         // Optimize page size for faster initial load
         const actualPageSize = page === 1 ? Math.min(pageSize, 10) : pageSize;
-        
+
         let apiUrl =
             `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/therapist-directory?name=${
                 encodeURIComponent(name)
@@ -268,7 +306,7 @@ export async function searchTherapistsByName(
             },
             next: { revalidate: 3600 }, // Cache for 1 hour
         };
-        
+
         const data = await fetchWithCache(apiUrl, options);
 
         return {
@@ -292,7 +330,7 @@ export async function getPopularCitiesByRegion(
     if (isMockDataEnabled()) {
         return getMockCitiesByRegion(country, region);
     }
-    
+
     try {
         // Convert to proper database format
         const regionDBCode = getRegionDBCode(country, region);
@@ -314,9 +352,13 @@ export async function getPopularCitiesByRegion(
                 },
                 next: { revalidate: 86400 }, // Cache for 24 hours
             };
-            
+
             // Use longer cache TTL for cities (24 hours)
-            const data = await fetchWithCache(apiUrl, options, 24 * 60 * 60 * 1000);
+            const data = await fetchWithCache(
+                apiUrl,
+                options,
+                24 * 60 * 60 * 1000,
+            );
             return data.data.cities || [];
         } catch (error) {
             console.warn("Error fetching cities from API:", error);
@@ -339,7 +381,7 @@ export async function getPopularRegions(
     if (isMockDataEnabled()) {
         return getMockRegionsByCountry(country);
     }
-    
+
     try {
         // First try to get from static data as fallback
         const countryLower = country.toLowerCase();
@@ -366,9 +408,13 @@ export async function getPopularRegions(
                     },
                     next: { revalidate: 86400 }, // Cache for 24 hours
                 };
-                
+
                 // Use longer cache TTL for regions (24 hours)
-                const data = await fetchWithCache(apiUrl, options, 24 * 60 * 60 * 1000);
+                const data = await fetchWithCache(
+                    apiUrl,
+                    options,
+                    24 * 60 * 60 * 1000,
+                );
                 return data.data.regions || staticRegions;
             } catch (error) {
                 console.warn(
@@ -388,3 +434,17 @@ export async function getPopularRegions(
         return getMockRegionsByCountry(country);
     }
 }
+
+// Add this at the top of any functions that fetch therapists
+console.log(
+    `[DEBUG] Using ${
+        isMockDataEnabled() ? "MOCK" : "REAL"
+    } data for therapist directory`,
+);
+console.log(
+    `[DEBUG] Environment: ${process.env.NODE_ENV}, Mock flag: ${
+        typeof window !== "undefined"
+            ? localStorage.getItem("useMockData")
+            : "N/A"
+    }`,
+);
