@@ -24,7 +24,7 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "www.peak-resilience.com",
+        hostname: "peak-resilience.com",
       },
       {
         protocol: "https",
@@ -37,6 +37,10 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "assets-jane-cac1-24.janeapp.net",
+      },
+      {
+        protocol: "https",
+        hostname: "assets-jane-cac1-36.janeapp.net",
       },
       {
         protocol: "https",
@@ -109,6 +113,14 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "freemindtherapy.ca",
+      },
+      {
+        protocol: "https",
+        hostname: "bewellclinics.ca",
+      },
+      {
+        protocol: "https",
+        hostname: "healingrootstherapy.ca",
       },
       {
         protocol: "https",
