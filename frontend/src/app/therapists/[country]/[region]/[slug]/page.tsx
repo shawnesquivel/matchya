@@ -204,12 +204,13 @@ const TherapistContent = ({
 
       <div>
         {/* Banner and Header styled like the modal */}
-        <div className="bg-beige sm:py-14 py-12 relative"></div>
-        <div className="bg-white pt-8 sm:px-3 sm:pt-4 px-3">
+        <div className="bg-beige sm:pb-16 sm:pt-6 pb-14 pt-7 px-3 relative">
           {/* Add breadcrumbs */}
           <div className="container mx-auto mb-6">
             <DirectoryBreadcrumbs breadcrumbs={breadcrumbs} />
           </div>
+        </div>
+        <div className="bg-white pt-8 sm:px-3 sm:pt-4 px-3">
           <div className="grid grid-cols-6 sm:gap-8 gap-3 container mx-auto">
             <div className="relative md:col-span-1 sm:col-span-2 col-span-6">
               <div className="relative w-[40vw] md:w-full md:left-0 md:translate-x-0">
