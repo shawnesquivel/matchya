@@ -166,6 +166,10 @@ const nextConfig = {
         protocol: "https",
         hostname: "mlddlxmupu0y.i.optimole.com",
       },
+      {
+        protocol: "https",
+        hostname: "photos.psychologytoday.com",
+      },
     ],
   },
   env: {
