@@ -10,8 +10,10 @@ module.exports = {
     extend: {
       colors: {
         green: {
+          extraxlight: "#F6F7EA",
           extralight: "#BCBD88",
           light: "#C9D356",
+          muted: "#D2D988",
           DEFAULT: "#466421",
           dark: "#365216",
         },
@@ -30,6 +32,9 @@ module.exports = {
         white: {
           DEFAULT: "#FDFDFD",
           dark: "#F6F5F1",
+        },
+        yellow: {
+          DEFAULT: "#FEE984",
         },
         grey: {
           DEFAULT: "#F7F7F7",

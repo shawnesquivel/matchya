@@ -18,7 +18,11 @@ import TherapistQualifications from "@/app/components/TherapistQualifications";
 import { TherapistVideos } from "@/app/components/TherapistVideos";
 import { isValidRegion, getCountryName, getRegionName } from "@/app/utils/locationData";
 import DirectoryBreadcrumbs from "@/app/components/DirectoryBreadcrumbs";
-
+import TherapistPromptCarousel from "@/app/components/TherapistPromptCarousel";
+import GlobeIcon from "@/components/icons/GlobeIcon";
+import CalendarIcon from "@/components/icons/CalendarIcon";
+import { trackOutboundLink } from "@/app/utils/analytics";
+import TherapistContactSection from "@/app/components/TherapistContactSection";
 // Dynamically import client components
 const TherapistProfileTracker = dynamic(() => import("@/app/components/TherapistProfileTracker"), {
   ssr: false,
@@ -315,6 +319,21 @@ const TherapistContent = ({
               <TherapistQualifications therapist={therapist} variant="page" />
             </div>
           </div>
+        </div>
+        <div className="bg-green-extraxlight py-12 md:py-20 px-3">
+          <div className="flex flex-col gap-2 container mx-auto justify-center items-center">
+            <h2 className="font-new-spirit font-light text-2xl text-center">
+              Get to <span className="italic">Really</span> Know {therapist.first_name}
+            </h2>
+            <h3 className="text-base mb-10 text-center">
+              Fun facts about {therapist.first_name}'s approach and what working with{" "}
+              {therapist.first_name} is like.
+            </h3>
+            <TherapistPromptCarousel prompts={therapist.prompts || []} />
+          </div>
+        </div>
+        <div className="bg-green-extraxlight pb-12 md:pb-20 px-3">
+          <TherapistContactSection therapist={therapist} />
         </div>
       </div>
     </>
