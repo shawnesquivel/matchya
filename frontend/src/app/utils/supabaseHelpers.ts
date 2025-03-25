@@ -77,6 +77,16 @@ export interface SupabaseTherapistProfile {
 
   // Add the slug field
   slug?: string;
+
+  // Add prompts field to Supabase profile interface
+  prompts?: Array<{
+    id: string;
+    prompt_id: string;
+    question: string;
+    answer: string;
+    category_name: string;
+    category_display_name: string;
+  }>;
 }
 
 // Interface matching the frontend's expected structure
@@ -140,6 +150,8 @@ export interface TherapistProfile {
   is_verified?: boolean;
   // Add the slug field
   slug: string;
+  // Add the prompts field
+  prompts?: TherapistPrompt[];
 }
 
 // Add import for mock data
@@ -150,6 +162,16 @@ import {
 
 // Update import
 import { TherapistVideo } from "../components/VideoEmbed";
+
+// Add a new interface for therapist prompts
+export interface TherapistPrompt {
+  id: string;
+  prompt_id: string;
+  question: string;
+  answer: string;
+  category_name: string;
+  category_display_name: string;
+}
 
 /**
  * Fetch a therapist profile by name from the Supabase edge function
@@ -396,6 +418,8 @@ export function mapSupabaseToTherapistProfile(
         `${profile.first_name} ${profile.last_name}`,
         profile.id,
       ),
+    // Map prompts if they exist
+    prompts: profile.prompts || [],
   };
 }
 

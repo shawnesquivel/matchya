@@ -75,6 +75,37 @@ export const mockTherapist: Therapist = {
   slug: "emma-thompson-mock01",
 };
 
+// Add mock prompts for testing
+export const mockPrompts = [
+  {
+    id: "mock-prompt-1",
+    prompt_id: "prompt-personal-1",
+    question: "What led you to become a therapist?",
+    answer:
+      "I became a therapist because I've always been fascinated by human behavior and wanted to help others navigate life's challenges. After experiencing my own journey through therapy, I was inspired to provide that same support to others.",
+    category_name: "personal",
+    category_display_name: "Personal",
+  },
+  {
+    id: "mock-prompt-2",
+    prompt_id: "prompt-therapeutic-1",
+    question: "How would you describe your therapeutic approach?",
+    answer:
+      "I use an integrative approach that combines cognitive-behavioral therapy (CBT), mindfulness practices, and person-centered techniques. I believe therapy should be tailored to each individual's unique needs and goals, rather than following a rigid framework.",
+    category_name: "therapeutic",
+    category_display_name: "Therapeutic Approach",
+  },
+  {
+    id: "mock-prompt-3",
+    prompt_id: "prompt-fun-1",
+    question: "What's your favorite self-care activity?",
+    answer:
+      "On weekends, you'll find me hiking in nature or practicing yoga. I've found that connecting with the outdoors helps me reset and maintain my own mental health. I also enjoy cooking and trying new recipes as a form of creative expression.",
+    category_name: "fun",
+    category_display_name: "Fun Facts",
+  },
+];
+
 // Mock data for TherapistProfileModal
 export const mockTherapistProfile: TherapistProfile = {
   id: "mock-therapist-123",
@@ -298,6 +329,7 @@ export const mockTherapistProfile: TherapistProfile = {
     },
   ],
   slug: "emma-thompson-mock123",
+  prompts: mockPrompts,
 };
 
 // Helper functions for mock data

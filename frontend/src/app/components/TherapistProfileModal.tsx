@@ -6,6 +6,7 @@ import TherapistFees from "./TherapistFees";
 import TherapistLicenses from "./TherapistLicenses";
 import TherapistLocation from "./TherapistLocation";
 import TherapistQualifications from "./TherapistQualifications";
+import TherapistPromptCards from "./TherapistPromptCards";
 import { useTherapist } from "../contexts/TherapistContext";
 import { mockTherapistProfile } from "../utils/mockTherapistData";
 import Image from "next/image";
@@ -81,6 +82,7 @@ export default function TherapistProfileModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { useMockData } = useTherapist();
+  const [activeTab, setActiveTab] = useState("about");
 
   // Fetch therapist data when the modal opens and therapistId changes
   useEffect(() => {
@@ -306,81 +308,128 @@ export default function TherapistProfileModal({
               </div>
             </div>
 
-            {/* Main Content */}
-            <div className="bg-white sm:px-8 px-4">
-              <div className="container mx-auto gap-8 grid md:grid-cols-3 sm:grid-cols-1 md:py-14 sm:py-8">
-                <div className="md:col-span-2 sm:col-span-2 gap-8">
-                  <div className="flex flex-col gap-2">
-                    {/* Introduction videos above bio */}
-                    {displayTherapist.videos &&
-                      displayTherapist.videos.filter((v) => v.type === "intro").length > 0 && (
-                        <div className="mb-6">
-                          <h2 className="font-new-spirit font-light text-xl mb-2">
-                            Meet {displayTherapist.first_name}
-                          </h2>
-                          <TherapistVideos
-                            videos={displayTherapist.videos}
-                            variant="modal"
-                            type="intro"
-                          />
-                        </div>
-                      )}
-
-                    <h2 className="font-new-spirit font-light text-xl mb-2">
-                      About {displayTherapist.first_name}
-                    </h2>
-                    <p className="text-mblack">{displayTherapist.bio || "No bio available"}</p>
-
-                    {/* FAQ videos after bio in accordion style */}
-                    {displayTherapist.videos &&
-                      displayTherapist.videos.filter((v) => v.type === "faq").length > 0 && (
-                        <div className="mt-8">
-                          <h2 className="font-new-spirit font-light text-xl mb-6">FAQs</h2>
-                          <TherapistVideos
-                            videos={displayTherapist.videos}
-                            variant="modal"
-                            type="faq"
-                          />
-                        </div>
-                      )}
-
-                    {/* Testimonial videos below FAQ in carousel style */}
-                    {displayTherapist.videos &&
-                      displayTherapist.videos.filter((v) => v.type === "testimonial").length >
-                        0 && (
-                        <div className="mt-8">
-                          <h2 className="font-new-spirit font-light text-xl mb-6">Testimonials</h2>
-                          <TherapistVideos
-                            videos={displayTherapist.videos}
-                            variant="modal"
-                            type="testimonial"
-                          />
-                        </div>
-                      )}
-
-                    <div className="mt-8 flex flex-col gap-2">
-                      <h2 className="font-medium text-xl">Areas of Practice</h2>
-                      <CollapsibleAreasOfFocus
-                        areasOfFocus={displayTherapist.areas_of_focus || []}
-                      />
-                    </div>
-
-                    <div className="mt-8 flex flex-col gap-2">
-                      <h2 className="font-medium text-xl">Therapeutic Approaches</h2>
-                      <CollapsibleApproaches approaches={displayTherapist.approaches || []} />
-                    </div>
-                    <div className="mt-8 flex flex-col gap-2">
-                      <TherapistLicenses therapist={displayTherapist} variant="modal" />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="md:col-span-1 sm:col-span-2 space-y-8">
-                  <TherapistLocation therapist={displayTherapist} variant="modal" />
-                  <TherapistFees therapist={displayTherapist} variant="modal" />
-                  <TherapistQualifications therapist={displayTherapist} variant="modal" />
+            {/* Tabs for navigating between sections */}
+            <div className="bg-white sm:px-8 px-4 border-b border-gray-200">
+              <div className="container mx-auto">
+                <div className="flex space-x-6 overflow-x-auto whitespace-nowrap py-4">
+                  <button
+                    onClick={() => setActiveTab("about")}
+                    className={`relative py-1 px-2 text-left w-fit ${
+                      activeTab === "about" ? "text-gray-800" : "text-gray-600"
+                    } transition-all duration-300 group`}
+                  >
+                    About
+                    <span
+                      className={`absolute bottom-0 left-0 h-0.5 bg-gray-600 transition-width duration-300 group-hover:w-full ${
+                        activeTab === "about" ? "w-full" : "w-0"
+                      }`}
+                    ></span>
+                  </button>
+                  <button
+                    onClick={() => setActiveTab("prompts")}
+                    className={`relative py-1 px-2 text-left w-fit ${
+                      activeTab === "prompts" ? "text-gray-800" : "text-gray-600"
+                    } transition-all duration-300 group`}
+                  >
+                    Q&A
+                    <span
+                      className={`absolute bottom-0 left-0 h-0.5 bg-gray-600 transition-width duration-300 group-hover:w-full ${
+                        activeTab === "prompts" ? "w-full" : "w-0"
+                      }`}
+                    ></span>
+                  </button>
                 </div>
               </div>
+            </div>
+
+            {/* Main Content */}
+            <div className="bg-white sm:px-8 px-4">
+              {activeTab === "about" && (
+                <div className="container mx-auto gap-8 grid md:grid-cols-3 sm:grid-cols-1 md:py-14 sm:py-8">
+                  <div className="md:col-span-2 sm:col-span-2 gap-8">
+                    <div className="flex flex-col gap-2">
+                      {/* Introduction videos above bio */}
+                      {displayTherapist.videos &&
+                        displayTherapist.videos.filter((v) => v.type === "intro").length > 0 && (
+                          <div className="mb-6">
+                            <h2 className="font-new-spirit font-light text-xl mb-2">
+                              Meet {displayTherapist.first_name}
+                            </h2>
+                            <TherapistVideos
+                              videos={displayTherapist.videos}
+                              variant="modal"
+                              type="intro"
+                            />
+                          </div>
+                        )}
+
+                      <h2 className="font-new-spirit font-light text-xl mb-2">
+                        About {displayTherapist.first_name}
+                      </h2>
+                      <p className="text-mblack">{displayTherapist.bio || "No bio available"}</p>
+
+                      {/* FAQ videos after bio in accordion style */}
+                      {displayTherapist.videos &&
+                        displayTherapist.videos.filter((v) => v.type === "faq").length > 0 && (
+                          <div className="mt-8">
+                            <h2 className="font-new-spirit font-light text-xl mb-6">FAQs</h2>
+                            <TherapistVideos
+                              videos={displayTherapist.videos}
+                              variant="modal"
+                              type="faq"
+                            />
+                          </div>
+                        )}
+
+                      {/* Testimonial videos below FAQ in carousel style */}
+                      {displayTherapist.videos &&
+                        displayTherapist.videos.filter((v) => v.type === "testimonial").length >
+                          0 && (
+                          <div className="mt-8">
+                            <h2 className="font-new-spirit font-light text-xl mb-6">
+                              Testimonials
+                            </h2>
+                            <TherapistVideos
+                              videos={displayTherapist.videos}
+                              variant="modal"
+                              type="testimonial"
+                            />
+                          </div>
+                        )}
+
+                      <div className="mt-8 flex flex-col gap-2">
+                        <h2 className="font-medium text-xl">Areas of Practice</h2>
+                        <CollapsibleAreasOfFocus
+                          areasOfFocus={displayTherapist.areas_of_focus || []}
+                        />
+                      </div>
+
+                      <div className="mt-8 flex flex-col gap-2">
+                        <h2 className="font-medium text-xl">Therapeutic Approaches</h2>
+                        <CollapsibleApproaches approaches={displayTherapist.approaches || []} />
+                      </div>
+                      <div className="mt-8 flex flex-col gap-2">
+                        <TherapistLicenses therapist={displayTherapist} variant="modal" />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="md:col-span-1 sm:col-span-2 space-y-8">
+                    <TherapistLocation therapist={displayTherapist} variant="modal" />
+                    <TherapistFees therapist={displayTherapist} variant="modal" />
+                    <TherapistQualifications therapist={displayTherapist} variant="modal" />
+                  </div>
+                </div>
+              )}
+
+              {activeTab === "prompts" && (
+                <div className="container mx-auto py-8">
+                  <h2 className="font-new-spirit font-light text-2xl mb-6">
+                    Get to Know {displayTherapist.first_name}
+                  </h2>
+                  <TherapistPromptCards prompts={displayTherapist.prompts || []} variant="modal" />
+                </div>
+              )}
             </div>
           </div>
         ) : (

@@ -28,6 +28,10 @@ const nextConfig = {
       },
       {
         protocol: "https",
+        hostname: "www.peak-resilience.com",
+      },
+      {
+        protocol: "https",
         hostname: "assets-jane-cac1-22.janeapp.net",
       },
       {

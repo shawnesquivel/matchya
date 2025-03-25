@@ -54,7 +54,21 @@ Deno.serve(async (req) => {
         .select(`
           *,
           fees:therapist_fees(*),
-          licenses:therapist_licenses(*)
+          licenses:therapist_licenses(*),
+          prompt_answers:therapist_prompts(
+            id,
+            answer,
+            prompt_id,
+            prompts:prompts(
+              id,
+              question,
+              category:prompt_categories(
+                id,
+                name,
+                display_name
+              )
+            )
+          )
         `)
         .like("slug", `${partialSlug}%`)
         .limit(1);
@@ -100,6 +114,17 @@ Deno.serve(async (req) => {
       const therapistName = `${therapist.first_name || ""} ${
         therapist.last_name || ""
       }`.trim();
+
+      // Process prompt answers
+      const promptAnswers = therapist.prompt_answers || [];
+      const processedPrompts = promptAnswers.map((answer: any) => ({
+        id: answer.id,
+        prompt_id: answer.prompt_id,
+        question: answer.prompts?.question || "",
+        answer: answer.answer || "",
+        category_name: answer.prompts?.category?.name || "",
+        category_display_name: answer.prompts?.category?.display_name || "",
+      }));
 
       const transformedData = {
         // Basic info
@@ -149,6 +174,9 @@ Deno.serve(async (req) => {
 
         // Fees - raw data from database, we'll adapt frontend to work with this
         fees: therapistFees,
+
+        // Prompt answers
+        prompts: processedPrompts,
       };
 
       return new Response(
@@ -178,7 +206,21 @@ Deno.serve(async (req) => {
         .select(`
           *,
           fees:therapist_fees(*),
-          licenses:therapist_licenses(*)
+          licenses:therapist_licenses(*),
+          prompt_answers:therapist_prompts(
+            id,
+            answer,
+            prompt_id,
+            prompts:prompts(
+              id,
+              question,
+              category:prompt_categories(
+                id,
+                name,
+                display_name
+              )
+            )
+          )
         `)
         .eq("slug", searchSlug)
         .limit(1);
@@ -229,6 +271,17 @@ Deno.serve(async (req) => {
         therapist.last_name || ""
       }`.trim();
 
+      // Process prompt answers
+      const promptAnswers = therapist.prompt_answers || [];
+      const processedPrompts = promptAnswers.map((answer: any) => ({
+        id: answer.id,
+        prompt_id: answer.prompt_id,
+        question: answer.prompts?.question || "",
+        answer: answer.answer || "",
+        category_name: answer.prompts?.category?.name || "",
+        category_display_name: answer.prompts?.category?.display_name || "",
+      }));
+
       const transformedData = {
         // Basic info
         id: therapist.id,
@@ -277,6 +330,9 @@ Deno.serve(async (req) => {
 
         // Fees - raw data from database, we'll adapt frontend to work with this
         fees: therapistFees,
+
+        // Prompt answers
+        prompts: processedPrompts,
       };
 
       return new Response(
@@ -324,7 +380,21 @@ Deno.serve(async (req) => {
     let query = supabaseClient.from("therapists").select(`
         *,
         fees:therapist_fees(*),
-        licenses:therapist_licenses(*)
+        licenses:therapist_licenses(*),
+        prompt_answers:therapist_prompts(
+          id,
+          answer,
+          prompt_id,
+          prompts:prompts(
+            id,
+            question,
+            category:prompt_categories(
+              id,
+              name,
+              display_name
+            )
+          )
+        )
       `);
 
     if (nameParts.length > 1) {
@@ -382,6 +452,17 @@ Deno.serve(async (req) => {
       therapist.last_name || ""
     }`.trim();
 
+    // Process prompt answers
+    const promptAnswers = therapist.prompt_answers || [];
+    const processedPrompts = promptAnswers.map((answer: any) => ({
+      id: answer.id,
+      prompt_id: answer.prompt_id,
+      question: answer.prompts?.question || "",
+      answer: answer.answer || "",
+      category_name: answer.prompts?.category?.name || "",
+      category_display_name: answer.prompts?.category?.display_name || "",
+    }));
+
     const transformedData = {
       // Basic info
       id: therapist.id,
@@ -430,6 +511,9 @@ Deno.serve(async (req) => {
 
       // Fees - raw data from database, we'll adapt frontend to work with this
       fees: therapistFees,
+
+      // Prompt answers
+      prompts: processedPrompts,
     };
 
     return new Response(
