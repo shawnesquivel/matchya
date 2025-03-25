@@ -55,6 +55,16 @@ Deno.serve(async (req) => {
           *,
           fees:therapist_fees(*),
           licenses:therapist_licenses(*),
+          videos:therapist_videos(
+            id,
+            url,
+            platform,
+            type,
+            title,
+            description,
+            display_order,
+            is_active
+          ),
           prompt_answers:therapist_prompts(
             id,
             answer,
@@ -207,6 +217,16 @@ Deno.serve(async (req) => {
           *,
           fees:therapist_fees(*),
           licenses:therapist_licenses(*),
+          videos:therapist_videos(
+            id,
+            url,
+            platform,
+            type,
+            title,
+            description,
+            display_order,
+            is_active
+          ),
           prompt_answers:therapist_prompts(
             id,
             answer,
@@ -381,6 +401,16 @@ Deno.serve(async (req) => {
         *,
         fees:therapist_fees(*),
         licenses:therapist_licenses(*),
+        videos:therapist_videos(
+          id,
+          url,
+          platform,
+          type,
+          title,
+          description,
+          display_order,
+          is_active
+        ),
         prompt_answers:therapist_prompts(
           id,
           answer,
