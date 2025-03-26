@@ -8,7 +8,23 @@ export default clerkMiddleware((auth, request) => {
   // Get the pathname from the request
   const pathname = request.nextUrl.pathname;
 
-  console.log("Middleware executing for path:", pathname);
+  console.log(`Middleware executing for path: ${pathname}`);
+
+  // Skip processing for known paths
+  if (
+    pathname === "/" ||
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/static") ||
+    pathname.startsWith("/favicon") ||
+    pathname.includes(".") ||
+    pathname.includes("api/") ||
+    pathname.includes("not-found")
+  ) {
+    console.log(
+      `Middleware: Skipping known path: ${pathname.split("/")[1] || pathname}`,
+    );
+    return NextResponse.next();
+  }
 
   // Case 1: Handle old format URLs - /therapists/[slug]
   if (
@@ -157,8 +173,13 @@ async function handleInvalidSlugFormat(
     );
   } catch (error) {
     console.error("Middleware error for invalid slug format:", error);
-    // In case of error, redirect to the not found page
-    return NextResponse.redirect(new URL("/therapists/not-found", request.url));
+    // In case of error, redirect to the not found page with the search term
+    return NextResponse.redirect(
+      new URL(
+        `/therapists/not-found?q=${encodeURIComponent(invalidSlug || "")}`,
+        request.url,
+      ),
+    );
   }
 }
 
@@ -300,8 +321,13 @@ async function handleOldTherapistUrl(request: NextRequest) {
     );
   } catch (error) {
     console.error("Middleware error:", error);
-    // In case of error, redirect to the not found page
-    return NextResponse.redirect(new URL("/therapists/not-found", request.url));
+    // In case of error, redirect to the not found page with the search term if available
+    return NextResponse.redirect(
+      new URL(
+        `/therapists/not-found?q=${encodeURIComponent(oldSlug || "")}`,
+        request.url,
+      ),
+    );
   }
 }
 

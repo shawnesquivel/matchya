@@ -87,12 +87,45 @@ Deno.serve(async (req) => {
 
       if (!therapistResults || therapistResults.length === 0) {
         // If not found, return suggestions with more flexible matching
+        console.log(
+          `[profile-search] No exact match found for "${partialSlug}". Looking for similar slugs...`,
+        );
+
+        // Extract the first part of the slug (before any hyphen)
+        const slugBase = partialSlug.split("-")[0];
+        console.log(
+          `[profile-search] Using slug base "${slugBase}" for similar search`,
+        );
+
         const { data: similarTherapists, error: similarError } =
           await supabaseClient
             .from("therapists")
-            .select("id, first_name, last_name, slug")
-            .like("slug", `%${partialSlug.split("-")[0]}%`)
+            .select(
+              "id, first_name, last_name, slug, clinic_country, clinic_province",
+            )
+            .like("slug", `%${slugBase}%`)
             .limit(5);
+
+        if (similarError) {
+          console.error(
+            `[profile-search] Error searching for similar therapists:`,
+            similarError,
+          );
+        }
+
+        console.log(
+          `[profile-search] Similar search results: found ${
+            similarTherapists?.length || 0
+          } therapists`,
+        );
+
+        if (similarTherapists && similarTherapists.length > 0) {
+          console.log(
+            `[profile-search] Suggestion slugs: ${
+              similarTherapists.map((t) => t.slug).join(", ")
+            }`,
+          );
+        }
 
         return new Response(
           JSON.stringify({
@@ -100,6 +133,8 @@ Deno.serve(async (req) => {
             suggestions: similarTherapists || [],
             debug: {
               searchedPartialSlug: partialSlug,
+              slugBase: slugBase,
+              similarCount: similarTherapists?.length || 0,
             },
           }),
           {
