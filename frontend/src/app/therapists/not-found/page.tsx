@@ -13,7 +13,7 @@ interface SimilarTherapist {
   clinic_province?: string;
 }
 
-export default function TherapistNotFound() {
+export default function TherapistNotFoundPage() {
   const searchParams = useSearchParams();
   const [similarTherapists, setSimilarTherapists] = useState<SimilarTherapist[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -29,9 +29,13 @@ export default function TherapistNotFound() {
       setIsLoading(true);
 
       try {
-        // Call the profile-search edge function with partialSlug parameter
+        // Use the new therapist-name-search endpoint for better name matching
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/profile-search?partialSlug=${searchedName}`,
+          `${
+            process.env.NEXT_PUBLIC_SUPABASE_URL
+          }/functions/v1/therapist-name-search?nameSlug=${encodeURIComponent(
+            searchedName
+          )}&limit=3`,
           {
             method: "GET",
             headers: {
@@ -43,8 +47,26 @@ export default function TherapistNotFound() {
 
         const data = await response.json();
 
-        if (data.suggestions && data.suggestions.length > 0) {
-          setSimilarTherapists(data.suggestions);
+        if (data.data && data.data.length > 0) {
+          setSimilarTherapists(data.data);
+        } else {
+          // Fallback to the profile-search endpoint if no results
+          const fallbackResponse = await fetch(
+            `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/profile-search?partialSlug=${searchedName}`,
+            {
+              method: "GET",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+              },
+            }
+          );
+
+          const fallbackData = await fallbackResponse.json();
+
+          if (fallbackData.suggestions && fallbackData.suggestions.length > 0) {
+            setSimilarTherapists(fallbackData.suggestions);
+          }
         }
       } catch (error) {
         console.error("Error fetching similar therapists:", error);
@@ -62,6 +84,9 @@ export default function TherapistNotFound() {
       <p className="text-center text-gray-600 mb-8 max-w-md">
         We couldn't find the therapist you're looking for. They may have moved or the profile
         doesn't exist.
+        {searchedName && (
+          <span className="block mt-2 font-medium">Searched for: "{searchedName}"</span>
+        )}
       </p>
 
       {isLoading ? (
