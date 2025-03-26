@@ -4,8 +4,9 @@ import { inter } from "./styles/fonts";
 import { ClerkProvider } from "@clerk/nextjs";
 
 export const metadata = {
-  title: "matchya",
-  description: "find your ideal therapist, without the hassle.",
+  title: "Matchya | Therapist Finder",
+  description:
+    "Instantly connect with your ideal therapist using Matchya's AI-powered chat interface. Skip tedious searches and get personalized, empathetic matches tailored to your mental health needs.",
   icons: {
     icon: "/assets/images/favicon.png", // /public path
   },
@@ -18,16 +19,13 @@ export default function RootLayout({ children }) {
         <head>
           <link rel="stylesheet" href="https://use.typekit.net/vmx7tbu.css" />
           <script async src="https://tally.so/widgets/embed.js"></script>
-          <script
-            async
-            src="https://js.stripe.com/v3/pricing-table.js"
-          ></script>
+          <script async src="https://js.stripe.com/v3/pricing-table.js"></script>
           {/* Initialize dataLayer before GTM */}
           <script
             dangerouslySetInnerHTML={{
               __html: `
                 window.dataLayer = window.dataLayer || [];
-              `
+              `,
             }}
           />
           {/* Google Tag Manager */}
@@ -37,7 +35,7 @@ export default function RootLayout({ children }) {
               new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
               j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
               'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-              })(window,document,'script','dataLayer','GTM-NWJVRJF5');`
+              })(window,document,'script','dataLayer','GTM-NWJVRJF5');`,
             }}
           />
           {/* End Google Tag Manager */}
@@ -47,7 +45,7 @@ export default function RootLayout({ children }) {
           <noscript
             dangerouslySetInnerHTML={{
               __html: `<iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NWJVRJF5"
-              height="0" width="0" style="display:none;visibility:hidden"></iframe>`
+              height="0" width="0" style="display:none;visibility:hidden"></iframe>`,
             }}
           />
           {/* End Google Tag Manager (noscript) */}
