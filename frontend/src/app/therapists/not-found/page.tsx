@@ -123,7 +123,7 @@ export default function TherapistNotFoundPage() {
       <div className="flex flex-col sm:flex-row gap-4">
         <Link
           href="/therapists/browse"
-          className="px-6 py-3 bg-primary-blue text-white rounded-full hover:bg-primary-blue-dark transition duration-300"
+          className="px-6 py-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition duration-300"
         >
           Browse All Therapists
         </Link>
