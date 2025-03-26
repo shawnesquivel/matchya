@@ -104,6 +104,87 @@ export const mockPrompts = [
     category_name: "fun",
     category_display_name: "Fun Facts",
   },
+  {
+    id: "mock-prompt-4",
+    prompt_id: "prompt-personal-2",
+    question: "If therapy had a theme song, mine would be",
+    answer:
+      "I'd choose 'Lean on Me' by Bill Withers. It perfectly captures the essence of therapy - being there for each other, offering support, and knowing it's okay to ask for help when you need it.",
+    category_name: "personal",
+    category_display_name: "Personal",
+  },
+  {
+    id: "mock-prompt-5",
+    prompt_id: "prompt-therapeutic-2",
+    question: "In my therapy room, you can always expect",
+    answer:
+      "A warm, welcoming space with comfortable seating, soft lighting, and a collection of fidget toys. I believe creating a safe, calming environment is essential for open and honest communication.",
+    category_name: "therapeutic",
+    category_display_name: "Therapeutic Approach",
+  },
+  {
+    id: "mock-prompt-6",
+    prompt_id: "prompt-fun-2",
+    question: "The emoji that best represents my therapy style",
+    answer:
+      "🌱 - Like a growing plant, I believe in nurturing growth at your own pace, providing the right environment for healing and development.",
+    category_name: "fun",
+    category_display_name: "Fun Facts",
+  },
+  {
+    id: "mock-prompt-7",
+    prompt_id: "prompt-personal-3",
+    question: "My go-to self-care ritual is",
+    answer:
+      "Morning meditation followed by journaling. It helps me stay grounded and present, which is essential for both my personal well-being and my ability to support others.",
+    category_name: "personal",
+    category_display_name: "Personal",
+  },
+  {
+    id: "mock-prompt-8",
+    prompt_id: "prompt-therapeutic-3",
+    question: "A common misconception about therapy that I wish more people knew",
+    answer:
+      "That therapy is only for people with 'serious' problems. In reality, therapy is for everyone - it's about personal growth, self-discovery, and building resilience, not just addressing crises.",
+    category_name: "therapeutic",
+    category_display_name: "Therapeutic Approach",
+  },
+  {
+    id: "mock-prompt-9",
+    prompt_id: "prompt-fun-3",
+    question: "If my therapy style were a coffee order, it would be",
+    answer:
+      "A warm chai latte with oat milk - comforting, slightly sweet, and always there to help you start your day on a positive note.",
+    category_name: "fun",
+    category_display_name: "Fun Facts",
+  },
+  {
+    id: "mock-prompt-10",
+    prompt_id: "prompt-personal-4",
+    question: "A book that changed my perspective on mental health",
+    answer:
+      "'The Body Keeps the Score' by Bessel van der Kolk. It opened my eyes to the profound connection between mind and body, and how trauma affects us on every level.",
+    category_name: "personal",
+    category_display_name: "Personal",
+  },
+  {
+    id: "mock-prompt-11",
+    prompt_id: "prompt-therapeutic-4",
+    question: "I believe healing looks like",
+    answer:
+      "A journey of self-discovery where you learn to embrace all parts of yourself - the light and the shadow. It's about finding your voice, setting boundaries, and creating a life that feels authentic to you.",
+    category_name: "therapeutic",
+    category_display_name: "Therapeutic Approach",
+  },
+  {
+    id: "mock-prompt-12",
+    prompt_id: "prompt-fun-4",
+    question: "If I could add one 'unconventional' tool to my therapy practice, it would be",
+    answer:
+      "A therapy dog! I believe in the healing power of animal companionship and would love to have a gentle, trained therapy dog to help create an even more welcoming environment.",
+    category_name: "fun",
+    category_display_name: "Fun Facts",
+  }
 ];
 
 // Mock data for TherapistProfileModal
