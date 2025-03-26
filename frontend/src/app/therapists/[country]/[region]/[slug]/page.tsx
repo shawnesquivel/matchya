@@ -23,6 +23,11 @@ import GlobeIcon from "@/components/icons/GlobeIcon";
 import CalendarIcon from "@/components/icons/CalendarIcon";
 import { trackOutboundLink } from "@/app/utils/analytics";
 import TherapistContactSection from "@/app/components/TherapistContactSection";
+
+// Debug timestamp
+const RENDER_TIMESTAMP = new Date().toISOString();
+console.log(`[THERAPIST_PAGE] Rendering therapist page at: ${RENDER_TIMESTAMP}`);
+
 // Dynamically import client components
 const TherapistProfileTracker = dynamic(() => import("@/app/components/TherapistProfileTracker"), {
   ssr: false,
@@ -190,6 +195,13 @@ const TherapistContent = ({
       <TherapistProfileHeader therapist={therapist} />
       {/* Client component for tracking views */}
       <TherapistProfileTracker therapist={therapist} />
+
+      {/* Debug timestamp visible in development */}
+      {process.env.NODE_ENV !== "production" && (
+        <div className="bg-yellow-100 text-yellow-800 px-4 py-1 text-xs fixed bottom-0 right-0 z-50">
+          Page rendered: {RENDER_TIMESTAMP}
+        </div>
+      )}
 
       <Script
         id="adobe-fonts"
