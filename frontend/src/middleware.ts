@@ -18,7 +18,8 @@ export default clerkMiddleware((auth, request) => {
     pathname.startsWith("/favicon") ||
     pathname.includes(".") ||
     pathname.includes("api/") ||
-    pathname.includes("not-found")
+    pathname.includes("not-found") ||
+    pathname.startsWith("/therapists/browse/") // Skip all browse directory pages
   ) {
     console.log(
       `Middleware: Skipping known path: ${pathname.split("/")[1] || pathname}`,
