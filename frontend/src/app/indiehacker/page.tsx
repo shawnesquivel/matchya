@@ -5,6 +5,7 @@ import IndieHackerChatInput from "../components/IndieHackerChatInput";
 import IndieHackerChatMessages from "../components/IndieHackerChatMessages";
 import IndieHackerResults from "../components/IndieHackerResults";
 import IndieHackerFilters from "../components/IndieHackerFilters";
+import IndieHackerStarterPrompts from "../components/IndieHackerStarterPrompts";
 
 export default function IndieHackerPage() {
   return (
@@ -16,6 +17,7 @@ export default function IndieHackerPage() {
           </header>
           <div className="flex-grow flex flex-col overflow-hidden">
             <IndieHackerChatMessages />
+            <IndieHackerStarterPrompts />
             <IndieHackerChatInput />
           </div>
         </div>
