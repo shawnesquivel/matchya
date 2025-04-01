@@ -186,6 +186,7 @@ export function IndieHackerProvider({ children }: { children: React.ReactNode })
             query: message,
             minMrr: state.filters.minMrr,
             maxMrr: state.filters.maxMrr,
+            matchThreshold: 0.2,
           }),
         }
       );
