@@ -1,6 +1,6 @@
 export const metadata = {
-  title: "Indie Hacker Chatbot",
-  description: "Chat with a database of indie hackers and their products",
+  title: "cracked builders",
+  description: "Chat with a database of cracked builders and their products",
 };
 
 export default function IndieHackerLayout({ children }: { children: React.ReactNode }) {
