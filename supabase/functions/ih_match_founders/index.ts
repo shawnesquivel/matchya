@@ -39,10 +39,10 @@ Deno.serve(async (req) => {
             throw new Error("Missing environment variables");
         }
 
-        // Initialize Supabase client
+        // Initialize Supabase client - NO schema setting
         const supabase = createClient(supabaseUrl, supabaseKey, {
             auth: { persistSession: false },
-            db: { schema: "ih" },
+            // Remove db: { schema: "ih" }
         });
 
         // Get request body
@@ -55,6 +55,14 @@ Deno.serve(async (req) => {
             existingEmbedding = null,
         } = await req.json();
 
+        console.log("Request parameters:", {
+            query,
+            minMrr,
+            maxMrr,
+            limit,
+            matchThreshold,
+        });
+
         // Validate query
         if (!query && !existingEmbedding) {
             throw new Error("Query or existingEmbedding is required");
@@ -65,24 +73,74 @@ Deno.serve(async (req) => {
         // Generate embedding if not provided
         if (!existingEmbedding) {
             // Generate embedding for the query
+            console.log("Generating embedding for query:", query);
             const embeddingResponse = await openai.embeddings.create({
                 model: "text-embedding-3-small",
                 input: query,
                 encoding_format: "float",
             });
             embedding = embeddingResponse.data[0].embedding;
+            console.log(
+                "Generated embedding with dimensions:",
+                embedding.length,
+            );
         } else {
             embedding = existingEmbedding;
+            console.log("Using provided embedding");
         }
 
-        // Call the match_founders function
-        const { data: founders, error } = await supabase.rpc("match_founders", {
-            query_embedding: embedding,
-            match_threshold: matchThreshold,
-            min_mrr: minMrr,
-            max_mrr: maxMrr,
-            limit_count: limit,
-        });
+        // Try different approaches to call the function
+        let founders;
+        let error;
+
+        try {
+            console.log(
+                "Attempting to call match_founders using RPC with fully qualified name",
+            );
+            // Try using the fully qualified function name first
+            const result = await supabase.rpc("ih.match_founders", {
+                query_embedding: embedding,
+                match_threshold: matchThreshold,
+                min_mrr: minMrr,
+                max_mrr: maxMrr,
+                limit_count: limit,
+            });
+
+            founders = result.data;
+            error = result.error;
+
+            if (error) {
+                console.log("Error with ih.match_founders:", error.message);
+
+                // Fallback: Try using just the function name without schema
+                console.log(
+                    "Falling back to match_founders without schema prefix",
+                );
+                const fallbackResult = await supabase.rpc("match_founders", {
+                    query_embedding: embedding,
+                    match_threshold: matchThreshold,
+                    min_mrr: minMrr,
+                    max_mrr: maxMrr,
+                    limit_count: limit,
+                });
+
+                founders = fallbackResult.data;
+                error = fallbackResult.error;
+            }
+
+            console.log("RPC response:", {
+                success: !error,
+                resultCount: founders?.length || 0,
+                error: error?.message,
+            });
+        } catch (err) {
+            console.error("Error calling RPC:", err);
+            throw new Error(
+                `RPC error: ${
+                    err instanceof Error ? err.message : String(err)
+                }`,
+            );
+        }
 
         if (error) {
             throw new Error(`Error in match_founders: ${error.message}`);

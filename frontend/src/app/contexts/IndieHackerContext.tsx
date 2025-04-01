@@ -196,6 +196,10 @@ export function IndieHackerProvider({ children }: { children: React.ReactNode })
 
       const searchData = await searchResponse.json();
 
+      console.log("Starting search query:", message);
+      console.log("Search results:", searchData);
+      console.log("Matched founders:", searchData.founders?.length || 0);
+
       // Update founders list
       dispatch({
         type: ACTIONS.SET_FOUNDERS,

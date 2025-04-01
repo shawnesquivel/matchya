@@ -25,6 +25,13 @@ const openai = new OpenAI({
     apiKey: Deno.env.get("OPENAI_API_KEY"),
 });
 
+// Option 1: Add a type definition
+interface ProfileWithEmbedding {
+    id: any;
+    llm_founder_summary: any;
+    embedding?: any;
+}
+
 Deno.serve(async (req) => {
     try {
         // Handle CORS preflight request
@@ -39,26 +46,98 @@ Deno.serve(async (req) => {
             throw new Error("Missing environment variables");
         }
 
-        // Initialize Supabase client
+        // Initialize Supabase client WITH schema setting
         const supabase = createClient(supabaseUrl, supabaseKey, {
             auth: { persistSession: false },
+            db: { schema: "ih" }, // Set schema here
         });
 
         // Get request body
         const { batchSize = 10, forceUpdate = false } = await req.json();
 
-        // Query founders without embeddings or force update all
-        const query = supabase.from("ih.profiles");
-        if (!forceUpdate) {
-            query.is("embedding", null);
+        console.log("Request received with params:", {
+            batchSize,
+            forceUpdate,
+        });
+
+        // Use different approach based on forceUpdate
+        let profiles;
+        let queryError;
+        try {
+            console.log("Running query with forceUpdate:", forceUpdate);
+
+            if (forceUpdate) {
+                // Get all profiles
+                const result = await supabase.from("profiles")
+                    .select("id, llm_founder_summary")
+                    .limit(batchSize);
+
+                profiles = result.data;
+                queryError = result.error;
+            } else {
+                // Fallback approach: Get all profiles with embedding column and filter
+                try {
+                    console.log(
+                        "Fetching profiles and filtering for NULL embeddings",
+                    );
+
+                    // Get profiles with their embedding column so we can filter
+                    const result = await supabase.from("profiles")
+                        .select("id, llm_founder_summary, embedding")
+                        .limit(100); // Get more to find NULL ones
+
+                    if (result.error) {
+                        throw result.error;
+                    }
+
+                    // Filter in JavaScript for NULL embeddings
+                    profiles = result.data?.filter((p) =>
+                        p.embedding === null
+                    ) || [];
+                    profiles = profiles.slice(0, batchSize);
+
+                    console.log(
+                        `Found ${profiles.length} profiles with NULL embeddings`,
+                    );
+                } catch (err) {
+                    console.error("Error fetching profiles:", err);
+                    throw new Error(
+                        `Failed to fetch profiles: ${
+                            err instanceof Error ? err.message : String(err)
+                        }`,
+                    );
+                }
+            }
+
+            console.log("Query completed");
+        } catch (err) {
+            console.error("Exception during query:", err);
+            throw new Error(
+                `Query exception: ${
+                    err instanceof Error ? err.message : String(err)
+                }`,
+            );
         }
 
-        const { data: profiles, error } = await query
-            .select("id, llm_founder_summary")
-            .limit(batchSize);
+        if (queryError) {
+            throw new Error(`Error querying profiles: ${queryError.message}`);
+        }
 
-        if (error) {
-            throw new Error(`Error querying profiles: ${error.message}`);
+        if (!profiles || profiles.length === 0) {
+            return new Response(
+                JSON.stringify({
+                    success: true,
+                    message: "No profiles to process",
+                    processed: [],
+                    remaining: 0,
+                }),
+                {
+                    headers: {
+                        ...corsHeaders,
+                        "Content-Type": "application/json",
+                    },
+                },
+            );
         }
 
         console.log(`Processing ${profiles.length} profiles`);
@@ -88,7 +167,7 @@ Deno.serve(async (req) => {
 
                 // Update profile with embedding
                 const { data, error: updateError } = await supabase
-                    .from("ih.profiles")
+                    .from("profiles") // No "ih." prefix!
                     .update({ embedding: vectorString })
                     .eq("id", profile.id)
                     .select("id, first_name, last_name");
@@ -113,7 +192,7 @@ Deno.serve(async (req) => {
                 updates.push({
                     id: profile.id,
                     success: false,
-                    error: err.message,
+                    error: err instanceof Error ? err.message : String(err),
                 });
             }
         }
@@ -130,12 +209,12 @@ Deno.serve(async (req) => {
                 headers: { ...corsHeaders, "Content-Type": "application/json" },
             },
         );
-    } catch (error) {
+    } catch (error: unknown) {
         console.error("Error in ih_embed_profiles:", error);
         return new Response(
             JSON.stringify({
                 success: false,
-                error: error.message,
+                error: error instanceof Error ? error.message : String(error),
             }),
             {
                 status: 500,
