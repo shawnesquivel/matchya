@@ -129,7 +129,8 @@ export function IndieHackerProvider({ children }: { children: React.ReactNode })
         type: ACTIONS.ADD_MESSAGE,
         payload: {
           role: "assistant",
-          content: "Hi! I'm your indie hacker assistant. Ask me about founders and their products!",
+          content:
+            "Today's cracked builders are making anywhere from $1K MRR to $300K MRR. Who do you want to learn about?",
           id: "welcome",
         },
       });
@@ -207,7 +208,28 @@ export function IndieHackerProvider({ children }: { children: React.ReactNode })
         payload: searchData.founders || [],
       });
 
-      // Generate chat response
+      // Check if we found any founders
+      if (!searchData.founders || searchData.founders.length === 0) {
+        // Remove typing indicator
+        dispatch({
+          type: ACTIONS.REMOVE_TYPING_MESSAGE,
+          payload: typingMessageId,
+        });
+
+        // Add a specialized response for no matches
+        dispatch({
+          type: ACTIONS.ADD_MESSAGE,
+          payload: {
+            role: "assistant",
+            content:
+              "I couldn't find any cracked builders matching your query. Try asking about a different topic, product category, or using more general terms. For example, ask about 'SaaS founders', 'productivity tools', or 'bootstrapped startups'.",
+            id: `no-results-${Date.now()}`,
+          },
+        });
+        return; // Exit early, don't call the chat endpoint
+      }
+
+      // Generate chat response only if we have founders
       const chatResponse = await fetch(
         `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/ih_chat`,
         {

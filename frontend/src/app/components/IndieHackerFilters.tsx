@@ -32,48 +32,100 @@ export default function IndieHackerFilters() {
   };
 
   return (
-    <div className="border rounded-lg p-4 bg-gray-50 mb-4">
-      <h2 className="text-lg font-medium mb-4">Filter by MRR</h2>
-
-      <div className="space-y-4">
+    <div className="mx-4 bg-white rounded-xl p-5 shadow-sm border border-gray-200">
+      <div className="space-y-5">
         <div>
-          <label htmlFor="minMrr" className="block text-sm font-medium text-gray-700 mb-1">
-            Minimum MRR ($)
+          <label
+            htmlFor="minMrr"
+            className="block text-sm font-medium text-gray-700 mb-1 flex items-center"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4 mr-1 text-blue-500"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="12" y1="1" x2="12" y2="23"></line>
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+            </svg>
+            Minimum MRR
           </label>
-          <input
-            type="number"
-            id="minMrr"
-            value={minMrr}
-            onChange={(e) => setMinMrr(e.target.value)}
-            placeholder="Min MRR"
-            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <span className="text-gray-500 sm:text-sm">$</span>
+            </div>
+            <input
+              type="number"
+              id="minMrr"
+              value={minMrr}
+              onChange={(e) => setMinMrr(e.target.value)}
+              placeholder="0"
+              className="w-full pl-7 pr-3 py-2 border border-gray-200 bg-gray-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
+            />
+          </div>
         </div>
 
         <div>
-          <label htmlFor="maxMrr" className="block text-sm font-medium text-gray-700 mb-1">
-            Maximum MRR ($)
+          <label
+            htmlFor="maxMrr"
+            className="block text-sm font-medium text-gray-700 mb-1 flex items-center"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4 mr-1 text-blue-500"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="12" y1="1" x2="12" y2="23"></line>
+              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+            </svg>
+            Maximum MRR
           </label>
-          <input
-            type="number"
-            id="maxMrr"
-            value={maxMrr}
-            onChange={(e) => setMaxMrr(e.target.value)}
-            placeholder="Max MRR"
-            className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <span className="text-gray-500 sm:text-sm">$</span>
+            </div>
+            <input
+              type="number"
+              id="maxMrr"
+              value={maxMrr}
+              onChange={(e) => setMaxMrr(e.target.value)}
+              placeholder="No limit"
+              className="w-full pl-7 pr-3 py-2 border border-gray-200 bg-gray-50 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
+            />
+          </div>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-3 pt-2">
           <button
             onClick={applyFilters}
-            className="flex-1 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 focus:outline-none"
+            className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-2 rounded-lg hover:shadow-md focus:outline-none transition-all duration-200 flex items-center justify-center"
           >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4 mr-2"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+            </svg>
             Apply Filters
           </button>
           <button
             onClick={resetFilters}
-            className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-400 focus:outline-none"
+            className="flex-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 focus:outline-none transition-all duration-200 border border-gray-200"
           >
             Reset
           </button>
