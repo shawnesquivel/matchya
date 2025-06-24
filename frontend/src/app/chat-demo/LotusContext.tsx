@@ -16,6 +16,7 @@ export interface LotusSessionState {
   stage: number; // 1-5 (Warmup → Complete)
   messages: LotusMessage[];
   isComplete: boolean;
+  voiceMode: boolean;
 }
 
 // Stage names mapping
@@ -42,6 +43,7 @@ type LotusAction =
   | { type: "UPDATE_STAGE"; payload: number }
   | { type: "SET_COMPLETE"; payload: boolean }
   | { type: "SET_THERAPY_TYPE"; payload: string }
+  | { type: "SET_VOICE_MODE"; payload: boolean }
   | { type: "RESET_SESSION" }
   | { type: "LOAD_SESSION"; payload: LotusSessionState };
 
@@ -57,6 +59,7 @@ const createInitialState = (): LotusSessionState => ({
   stage: 1,
   messages: [],
   isComplete: false,
+  voiceMode: false,
 });
 
 // Reducer
@@ -83,6 +86,11 @@ const lotusReducer = (state: LotusSessionState, action: LotusAction): LotusSessi
         ...state,
         therapyType: action.payload,
       };
+    case "SET_VOICE_MODE":
+      return {
+        ...state,
+        voiceMode: action.payload,
+      };
     case "RESET_SESSION":
       return createInitialState();
     case "LOAD_SESSION":
@@ -99,6 +107,7 @@ interface LotusContextType {
   updateStage: (stage: number) => void;
   setComplete: (complete: boolean) => void;
   setTherapyType: (therapyType: string) => void;
+  setVoiceMode: (voiceMode: boolean) => void;
   resetSession: () => void;
   getCurrentStageName: () => string;
 }
@@ -148,6 +157,10 @@ export function LotusProvider({ children }: { children: React.ReactNode }) {
     dispatch({ type: "SET_THERAPY_TYPE", payload: therapyType });
   };
 
+  const setVoiceMode = (voiceMode: boolean) => {
+    dispatch({ type: "SET_VOICE_MODE", payload: voiceMode });
+  };
+
   const resetSession = () => {
     localStorage.removeItem("lotus-session");
     dispatch({ type: "RESET_SESSION" });
@@ -165,6 +178,7 @@ export function LotusProvider({ children }: { children: React.ReactNode }) {
         updateStage,
         setComplete,
         setTherapyType,
+        setVoiceMode,
         resetSession,
         getCurrentStageName,
       }}

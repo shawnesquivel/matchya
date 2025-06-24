@@ -1,0 +1,9 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+1. Review what the task is.
+2. Execute it in this chat, don't ask for my permission.
+3. Verify your changes. If you cannot verify, let me know how to verify the changes myself.
+4. Explain the changes simply, as per a checklist of everything originally mentioned. NEVER make other fixes, just mention them.

@@ -19,7 +19,7 @@ interface TherapyType {
 }
 
 interface TherapySelectorProps {
-  onTherapySelect: (therapyType: string) => void;
+  onTherapySelect: (selection: { therapyType: string; voiceMode: boolean }) => void;
 }
 
 const THERAPY_TYPES: TherapyType[] = [
@@ -182,6 +182,12 @@ function TherapyCard({
 
 // Main therapy selector component
 export default function TherapySelector({ onTherapySelect }: TherapySelectorProps) {
+  const [voiceModeEnabled, setVoiceModeEnabled] = React.useState(true);
+
+  const handleTherapySelect = (therapyType: string) => {
+    onTherapySelect({ therapyType, voiceMode: voiceModeEnabled });
+  };
+
   return (
     <div className="flex-1 flex items-start md:items-center justify-center p-4 md:p-8 min-h-full">
       <div className="w-full max-w-4xl mx-auto">
@@ -196,10 +202,23 @@ export default function TherapySelector({ onTherapySelect }: TherapySelectorProp
           </p>
         </div>
 
+        {/* Voice Mode Toggle */}
+        <div className="flex items-center justify-center mb-6">
+          <label className="flex items-center gap-2 cursor-pointer text-base text-mblack">
+            <input
+              type="checkbox"
+              checked={voiceModeEnabled}
+              onChange={(e) => setVoiceModeEnabled(e.target.checked)}
+              className="accent-green h-5 w-5"
+            />
+            Enable Voice Mode
+          </label>
+        </div>
+
         {/* Therapy cards grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           {THERAPY_TYPES.map((therapy) => (
-            <TherapyCard key={therapy.id} therapy={therapy} onSelect={onTherapySelect} />
+            <TherapyCard key={therapy.id} therapy={therapy} onSelect={handleTherapySelect} />
           ))}
         </div>
 
