@@ -6,7 +6,7 @@ import DeleteIcon from "../components/DeleteIcon";
 import Link from "next/link";
 import { useUser } from "@clerk/nextjs";
 import { fetchPineconeProfile } from "../utils/pineconeHelpers";
-import { UserButton } from "@clerk/clerk-react";
+import { UserButton } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import ProfileLoadingSkeleton from "./EditProfileLoadingSkeleton";
 
@@ -105,14 +105,11 @@ const EditProfileForm = ({ handleManualProfile }) => {
             qualifications: pineconeProfile.qualifications || [],
             specialties: pineconeProfile.specialties || [],
             approaches: pineconeProfile.approaches || [],
-            mental_health_role:
-              pineconeProfile.mental_health_role || "therapist",
+            mental_health_role: pineconeProfile.mental_health_role || "therapist",
             license_number: pineconeProfile.license_number || "",
             license_province: pineconeProfile.license_province || "",
-            license_expiration_month:
-              pineconeProfile.license_expiration_month || "",
-            license_expiration_year:
-              pineconeProfile.license_expiration_year || "",
+            license_expiration_month: pineconeProfile.license_expiration_month || "",
+            license_expiration_year: pineconeProfile.license_expiration_year || "",
             insurance: pineconeProfile.insurance || {
               direct_billing: false,
               accepted_providers: [],
@@ -246,10 +243,7 @@ const EditProfileForm = ({ handleManualProfile }) => {
                 {item}
               </div>
             )}
-            <button
-              onClick={() => handleDeleteItem(fieldName, index)}
-              className="ml-2"
-            >
+            <button onClick={() => handleDeleteItem(fieldName, index)} className="ml-2">
               <DeleteIcon />
             </button>
           </div>
@@ -257,9 +251,7 @@ const EditProfileForm = ({ handleManualProfile }) => {
         <input
           type="text"
           value={newChips[fieldName]}
-          onChange={(e) =>
-            setNewChips({ ...newChips, [fieldName]: e.target.value })
-          }
+          onChange={(e) => setNewChips({ ...newChips, [fieldName]: e.target.value })}
           onKeyPress={(e) => {
             if (e.key === "Enter") {
               handleAddChip(fieldName, newChips[fieldName]);
@@ -342,10 +334,7 @@ const EditProfileForm = ({ handleManualProfile }) => {
 
   if (user?.unsafeMetadata?.profileStarted === false) {
     return (
-      <Link
-        href={"/profile"}
-        className="underline underline-offset-2 ml-16 mt-16"
-      >
+      <Link href={"/profile"} className="underline underline-offset-2 ml-16 mt-16">
         Profile not started. Go to bio.
       </Link>
     );
@@ -368,9 +357,7 @@ const EditProfileForm = ({ handleManualProfile }) => {
                   ? "Edit your profile"
                   : "Help clients find you by filling in your profile"}
               </h1>
-              <p className="text-sm">
-                Having a good profile helps users find your practice.
-              </p>
+              <p className="text-sm">Having a good profile helps users find your practice.</p>
               {profileData?.name && (
                 <>
                   {determineProfileStatusText()}
@@ -378,20 +365,14 @@ const EditProfileForm = ({ handleManualProfile }) => {
                     {profileData?.subscription_id === "" ? (
                       <>
                         <p>You're on the free plan.</p>
-                        <Link
-                          href="/subscriptions"
-                          className="underline underline-offset-4"
-                        >
+                        <Link href="/subscriptions" className="underline underline-offset-4">
                           Upgrade Your Plan
                         </Link>
                       </>
                     ) : (
                       <>
                         <p>Your profile is live.</p>
-                        <Link
-                          href="/subscriptions"
-                          className="underline underline-offset-4"
-                        >
+                        <Link href="/subscriptions" className="underline underline-offset-4">
                           Manage Your Subscription
                         </Link>
                       </>
@@ -421,14 +402,10 @@ const EditProfileForm = ({ handleManualProfile }) => {
                 disabled={isLoading || savingProfile}
               />
               {saveProfileError && (
-                <p className="text-xs text-red-500 max-w-[200px] text-right">
-                  {saveProfileError}
-                </p>
+                <p className="text-xs text-red-500 max-w-[200px] text-right">{saveProfileError}</p>
               )}
               {saveProfileSuccess && (
-                <p className="text-xs text-green-500 text-right">
-                  Your profile was saved!
-                </p>
+                <p className="text-xs text-green-500 text-right">Your profile was saved!</p>
               )}
             </div>
           </div>
@@ -463,9 +440,7 @@ const EditProfileForm = ({ handleManualProfile }) => {
               <button
                 onClick={() => setActiveTab("qualifications")}
                 className={`relative py-1 px-2 text-left w-fit ${
-                  activeTab === "qualifications"
-                    ? "text-gray-800"
-                    : "text-gray-600"
+                  activeTab === "qualifications" ? "text-gray-800" : "text-gray-600"
                 } transition-all duration-300 group`}
               >
                 Expertise
@@ -478,9 +453,7 @@ const EditProfileForm = ({ handleManualProfile }) => {
               <button
                 onClick={() => setActiveTab("credentials")}
                 className={`relative py-1 px-2 text-left w-fit ${
-                  activeTab === "credentials"
-                    ? "text-gray-800"
-                    : "text-gray-600"
+                  activeTab === "credentials" ? "text-gray-800" : "text-gray-600"
                 } transition-all duration-300 group`}
               >
                 Credentials
@@ -505,11 +478,7 @@ const EditProfileForm = ({ handleManualProfile }) => {
                   </div>
                   <div className="profile-field">
                     <label>Gender</label>
-                    <select
-                      name="gender"
-                      value={profileData?.gender}
-                      onChange={handleChange}
-                    >
+                    <select name="gender" value={profileData?.gender} onChange={handleChange}>
                       <option value="male">Male</option>
                       <option value="female">Female</option>
                     </select>
@@ -626,11 +595,7 @@ const EditProfileForm = ({ handleManualProfile }) => {
                 <div className="grid grid-cols-2 gap-4 h-full">
                   <div className="profile-field col-span-2">
                     <label>Bio</label>
-                    <textarea
-                      name="bio"
-                      value={profileData?.bio}
-                      onChange={handleChange}
-                    />
+                    <textarea name="bio" value={profileData?.bio} onChange={handleChange} />
                   </div>
 
                   <div className="profile-field col-span-2">
@@ -643,11 +608,7 @@ const EditProfileForm = ({ handleManualProfile }) => {
                   </div>
                   <div className="profile-field col-span-2">
                     <label>Summary</label>
-                    <textarea
-                      name="summary"
-                      value={profileData?.summary}
-                      onChange={handleChange}
-                    />
+                    <textarea name="summary" value={profileData?.summary} onChange={handleChange} />
                   </div>
                 </div>
               )}
@@ -657,10 +618,7 @@ const EditProfileForm = ({ handleManualProfile }) => {
                     <label>Qualifications</label>
                     <div className="chips-container">
                       <div className="chips">
-                        {renderArrayInputs(
-                          profileData?.qualifications,
-                          "qualifications"
-                        )}
+                        {renderArrayInputs(profileData?.qualifications, "qualifications")}
                       </div>
                     </div>
                   </div>
@@ -668,10 +626,7 @@ const EditProfileForm = ({ handleManualProfile }) => {
                     <label>Specialties</label>
                     <div className="chips-container">
                       <div className="chips">
-                        {renderArrayInputs(
-                          profileData?.specialties,
-                          "specialties"
-                        )}
+                        {renderArrayInputs(profileData?.specialties, "specialties")}
                       </div>
                     </div>
                   </div>
@@ -679,10 +634,7 @@ const EditProfileForm = ({ handleManualProfile }) => {
                     <label>Approaches</label>
                     <div className="chips-container">
                       <div className="chips">
-                        {renderArrayInputs(
-                          profileData?.approaches,
-                          "approaches"
-                        )}
+                        {renderArrayInputs(profileData?.approaches, "approaches")}
                       </div>
                     </div>
                   </div>
@@ -698,9 +650,7 @@ const EditProfileForm = ({ handleManualProfile }) => {
                       onChange={handleChange}
                     >
                       <option value="therapist">Therapist</option>
-                      <option value="clinical counsellor">
-                        Clinical Counselor
-                      </option>
+                      <option value="clinical counsellor">Clinical Counselor</option>
                     </select>
                   </div>
                   <div className="profile-field">
@@ -710,10 +660,7 @@ const EditProfileForm = ({ handleManualProfile }) => {
                       name="license_number"
                       value={profileData.license_number}
                       onChange={(e) => {
-                        const onlyNumbers = e.target.value.replace(
-                          /[^0-9]/g,
-                          ""
-                        );
+                        const onlyNumbers = e.target.value.replace(/[^0-9]/g, "");
                         handleChange({
                           target: {
                             name: "license_number",
@@ -756,16 +703,11 @@ const EditProfileForm = ({ handleManualProfile }) => {
                         className="w-1/2"
                       >
                         <option value="">Month</option>
-                        {Array.from({ length: 12 }, (_, i) => i + 1).map(
-                          (month) => (
-                            <option
-                              key={month}
-                              value={month.toString().padStart(2, "0")}
-                            >
-                              {month.toString().padStart(2, "0")}
-                            </option>
-                          )
-                        )}
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
+                          <option key={month} value={month.toString().padStart(2, "0")}>
+                            {month.toString().padStart(2, "0")}
+                          </option>
+                        ))}
                       </select>
                       <select
                         name="license_expiration_year"
@@ -774,14 +716,13 @@ const EditProfileForm = ({ handleManualProfile }) => {
                         className="w-1/2"
                       >
                         <option value="">Year</option>
-                        {Array.from(
-                          { length: 10 },
-                          (_, i) => new Date().getFullYear() + i
-                        ).map((year) => (
-                          <option key={year} value={year.toString()}>
-                            {year}
-                          </option>
-                        ))}
+                        {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() + i).map(
+                          (year) => (
+                            <option key={year} value={year.toString()}>
+                              {year}
+                            </option>
+                          )
+                        )}
                       </select>
                     </div>
                   </div>
