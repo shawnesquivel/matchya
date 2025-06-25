@@ -174,7 +174,7 @@ export default function VoiceTherapyApp() {
       const transcriptItems = useVoiceTranscript().transcriptItems;
       const messages = transcriptItems
         .filter((item) => item.role === "user" || item.role === "assistant")
-        .map((item) => ({ role: item.role, content: item.text }));
+        .map((item) => ({ role: item.role, content: item.data?.text || item.title || "" }));
       // Find the current stage (default to 1 if not tracked elsewhere)
       let currentStage = 1;
       // Optionally, you could track stage in context or state if needed
