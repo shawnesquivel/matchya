@@ -1,14 +1,10 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
-
 import VoiceTranscript from "./components/VoiceTranscript";
 import VoiceEvents from "./components/VoiceEvents";
 import VoiceToolbar from "./components/VoiceToolbar";
-
-import { SessionStatus } from "../types";
-import type { RealtimeAgent } from "@openai/agents/realtime";
-
+import { SessionStatus } from "./types";
 import { useVoiceTranscript } from "./contexts/VoiceTranscriptContext";
 import { useVoiceEvent } from "./contexts/VoiceEventContext";
 import { useRealtimeSession } from "./hooks/useRealtimeSession";
