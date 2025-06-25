@@ -1,9 +1,10 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import TherapistNotFoundContent from "@/components/TherapistNotFoundContent";
 
-export default function GlobalTherapistNotFound() {
+function TherapistNotFoundInner() {
   const searchParams = useSearchParams();
 
   // Get search term from URL parameters and handle the case when it's "null"
@@ -11,4 +12,12 @@ export default function GlobalTherapistNotFound() {
   const searchedName = rawSearchTerm === "null" ? "" : rawSearchTerm;
 
   return <TherapistNotFoundContent searchedName={searchedName} />;
+}
+
+export default function GlobalTherapistNotFound() {
+  return (
+    <Suspense fallback={<TherapistNotFoundContent searchedName="" />}>
+      <TherapistNotFoundInner />
+    </Suspense>
+  );
 }

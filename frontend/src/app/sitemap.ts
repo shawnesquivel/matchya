@@ -5,7 +5,7 @@ import { COUNTRIES, REGIONS } from "./utils/locationData";
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL; // localhost or https://www.matchya.app
 
 if (!BASE_URL) {
-  throw new Error("NEXT_PUBLIC_BASE_URL must be set.");
+  throw new Error("sitemap.ts: NEXT_PUBLIC_BASE_URL must be set.");
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
