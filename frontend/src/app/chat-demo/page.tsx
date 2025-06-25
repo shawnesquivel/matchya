@@ -7,6 +7,7 @@ import ConversationPanel from "./ConversationPanel";
 import { useLotus, LotusProvider } from "./LotusContext";
 import "./styles/markdown.css";
 import Image from "next/image";
+import VoiceSession from "./voice/VoiceSession";
 
 // Custom scrollbar styles copied from main page.js
 const scrollbarStyles = `
@@ -32,12 +33,13 @@ const scrollbarStyles = `
 `;
 
 function ChatDemoContent() {
-  const { state, setTherapyType } = useLotus();
+  const { state, setTherapyType, setVoiceMode } = useLotus();
   const [currentView, setCurrentView] = useState<"chat" | "dashboard">("chat");
   const [isConversationPanelVisible, setIsConversationPanelVisible] = useState(false);
 
-  const handleTherapySelect = (therapyType: string) => {
-    setTherapyType(therapyType);
+  const handleTherapySelect = (selection: { therapyType: string; voiceMode: boolean }) => {
+    setTherapyType(selection.therapyType);
+    setVoiceMode(selection.voiceMode);
   };
 
   const toggleConversationPanel = () => {
@@ -133,6 +135,8 @@ function ChatDemoContent() {
             <Dashboard onBackToChat={handleBackToChat} />
           ) : !state.therapyType ? (
             <TherapySelector onTherapySelect={handleTherapySelect} />
+          ) : state.voiceMode ? (
+            <VoiceSession />
           ) : (
             <div className="max-w-3xl mx-auto h-full">
               <LotusPanel />

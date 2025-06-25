@@ -1,0 +1,266 @@
+# Lotus Therapy Platform - Post-MVP PRD
+
+# Overview  
+Building upon the successful Lotus MVP (a functional 5-stage CBT chatbot prototype), this PRD outlines the next development phases to transform the prototype into a production-ready therapy platform. The platform will include user authentication, safety assessments, voice therapy sessions, personalized homework generation, and analytics dashboards.
+
+The core value proposition remains: delivering accessible, structured cognitive-behavioral therapy sessions that adapt to user needs while maintaining clinical safety standards and providing actionable insights for personal growth.
+
+# Core Features  
+
+## 1. Infrastructure & Platform Foundation
+**What it does**: Establishes production-ready authentication, database persistence, rate limiting, and payment processing.
+**Why it's important**: Transforms localhost prototype into scalable, secure platform with proper user management and monetization.
+**How it works**: Clerk authentication, Supabase database integration, Stripe subscription management, and API rate limiting.
+
+## 2. Safety Assessment System  
+**What it does**: Pre-session screening to identify users requiring crisis intervention and redirect them to appropriate resources.
+**Why it's important**: Clinical safety requirement - prevents platform misuse for acute mental health crises.
+**How it works**: 5-question assessment that blocks platform access if warning flags detected, with hotline redirection.
+
+## 3. Enhanced Voice Session Management
+**What it does**: Provides time-bound, state-driven voice therapy sessions with clear progression indicators.
+**Why it's important**: Voice mode currently lacks session boundaries and user awareness of session duration/progress.
+**How it works**: Defined session duration, visual progress tracking, automatic session termination logic.
+
+## 4. Intelligent Reflection & Homework Generation
+**What it does**: Analyzes session content to generate personalized homework, insights, and cognitive bias identification.
+**Why it's important**: Extends therapeutic value beyond the session through actionable takeaways and continued learning.
+**How it works**: Post-session AI analysis creates weekly practice tasks, conversation highlights, and personalized stories.
+
+## 5. Analytics Dashboard & Progress Tracking
+**What it does**: Provides user insights into their cognitive patterns, biases, and therapy progress over time.
+**Why it's important**: Enables users to track growth and identify patterns in their mental health journey.
+**How it works**: NLP analysis of session transcripts, streak tracking, bias detection, and progress visualization.
+
+# User Experience  
+
+## User Personas
+- **Primary**: Adults (25-45) seeking accessible therapy for anxiety, stress, or general mental wellness
+- **Secondary**: Users with mild depression or cognitive behavioral patterns they want to address
+- **Excluded**: Users in acute crisis requiring immediate professional intervention
+
+## Key User Flows
+
+### New User Onboarding
+1. Sign up with Clerk authentication
+2. Complete safety assessment (5 questions)
+3. If safe: proceed to therapy mode selection
+4. If flagged: redirect to crisis resources with clear messaging
+
+### Therapy Session Flow
+1. Choose session mode (text or voice)
+2. Visual progress indicator shows session duration/stages
+3. Complete 5-stage CBT session with state tracking
+4. Automatic session completion with homework generation
+5. Review generated insights and weekly practice tasks
+
+### Dashboard Experience
+1. View session history and streak tracking
+2. Analyze cognitive bias patterns over time
+3. Access personalized homework assignments
+4. Track progress metrics and insights
+
+# Technical Architecture  
+
+## System Components
+- **Frontend**: Next.js with enhanced UI for progress tracking and dashboards
+- **Authentication**: Clerk integration with user management
+- **Database**: Supabase with schema for users, sessions, assessments, homework
+- **AI Processing**: OpenAI integration for session analysis and homework generation
+- **Payment**: Stripe subscription management
+- **Voice**: Existing voice agent infrastructure with enhanced state management
+
+## Data Models
+
+### Users Table
+```sql
+- id (uuid, primary key)
+- clerk_user_id (text, unique)
+- email (text)
+- subscription_status (enum)
+- safety_assessment_completed (boolean)
+- created_at (timestamp)
+```
+
+### Safety Assessments Table
+```sql
+- id (uuid, primary key)
+- user_id (uuid, foreign key)
+- responses (jsonb)
+- risk_level (enum: safe, flagged)
+- completed_at (timestamp)
+```
+
+### Sessions Table
+```sql
+- id (uuid, primary key)
+- user_id (uuid, foreign key)
+- mode (enum: text, voice)
+- stage (integer)
+- duration_minutes (integer)
+- transcript (text)
+- cognitive_biases_detected (text[])
+- completed_at (timestamp)
+```
+
+### Homework Table
+```sql
+- id (uuid, primary key)
+- session_id (uuid, foreign key)
+- user_id (uuid, foreign key)
+- practice_task (text)
+- highlights (text[])
+- cognitive_bias (text)
+- related_story (text)
+- created_at (timestamp)
+```
+
+## APIs and Integrations
+- **Clerk API**: User authentication and management
+- **Stripe API**: Subscription handling and payment processing
+- **OpenAI API**: Enhanced session analysis and homework generation
+- **Supabase Edge Functions**: Enhanced chat-lotus with database persistence
+- **Rate Limiting**: Middleware for API protection
+
+## Infrastructure Requirements
+- **Database**: Enhanced Supabase schema with new tables
+- **CDN**: Static asset delivery for dashboard charts/visualizations
+- **Monitoring**: Error tracking and performance monitoring
+- **Security**: Rate limiting, input validation, HIPAA considerations
+
+# Development Roadmap  
+
+## Phase 1: Infrastructure Foundation (Weeks 1-2)
+**MVP Requirements:**
+- Clerk authentication integration with existing Lotus pages
+- Database schema migration and user table creation
+- Basic rate limiting implementation
+- Stripe subscription setup (single tier)
+
+**Deliverable**: Authenticated users can access existing Lotus functionality with database persistence
+
+## Phase 2: Safety Assessment System (Week 3)
+**MVP Requirements:**
+- 5-question safety assessment UI component
+- Assessment logic and risk evaluation
+- Crisis resource page with hotline information
+- Database storage of assessment results
+- Blocking logic for flagged users
+
+**Deliverable**: New users complete safety screening before platform access
+
+## Phase 3: Enhanced Session Management (Week 4)
+**MVP Requirements:**
+- Session duration tracking and display
+- Enhanced progress indicators for both text and voice modes
+- Automatic session termination logic
+- Session state persistence in database
+- "Session complete" UI improvements
+
+**Deliverable**: Users have clear awareness of session progress and boundaries
+
+## Phase 4: Reflection & Homework Generation (Weeks 5-6)
+**MVP Requirements:**
+- Post-session analysis AI prompt development
+- Homework generation based on session content
+- Database schema for homework storage
+- Homework display UI component
+- Basic cognitive bias detection
+
+**Deliverable**: Users receive personalized homework after each session
+
+## Phase 5: Analytics Dashboard (Weeks 7-8)
+**MVP Requirements:**
+- Session history page with basic statistics
+- Streak tracking implementation
+- Cognitive bias pattern visualization
+- Progress metrics dashboard
+- Homework tracking and completion status
+
+**Deliverable**: Users can track their therapy progress and patterns over time
+
+## Phase 6: Polish & Optimization (Week 9)
+**MVP Requirements:**
+- Performance optimization and bug fixes
+- Enhanced error handling and user feedback
+- Mobile responsiveness improvements
+- Security audit and HIPAA compliance review
+
+**Deliverable**: Production-ready platform with polished user experience
+
+# Logical Dependency Chain
+
+## Foundation First (Phase 1)
+- Authentication must be implemented before any user-specific features
+- Database integration required for all subsequent phases
+- Rate limiting and basic security established early
+
+## Safety Before Therapy (Phase 2)  
+- Safety assessment must gate all therapy functionality
+- Crisis resources and blocking logic prevent misuse
+- Sets foundation for responsible therapy platform
+
+## Enhanced Sessions Before Analysis (Phase 3)
+- Session boundaries and state management improve user experience
+- Proper session completion enables accurate homework generation
+- Time tracking provides data for analytics
+
+## Content Generation Before Visualization (Phases 4-5)
+- Homework generation requires completed session data
+- Analytics dashboard builds upon homework and session history
+- Cognitive bias detection feeds into progress tracking
+
+## Polish and Security Last (Phase 6)
+- Final optimization after core functionality proven
+- Security review once all features implemented
+- Performance tuning based on complete feature set
+
+# Risks and Mitigations  
+
+## Technical Challenges
+**Risk**: Clerk integration complexity with existing authentication
+**Mitigation**: Start with basic Clerk setup, gradually migrate existing functionality
+
+**Risk**: Database migration affecting existing localStorage functionality  
+**Mitigation**: Implement hybrid approach, gradually migrate from localStorage to database
+
+**Risk**: AI homework generation producing inappropriate or harmful content
+**Mitigation**: Implement content filtering, human review process for generated content
+
+## Clinical Safety Risks
+**Risk**: Safety assessment missing users who need crisis intervention
+**Mitigation**: Conservative assessment criteria, regular review of assessment questions with mental health professionals
+
+**Risk**: Platform used inappropriately for severe mental health conditions
+**Mitigation**: Clear messaging about platform limitations, regular user education
+
+## Business and Resource Constraints
+**Risk**: Feature scope creep extending development timeline
+**Mitigation**: Strict MVP definition for each phase, defer nice-to-have features
+
+**Risk**: Stripe integration complexity for subscription management
+**Mitigation**: Start with single subscription tier, expand later
+
+**Risk**: Rate limiting affecting user experience
+**Mitigation**: Generous initial limits, monitoring and adjustment based on usage patterns
+
+# Appendix  
+
+## Safety Assessment Questions (Draft)
+1. "Are you currently having thoughts of harming yourself or others?"
+2. "Are you experiencing a mental health crisis that requires immediate attention?"
+3. "Have you been advised by a healthcare provider to seek immediate mental health care?"
+4. "Are you currently under the influence of substances that affect your judgment?"
+5. "Do you feel you need crisis intervention or emergency mental health services right now?"
+
+## Homework Generation Categories
+- **Practice Tasks**: Specific exercises related to session insights
+- **Conversation Highlights**: Key moments or breakthroughs identified
+- **Cognitive Bias Education**: Personalized explanation with relatable story
+- **Weekly Goals**: Actionable steps for continued progress
+
+## Analytics Metrics
+- **Engagement**: Session frequency, completion rates, streak tracking
+- **Progress**: Sentiment analysis over time, bias pattern changes
+- **Content**: Most common discussion topics, session stage effectiveness
+- **Homework**: Completion rates, user engagement with generated content 

@@ -3,8 +3,8 @@ description:
 globs: 
 alwaysApply: false
 ---
-PLANNING SEQUENCE:
-1. Start with # [PLANNING] or I might mention that I'm confirming the tradeoffs with one of the optoins.
+0. Don't create any document, answer directly in the chat.
+1. Start with # [Planning TOPIC] or I might mention that I'm confirming the tradeoffs with one of the optoins.
 2. Challenge the requirements from first principles, don't blindly accept.Don't use your knowledge base to code. If there are any docs you'd like to see from NextJS, Supabase. E.g., I'd like to see X documentation from NextJS.
 4. Tradeoffs: Evaluate 2-3 options and recommend pros/cons of several approaches. Provide high-level code snippets. Always provide both sides, e.g. if you provide a database recommendations, mention what frontend filtering/SQL could look like and vice versa.
 5. Recommendation based on the original requirements. Preference simple, balanced, but good for medium-term. 

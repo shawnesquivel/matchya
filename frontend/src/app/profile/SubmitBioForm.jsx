@@ -2,7 +2,7 @@
 import React from "react";
 import { aspekta } from "../styles/fonts";
 import PrimaryBtn from "../components/PrimaryBtn";
-import { UserButton } from "@clerk/clerk-react";
+import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 
 const SubmitBioForm = ({
@@ -33,8 +33,7 @@ const SubmitBioForm = ({
         <div className="text-center flex flex-col gap-4 items-center justify-center max-w-[800px]">
           <h1 className="lg:text-7xl text-3xl">Just 2 More Steps</h1>
           <h2 className="lg:text-2xl text-md">
-            Just paste your bio from your website to get a profile created
-            automatically.
+            Just paste your bio from your website to get a profile created automatically.
           </h2>
           <div className="flex flex-row mt-4 gap-4 w-full">
             <div className="profile-field w-full">
@@ -63,11 +62,7 @@ const SubmitBioForm = ({
               create a profile manually!
             </Link>
           </p>
-          {isLoading && (
-            <p className="text-amber-600">
-              Loading your profile, please wait....
-            </p>
-          )}
+          {isLoading && <p className="text-amber-600">Loading your profile, please wait....</p>}
           {errorMsg && (
             <>
               <p className="text-red-400 italic">{errorMsg}</p>

@@ -1,8 +1,0 @@
-node_modules/
-.next/
-.swc/
-.*.env
-.DS_Store
-env/
-.env.local
-*.tsbuildinfo
