@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import LotusPanel from "../chat-demo/LotusPanel";
+import { LotusProvider } from "../chat-demo/LotusContext";
 import "../chat-demo/styles/markdown.css";
 
 export default function LotusPage() {
@@ -14,7 +15,9 @@ export default function LotusPage() {
       {/* Main content - the Lotus chat panel */}
       <main className="flex-1 overflow-hidden">
         <div className="max-w-3xl mx-auto h-full">
-          <LotusPanel />
+          <LotusProvider>
+            <LotusPanel />
+          </LotusProvider>
         </div>
       </main>
     </div>
