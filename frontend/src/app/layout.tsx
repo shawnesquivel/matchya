@@ -27,7 +27,7 @@ interface RootLayoutProps {
 
 export default function RootLayout({ children }: RootLayoutProps): JSX.Element {
   return (
-    <ClerkProvider cssLayerName="clerk">
+    <ClerkProvider appearance={{ cssLayerName: "clerk" }}>
       <html lang="en">
         <head>
           <link rel="stylesheet" href="https://use.typekit.net/vmx7tbu.css" />
