@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
+import { useRouter } from "next/navigation";
 import VoiceTranscript from "./components/VoiceTranscript";
 import VoiceEvents from "./components/VoiceEvents";
 import VoiceToolbar from "./components/VoiceToolbar";
@@ -14,6 +15,9 @@ import useAudioDownload from "./hooks/useAudioDownload";
 import { useHandleSessionHistory } from "./hooks/useHandleSessionHistory";
 
 export default function VoiceTherapyApp() {
+  const router = useRouter();
+  const [hasShownError, setHasShownError] = useState(false);
+
   // Hardcode therapy agent scenario
   const agentSetKey = "therapyAgent";
   const agentConfigSet = therapyAgentScenario;
@@ -84,6 +88,7 @@ export default function VoiceTherapyApp() {
       logClientEvent(data, "error.no_ephemeral_key");
       console.error("No ephemeral key provided by the server");
       setSessionStatus("DISCONNECTED");
+      setHasShownError(true);
       return null;
     }
 
@@ -93,6 +98,7 @@ export default function VoiceTherapyApp() {
   const connectToRealtime = async () => {
     if (sessionStatus !== "DISCONNECTED") return;
     setSessionStatus("CONNECTING");
+    setHasShownError(false);
 
     try {
       const EPHEMERAL_KEY = await fetchEphemeralKey();
@@ -115,6 +121,7 @@ export default function VoiceTherapyApp() {
     } catch (err) {
       console.error("Error connecting via SDK:", err);
       setSessionStatus("DISCONNECTED");
+      setHasShownError(true);
     }
     return;
   };
@@ -123,6 +130,10 @@ export default function VoiceTherapyApp() {
     disconnect();
     setSessionStatus("DISCONNECTED");
     setIsPTTUserSpeaking(false);
+  };
+
+  const handleBackToChatDemo = () => {
+    router.push("/chat-demo");
   };
 
   const sendSimulatedUserMessage = (text: string) => {
@@ -236,7 +247,7 @@ export default function VoiceTherapyApp() {
   };
 
   useEffect(() => {
-    if (sessionStatus === "DISCONNECTED") {
+    if (sessionStatus === "DISCONNECTED" && !hasShownError) {
       connectToRealtime();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -316,7 +327,34 @@ export default function VoiceTherapyApp() {
 
   return (
     <div className="text-base flex flex-col h-screen bg-gray-100 text-gray-800 relative">
-      {sessionStatus === "DISCONNECTED" && (
+      {sessionStatus === "CONNECTING" && (
+        <div className="absolute inset-0 bg-white bg-opacity-95 flex items-center justify-center z-50">
+          <div className="text-center p-6 max-w-md">
+            <div className="mb-4">
+              <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
+                <svg
+                  className="w-8 h-8 text-blue-600 animate-spin"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                Connecting to Voice Service...
+              </h3>
+              <p className="text-gray-600">Please wait while we establish your voice session.</p>
+            </div>
+          </div>
+        </div>
+      )}
+      {hasShownError && (
         <div className="absolute inset-0 bg-white bg-opacity-95 flex items-center justify-center z-50">
           <div className="text-center p-6 max-w-md">
             <div className="mb-4">
@@ -350,12 +388,12 @@ export default function VoiceTherapyApp() {
               >
                 Retry Connection
               </button>
-              <a
-                href="/chat-demo"
-                className="block w-full bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors text-center"
+              <button
+                onClick={handleBackToChatDemo}
+                className="w-full bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors text-center"
               >
                 Back to Chat Demo
-              </a>
+              </button>
             </div>
           </div>
         </div>
