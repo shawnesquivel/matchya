@@ -13,6 +13,7 @@ type VoiceToolbarProps = {
   setIsEventsPaneExpanded: React.Dispatch<React.SetStateAction<boolean>>;
   isAudioPlaybackEnabled: boolean;
   setIsAudioPlaybackEnabled: React.Dispatch<React.SetStateAction<boolean>>;
+  onExitSession?: () => void;
 };
 
 function BottomToolbar({
@@ -27,6 +28,7 @@ function BottomToolbar({
   setIsEventsPaneExpanded,
   isAudioPlaybackEnabled,
   setIsAudioPlaybackEnabled,
+  onExitSession,
 }: VoiceToolbarProps) {
   const isConnected = sessionStatus === "CONNECTED";
   const isConnecting = sessionStatus === "CONNECTING";
@@ -58,6 +60,15 @@ function BottomToolbar({
       >
         {getConnectionButtonLabel()}
       </button>
+
+      {onExitSession && (
+        <button
+          onClick={onExitSession}
+          className="text-white text-base p-2 w-36 rounded-md h-full bg-orange-600 hover:bg-orange-700 cursor-pointer"
+        >
+          Exit Session
+        </button>
+      )}
 
       <div className="flex flex-row items-center gap-2">
         <input

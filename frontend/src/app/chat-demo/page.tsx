@@ -64,6 +64,16 @@ function ChatDemoContent() {
     setCurrentView("chat");
   };
 
+  const handleExitSession = () => {
+    // Reset therapy selection to go back to selector
+    setTherapyType("");
+    setVoiceMode(false);
+    setCurrentView("chat");
+  };
+
+  // Check if user is in an active therapy session
+  const isInActiveSession = state.therapyType && !state.isComplete;
+
   return (
     <div className="h-screen flex flex-col bg-beige overflow-hidden">
       {/* Global scrollbar styling */}
@@ -88,6 +98,14 @@ function ChatDemoContent() {
 
         {/* Navigation buttons */}
         <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+          {isInActiveSession && (
+            <button
+              onClick={handleExitSession}
+              className="text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-full transition-colors text-red-600 hover:text-white hover:bg-red-600 border border-red-600"
+            >
+              Exit Session
+            </button>
+          )}
           <button
             onClick={toggleConversationPanel}
             className={`text-xs sm:text-sm px-2 sm:px-3 py-1 rounded-full transition-colors ${

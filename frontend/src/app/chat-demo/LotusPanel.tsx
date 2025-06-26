@@ -6,12 +6,18 @@ import { useLotus, STAGE_NAMES, STAGE_DESCRIPTIONS } from "./LotusContext";
 
 // Progress indicator component
 function ProgressIndicator() {
-  const { state, getCurrentStageName } = useLotus();
+  const { state, getCurrentStageName, setTherapyType, setVoiceMode } = useLotus();
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  const handleExitSession = () => {
+    // Reset therapy selection to go back to selector
+    setTherapyType("");
+    setVoiceMode(false);
+  };
 
   const stageDescription = STAGE_DESCRIPTIONS[state.stage as keyof typeof STAGE_DESCRIPTIONS] || "";
 
@@ -29,6 +35,12 @@ function ProgressIndicator() {
           </div>
           <p className="text-xs text-gray-600 italic">{stageDescription}</p>
         </div>
+        <button
+          onClick={handleExitSession}
+          className="text-xs px-2 py-1 rounded-full transition-colors text-red-600 hover:text-white hover:bg-red-600 border border-red-600 ml-2"
+        >
+          Exit Session
+        </button>
       </div>
 
       {/* Progress bar */}

@@ -214,6 +214,14 @@ export default function VoiceTherapyApp() {
     }
   };
 
+  const handleExitSession = () => {
+    console.log("[VoiceTherapyApp] handleExitSession: Exiting voice session");
+    // Reset therapy selection to go back to selector
+    setVoiceMode(false);
+    setTherapyType("");
+    // No need to navigate since we're already on the chat-demo page
+  };
+
   const sendSimulatedUserMessage = (text: string) => {
     const id = uuidv4().slice(0, 32);
     addTranscriptMessage(id, "user", text, true);
@@ -513,6 +521,7 @@ export default function VoiceTherapyApp() {
         setIsEventsPaneExpanded={setIsEventsPaneExpanded}
         isAudioPlaybackEnabled={isAudioPlaybackEnabled}
         setIsAudioPlaybackEnabled={setIsAudioPlaybackEnabled}
+        onExitSession={handleExitSession}
       />
     </div>
   );
