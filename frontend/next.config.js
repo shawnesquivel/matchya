@@ -2,6 +2,7 @@
 const nextConfig = {
   experimental: {
     serverActions: true,
+    missingSuspenseWithCSRBailout: false,
   },
   webpack: (config) => {
     config.resolve.alias = {
