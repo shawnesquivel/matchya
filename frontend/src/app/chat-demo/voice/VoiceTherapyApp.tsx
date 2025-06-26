@@ -19,7 +19,7 @@ export default function VoiceTherapyApp() {
   console.log("[VoiceTherapyApp] Component mounting");
 
   const router = useRouter();
-  const { setVoiceMode } = useLotus();
+  const { setVoiceMode, setTherapyType } = useLotus();
   const [hasShownError, setHasShownError] = useState(false);
 
   // Hardcode therapy agent scenario
@@ -198,9 +198,10 @@ export default function VoiceTherapyApp() {
     console.log("[VoiceTherapyApp] handleBackToChatDemo: Router object:", router);
 
     try {
-      // Reset voice mode first
-      console.log("[VoiceTherapyApp] handleBackToChatDemo: Resetting voice mode");
+      // Reset therapy selection to go back to selector
+      console.log("[VoiceTherapyApp] handleBackToChatDemo: Resetting voice mode and therapy type");
       setVoiceMode(false);
+      setTherapyType("");
 
       // First try the router
       router.push("/chat-demo");
@@ -485,15 +486,6 @@ export default function VoiceTherapyApp() {
                 className="w-full bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors text-center"
               >
                 Back to Chat Demo
-              </button>
-              <button
-                onClick={() => {
-                  console.log("[VoiceTherapyApp] Test button clicked - overlay is working");
-                  alert("Overlay is working!");
-                }}
-                className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-center"
-              >
-                Test Overlay (Click Me)
               </button>
             </div>
           </div>
