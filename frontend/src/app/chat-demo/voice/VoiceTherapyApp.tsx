@@ -13,15 +13,25 @@ import { createModerationGuardrail } from "./agentConfigs/guardrails";
 import { therapyAgentScenario } from "./agentConfigs/therapyAgent";
 import useAudioDownload from "./hooks/useAudioDownload";
 import { useHandleSessionHistory } from "./hooks/useHandleSessionHistory";
+import { useLotus } from "../LotusContext";
 
 export default function VoiceTherapyApp() {
+  console.log("[VoiceTherapyApp] Component mounting");
+
   const router = useRouter();
+  const { setVoiceMode } = useLotus();
   const [hasShownError, setHasShownError] = useState(false);
 
   // Hardcode therapy agent scenario
   const agentSetKey = "therapyAgent";
   const agentConfigSet = therapyAgentScenario;
   const selectedAgentName = agentConfigSet[0]?.name || "";
+
+  console.log("[VoiceTherapyApp] Agent config loaded:", {
+    agentSetKey,
+    selectedAgentName,
+    agentCount: agentConfigSet.length,
+  });
 
   const { addTranscriptMessage, addTranscriptBreadcrumb } = useVoiceTranscript();
   const { logClientEvent, logServerEvent } = useVoiceEvent();
@@ -79,36 +89,86 @@ export default function VoiceTherapyApp() {
   // No codec selection, always use opus
 
   const fetchEphemeralKey = async (): Promise<string | null> => {
+    console.log("[VoiceTherapyApp] fetchEphemeralKey: Starting request");
     logClientEvent({ url: "/api/voice-session" }, "fetch_session_token_request");
-    const tokenResponse = await fetch("/api/voice-session", { method: "POST" });
-    const data = await tokenResponse.json();
-    logServerEvent(data, "fetch_session_token_response");
 
-    if (!data.client_secret?.value) {
-      logClientEvent(data, "error.no_ephemeral_key");
-      console.error("No ephemeral key provided by the server");
+    try {
+      console.log(
+        "[VoiceTherapyApp] fetchEphemeralKey: Making fetch request to /api/voice-session"
+      );
+      const tokenResponse = await fetch("/api/voice-session", { method: "POST" });
+
+      console.log("[VoiceTherapyApp] fetchEphemeralKey: Response status:", tokenResponse.status);
+      console.log(
+        "[VoiceTherapyApp] fetchEphemeralKey: Response headers:",
+        Object.fromEntries(tokenResponse.headers.entries())
+      );
+
+      const data = await tokenResponse.json();
+      console.log(
+        "[VoiceTherapyApp] fetchEphemeralKey: Response data:",
+        JSON.stringify(data, null, 2)
+      );
+
+      logServerEvent(data, "fetch_session_token_response");
+
+      if (!data.client_secret?.value) {
+        console.error("[VoiceTherapyApp] fetchEphemeralKey: No client_secret.value in response");
+        logClientEvent(data, "error.no_ephemeral_key");
+        console.error("No ephemeral key provided by the server");
+        setSessionStatus("DISCONNECTED");
+        setHasShownError(true);
+        return null;
+      }
+
+      console.log("[VoiceTherapyApp] fetchEphemeralKey: Successfully got ephemeral key");
+      return data.client_secret.value;
+    } catch (error) {
+      console.error("[VoiceTherapyApp] fetchEphemeralKey: Fetch error:", error);
+      logClientEvent(
+        { error: error instanceof Error ? error.message : "Unknown error" },
+        "error.fetch_failed"
+      );
       setSessionStatus("DISCONNECTED");
       setHasShownError(true);
       return null;
     }
-
-    return data.client_secret.value;
   };
 
   const connectToRealtime = async () => {
-    if (sessionStatus !== "DISCONNECTED") return;
+    console.log("[VoiceTherapyApp] connectToRealtime: Starting connection attempt");
+    console.log("[VoiceTherapyApp] connectToRealtime: Current session status:", sessionStatus);
+
+    if (sessionStatus !== "DISCONNECTED") {
+      console.log("[VoiceTherapyApp] connectToRealtime: Already connected or connecting, skipping");
+      return;
+    }
+
     setSessionStatus("CONNECTING");
     setHasShownError(false);
+    console.log("[VoiceTherapyApp] connectToRealtime: Set status to CONNECTING");
 
     try {
+      console.log("[VoiceTherapyApp] connectToRealtime: Fetching ephemeral key");
       const EPHEMERAL_KEY = await fetchEphemeralKey();
-      if (!EPHEMERAL_KEY) return;
+      if (!EPHEMERAL_KEY) {
+        console.log("[VoiceTherapyApp] connectToRealtime: No ephemeral key received, aborting");
+        return;
+      }
 
+      console.log("[VoiceTherapyApp] connectToRealtime: Got ephemeral key, preparing agents");
       const reorderedAgents = [...agentConfigSet];
+      console.log(
+        "[VoiceTherapyApp] connectToRealtime: Agent config:",
+        JSON.stringify(reorderedAgents, null, 2)
+      );
+
       // No agent switching, so just use the first agent
 
       const guardrail = createModerationGuardrail("therapy");
+      console.log("[VoiceTherapyApp] connectToRealtime: Created guardrail");
 
+      console.log("[VoiceTherapyApp] connectToRealtime: Calling connect with SDK");
       await connect({
         getEphemeralKey: async () => EPHEMERAL_KEY,
         initialAgents: reorderedAgents,
@@ -118,8 +178,9 @@ export default function VoiceTherapyApp() {
           addTranscriptBreadcrumb,
         },
       });
+      console.log("[VoiceTherapyApp] connectToRealtime: SDK connect completed successfully");
     } catch (err) {
-      console.error("Error connecting via SDK:", err);
+      console.error("[VoiceTherapyApp] connectToRealtime: Error connecting via SDK:", err);
       setSessionStatus("DISCONNECTED");
       setHasShownError(true);
     }
@@ -133,7 +194,23 @@ export default function VoiceTherapyApp() {
   };
 
   const handleBackToChatDemo = () => {
-    router.push("/chat-demo");
+    console.log("[VoiceTherapyApp] handleBackToChatDemo: Attempting navigation");
+    console.log("[VoiceTherapyApp] handleBackToChatDemo: Router object:", router);
+
+    try {
+      // Reset voice mode first
+      console.log("[VoiceTherapyApp] handleBackToChatDemo: Resetting voice mode");
+      setVoiceMode(false);
+
+      // First try the router
+      router.push("/chat-demo");
+      console.log("[VoiceTherapyApp] handleBackToChatDemo: Router.push called");
+    } catch (error) {
+      console.error("[VoiceTherapyApp] handleBackToChatDemo: Router error:", error);
+      // Fallback to window.location
+      console.log("[VoiceTherapyApp] handleBackToChatDemo: Falling back to window.location");
+      window.location.href = "/chat-demo";
+    }
   };
 
   const sendSimulatedUserMessage = (text: string) => {
@@ -247,8 +324,15 @@ export default function VoiceTherapyApp() {
   };
 
   useEffect(() => {
+    console.log("[VoiceTherapyApp] useEffect: Auto-connection check");
+    console.log("[VoiceTherapyApp] useEffect: sessionStatus:", sessionStatus);
+    console.log("[VoiceTherapyApp] useEffect: hasShownError:", hasShownError);
+
     if (sessionStatus === "DISCONNECTED" && !hasShownError) {
+      console.log("[VoiceTherapyApp] useEffect: Triggering auto-connection");
       connectToRealtime();
+    } else {
+      console.log("[VoiceTherapyApp] useEffect: Skipping auto-connection");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -327,6 +411,7 @@ export default function VoiceTherapyApp() {
 
   return (
     <div className="text-base flex flex-col h-screen bg-gray-100 text-gray-800 relative">
+      {console.log("[VoiceTherapyApp] Rendering with state:", { sessionStatus, hasShownError })}
       {sessionStatus === "CONNECTING" && (
         <div className="absolute inset-0 bg-white bg-opacity-95 flex items-center justify-center z-50">
           <div className="text-center p-6 max-w-md">
@@ -389,10 +474,22 @@ export default function VoiceTherapyApp() {
                 Retry Connection
               </button>
               <button
-                onClick={handleBackToChatDemo}
+                onClick={() => {
+                  console.log("[VoiceTherapyApp] Back to Chat Demo button clicked");
+                  handleBackToChatDemo();
+                }}
                 className="w-full bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors text-center"
               >
                 Back to Chat Demo
+              </button>
+              <button
+                onClick={() => {
+                  console.log("[VoiceTherapyApp] Test button clicked - overlay is working");
+                  alert("Overlay is working!");
+                }}
+                className="w-full bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-center"
+              >
+                Test Overlay (Click Me)
               </button>
             </div>
           </div>

@@ -8,7 +8,9 @@ export default clerkMiddleware((auth, request) => {
   // Get the pathname from the request
   const pathname = request.nextUrl.pathname;
 
-  console.log(`Middleware executing for path: ${pathname}`);
+  console.log(`[Middleware] Executing for path: ${pathname}`);
+  console.log(`[Middleware] Request method: ${request.method}`);
+  console.log(`[Middleware] Request URL: ${request.url}`);
 
   // Skip processing for known paths
   if (
@@ -21,14 +23,14 @@ export default clerkMiddleware((auth, request) => {
     pathname.startsWith("/therapists/browse/") // Skip all browse directory pages
   ) {
     console.log(
-      `Middleware: Skipping known path: ${pathname.split("/")[1] || pathname}`,
+      `[Middleware] Skipping known path: ${pathname.split("/")[1] || pathname}`,
     );
     return NextResponse.next();
   }
 
   // Allow API routes to pass through
   if (pathname.startsWith("/api/")) {
-    console.log(`Middleware: Allowing API route: ${pathname}`);
+    console.log(`[Middleware] Allowing API route: ${pathname}`);
     return NextResponse.next();
   }
 

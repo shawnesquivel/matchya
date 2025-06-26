@@ -14,6 +14,7 @@ const corsHeaders = {
 };
 
 Deno.serve(async (req) => {
+  console.log("req", req);
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
