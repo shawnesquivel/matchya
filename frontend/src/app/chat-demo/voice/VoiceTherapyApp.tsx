@@ -409,9 +409,13 @@ export default function VoiceTherapyApp() {
     localStorage.setItem("audioPlaybackEnabled", isAudioPlaybackEnabled.toString());
   }, [isAudioPlaybackEnabled]);
 
+  // Log render state
+  useEffect(() => {
+    console.log("[VoiceTherapyApp] Rendering with state:", { sessionStatus, hasShownError });
+  }, [sessionStatus, hasShownError]);
+
   return (
     <div className="text-base flex flex-col h-screen bg-gray-100 text-gray-800 relative">
-      {console.log("[VoiceTherapyApp] Rendering with state:", { sessionStatus, hasShownError })}
       {sessionStatus === "CONNECTING" && (
         <div className="absolute inset-0 bg-white bg-opacity-95 flex items-center justify-center z-50">
           <div className="text-center p-6 max-w-md">
