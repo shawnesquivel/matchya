@@ -10,12 +10,12 @@ export async function POST() {
             process.env.NEXT_PUBLIC_SUPABASE_URL ? "SET" : "NOT SET",
         );
         console.log(
-            "[API] SUPABASE_ANON_KEY:",
-            process.env.SUPABASE_ANON_KEY ? "SET" : "NOT SET",
+            "[API] NEXT_PUBLIC_SUPABASE_ANON_KEY:",
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? "SET" : "NOT SET",
         );
 
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-        const supabaseKey = process.env.SUPABASE_ANON_KEY;
+        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
         if (!supabaseUrl || !supabaseKey) {
             console.error(
