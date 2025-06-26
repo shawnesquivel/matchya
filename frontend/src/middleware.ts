@@ -17,13 +17,18 @@ export default clerkMiddleware((auth, request) => {
     pathname.startsWith("/static") ||
     pathname.startsWith("/favicon") ||
     pathname.includes(".") ||
-    pathname.includes("api/") ||
     pathname.includes("not-found") ||
     pathname.startsWith("/therapists/browse/") // Skip all browse directory pages
   ) {
     console.log(
       `Middleware: Skipping known path: ${pathname.split("/")[1] || pathname}`,
     );
+    return NextResponse.next();
+  }
+
+  // Allow API routes to pass through
+  if (pathname.startsWith("/api/")) {
+    console.log(`Middleware: Allowing API route: ${pathname}`);
     return NextResponse.next();
   }
 
