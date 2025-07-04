@@ -95,12 +95,9 @@ export async function POST(req: NextRequest) {
 async function createUserProfile(userData: any) {
     try {
         console.log("🔄 Creating user profile in Supabase...");
-        console.log("🔍 Supabase client config:", {
-            url: supabase.supabaseUrl,
-            key: supabase.supabaseKey
-                ? `${supabase.supabaseKey.substring(0, 30)}...`
-                : "❌ MISSING",
-        });
+        console.log(
+            "🔍 Supabase client initialized with environment variables",
+        );
 
         // Extract user data from Clerk webhook
         const userId = userData.id;
