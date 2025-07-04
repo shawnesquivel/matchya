@@ -5,6 +5,7 @@
 // Setup type definitions for built-in Supabase Runtime APIs
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { codeBlock } from "common-tags";
+import { createClient } from "@supabase/supabase-js";
 
 console.log("Chat Lotus: Hello!!");
 
@@ -19,6 +20,162 @@ function handleCors(req: Request) {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
+}
+
+// Initialize Supabase client
+const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+// Clerk JWT verification function
+async function verifyClerkJWT(authHeader: string): Promise<string> {
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    throw new Error("MISSING_AUTH_HEADER");
+  }
+
+  const token = authHeader.replace("Bearer ", "");
+
+  try {
+    // Extract user ID from JWT payload
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    const userId = payload.sub;
+
+    if (!userId) {
+      throw new Error("NO_USER_ID_IN_JWT");
+    }
+
+    // Verify user exists in our profiles table
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("id")
+      .eq("id", userId)
+      .single();
+
+    if (error) {
+      console.error(`[chat-lotus]: Profile lookup error for ${userId}:`, error);
+      throw new Error(`PROFILE_LOOKUP_FAILED: ${error.message}`);
+    }
+
+    if (!profile) {
+      throw new Error(`PROFILE_NOT_FOUND: ${userId}`);
+    }
+
+    return userId;
+  } catch (error) {
+    if (
+      error instanceof Error && error.message.startsWith("PROFILE_") ||
+      error.message.startsWith("NO_USER_ID") ||
+      error.message.startsWith("MISSING_AUTH")
+    ) {
+      throw error; // Re-throw our custom errors
+    }
+    throw new Error(
+      `JWT_DECODE_FAILED: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
+}
+
+// Database session management
+async function findOrCreateSession(
+  userId: string,
+  sessionId: string,
+  therapyType?: string,
+): Promise<any> {
+  console.log(
+    `[chat-lotus]: Finding/creating session ${sessionId} for user ${userId}`,
+  );
+
+  // Try to find existing session
+  const { data: existingSession, error: findError } = await supabase
+    .from("lotus_sessions")
+    .select("*")
+    .eq("id", sessionId)
+    .eq("user_id", userId)
+    .single();
+
+  if (existingSession) {
+    console.log(`[chat-lotus]: Found existing session:`, existingSession);
+    return existingSession;
+  }
+
+  // Create new session if not found
+  const sessionData = {
+    id: sessionId,
+    user_id: userId,
+    stage: "S1",
+    context: {
+      therapy_type: therapyType || "cbt",
+      voice_mode: false,
+      is_complete: false,
+    },
+    started_at: new Date().toISOString(),
+  };
+
+  const { data: newSession, error: createError } = await supabase
+    .from("lotus_sessions")
+    .insert([sessionData])
+    .select()
+    .single();
+
+  if (createError) {
+    throw new Error(`Failed to create session: ${createError.message}`);
+  }
+
+  console.log(`[chat-lotus]: Created new session:`, newSession);
+  return newSession;
+}
+
+// Save message to database
+async function saveMessage(
+  sessionId: string,
+  sender: "user" | "bot",
+  content: string,
+  llmPayload?: any,
+): Promise<void> {
+  const { error } = await supabase
+    .from("lotus_messages")
+    .insert([{
+      session_id: sessionId,
+      sender: sender,
+      body: content,
+      llm_payload: llmPayload || null,
+      created_at: new Date().toISOString(),
+    }]);
+
+  if (error) {
+    throw new Error(`Failed to save message: ${error.message}`);
+  }
+
+  console.log(`[chat-lotus]: Saved ${sender} message to database`);
+}
+
+// Update session stage and completion
+async function updateSession(
+  sessionId: string,
+  stage: number,
+  isComplete: boolean = false,
+): Promise<void> {
+  const stageMap = { 1: "S1", 2: "S2", 3: "S3", 4: "S4", 5: "S5" };
+  const stageValue = stageMap[stage as keyof typeof stageMap] || "S1";
+
+  const { error } = await supabase
+    .from("lotus_sessions")
+    .update({
+      stage: stageValue,
+      ended_at: isComplete ? new Date().toISOString() : null,
+      context: { is_complete: isComplete },
+    })
+    .eq("id", sessionId);
+
+  if (error) {
+    throw new Error(`Failed to update session: ${error.message}`);
+  }
+
+  console.log(
+    `[chat-lotus]: Updated session stage to ${stageValue}, complete: ${isComplete}`,
+  );
 }
 
 // Types for request/response
@@ -284,13 +441,78 @@ Deno.serve(async (req) => {
     const corsResponse = handleCors(req);
     if (corsResponse) return corsResponse;
 
-    // Parse request
+    // Step 1: Verify Clerk JWT and extract user ID
+    const authHeader = req.headers.get("Authorization");
+    let userId: string;
+
+    try {
+      userId = await verifyClerkJWT(authHeader || "");
+      console.log(`[chat-lotus]: Authenticated user: ${userId}`);
+    } catch (authError) {
+      console.error("[chat-lotus]: Authentication failed:", authError);
+      const errorMessage = authError instanceof Error
+        ? authError.message
+        : String(authError);
+
+      // Provide specific error codes for different auth failures
+      let statusCode = 401;
+      let errorCode = "AUTH_FAILED";
+
+      if (errorMessage.includes("PROFILE_NOT_FOUND")) {
+        errorCode = "PROFILE_NOT_FOUND";
+        statusCode = 404;
+      } else if (errorMessage.includes("PROFILE_LOOKUP_FAILED")) {
+        errorCode = "PROFILE_LOOKUP_FAILED";
+        statusCode = 500;
+      }
+
+      return new Response(
+        JSON.stringify({
+          error: "Authentication failed",
+          message: errorMessage,
+          code: errorCode,
+        }),
+        {
+          status: statusCode,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    // Step 2: Parse request
     const requestData: LotusRequest = await req.json();
     const { sessionId, stage, messages, userMessage } = requestData;
 
     console.log(
-      `[chat-lotus]: Session ${sessionId}, Stage ${stage}, Message: "${userMessage}"`,
+      `[chat-lotus]: User ${userId}, Session ${sessionId}, Stage ${stage}, Message: "${userMessage}"`,
     );
+
+    // Step 3: Find or create session in database
+    let dbSession;
+    try {
+      dbSession = await findOrCreateSession(userId, sessionId, "cbt");
+    } catch (dbError) {
+      console.error("[chat-lotus]: Database session error:", dbError);
+      return new Response(
+        JSON.stringify({
+          error: "Database session error",
+          message: dbError.message,
+          code: "DB_SESSION_FAILED",
+        }),
+        {
+          status: 500,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    // Step 4: Save user message to database
+    try {
+      await saveMessage(sessionId, "user", userMessage);
+    } catch (saveError) {
+      console.error("[chat-lotus]: Failed to save user message:", saveError);
+      // Continue processing but log the error
+    }
 
     // Generate message ID
     const messageId = `msg-${Date.now()}-${
@@ -501,18 +723,44 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Step 5: Save bot message to database
+    try {
+      const llmPayload = {
+        reasoning: plannerDecision,
+        usedFirstAid,
+        warnings: warnings.length > 0 ? warnings : undefined,
+        finishReason: responderFinishReason,
+      };
+      await saveMessage(sessionId, "bot", botMessage.trim(), llmPayload);
+    } catch (saveError) {
+      console.error("[chat-lotus]: Failed to save bot message:", saveError);
+      // Continue but log the error
+    }
+
+    // Step 6: Update session stage and completion status
+    const isComplete = newStage === 5;
+    try {
+      await updateSession(sessionId, newStage, isComplete);
+    } catch (updateError) {
+      console.error("[chat-lotus]: Failed to update session:", updateError);
+      // Continue but log the error
+    }
+
     // Prepare response
     const response: LotusResponse & { warnings?: string[] } = {
       messageId,
       botMessage: botMessage.trim(),
       newStage: newStage !== stage ? newStage : undefined,
       reasoning: plannerDecision,
-      sessionComplete: newStage === 5,
+      sessionComplete: isComplete,
       warnings: warnings.length > 0 ? warnings : undefined,
       usedFirstAid,
     };
 
     console.log("[chat-lotus]: Response:", response);
+    console.log(
+      `[chat-lotus]: Database operations completed for session ${sessionId}`,
+    );
 
     return new Response(
       JSON.stringify(response),

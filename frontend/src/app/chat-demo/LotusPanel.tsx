@@ -3,6 +3,7 @@ import React, { useRef, useEffect, useState } from "react";
 import ChatMessages from "./ChatMessages";
 import ChatInput from "./ChatInput";
 import { useLotus, STAGE_NAMES, STAGE_DESCRIPTIONS } from "./LotusContext";
+import { useAuth } from "@clerk/nextjs";
 
 // Progress indicator component
 function ProgressIndicator() {
@@ -175,6 +176,7 @@ function SessionComplete() {
 // Main Lotus Panel component
 function LotusContent() {
   const { state, addMessage, updateStage, setComplete } = useLotus();
+  const { getToken } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const hasInitializedWelcomeRef = useRef(false);
@@ -226,24 +228,47 @@ function LotusContent() {
     setIsLoading(true);
 
     try {
+      // Get Clerk JWT token
+      const token = await getToken();
+      if (!token) {
+        throw new Error("Authentication required. Please sign in.");
+      }
+
       // Call chat-lotus edge function with session context
-      const response = await fetch("http://127.0.0.1:54321/functions/v1/chat-lotus", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization:
-            "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0",
-        },
-        body: JSON.stringify({
-          sessionId: state.sessionId,
-          stage: state.stage,
-          messages: state.messages,
-          userMessage: message,
-        }),
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/chat-lotus`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            sessionId: state.sessionId,
+            stage: state.stage,
+            messages: state.messages,
+            userMessage: message,
+          }),
+        }
+      );
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+
+        // Handle specific error codes from chat-lotus
+        if (errorData.code === "AUTH_FAILED") {
+          throw new Error("Authentication failed. Please sign in again.");
+        } else if (errorData.code === "PROFILE_NOT_FOUND") {
+          throw new Error(
+            "Your profile hasn't been created yet. Please sign out and sign back in, then try again."
+          );
+        } else if (errorData.code === "PROFILE_LOOKUP_FAILED") {
+          throw new Error("Unable to verify your profile. Please try again in a moment.");
+        } else if (errorData.code === "DB_SESSION_FAILED") {
+          throw new Error("Database error. Please try again.");
+        } else {
+          throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        }
       }
 
       const data = await response.json();

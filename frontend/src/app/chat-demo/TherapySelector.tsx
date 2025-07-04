@@ -182,7 +182,7 @@ function TherapyCard({
 
 // Main therapy selector component
 export default function TherapySelector({ onTherapySelect }: TherapySelectorProps) {
-  const [voiceModeEnabled, setVoiceModeEnabled] = React.useState(true);
+  const [voiceModeEnabled, setVoiceModeEnabled] = React.useState(false);
 
   const handleTherapySelect = (therapyType: string) => {
     onTherapySelect({ therapyType, voiceMode: voiceModeEnabled });
@@ -211,7 +211,7 @@ export default function TherapySelector({ onTherapySelect }: TherapySelectorProp
               onChange={(e) => setVoiceModeEnabled(e.target.checked)}
               className="accent-green h-5 w-5"
             />
-            Enable Voice Mode
+            Use Voice Mode
           </label>
         </div>
 
