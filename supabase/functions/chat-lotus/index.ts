@@ -474,6 +474,9 @@ Deno.serve(async (req) => {
       } else if (errorMessage.includes("PROFILE_LOOKUP_FAILED")) {
         errorCode = "PROFILE_LOOKUP_FAILED";
         statusCode = 500;
+      } else if (errorMessage.includes("SAFETY_ASSESSMENT_REQUIRED")) {
+        errorCode = "SAFETY_ASSESSMENT_REQUIRED";
+        statusCode = 403; // Forbidden
       }
 
       return new Response(

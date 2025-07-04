@@ -18,54 +18,50 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const body = await req.json();
-        const { answers, passed, completedAt } = body;
+        const { answers } = await req.json();
 
-        console.log(
-            `🔒 Safety assessment for user ${userId}: ${
-                passed ? "PASSED" : "FAILED"
-            }`,
+        if (!answers || !Array.isArray(answers)) {
+            return NextResponse.json(
+                { error: "Invalid answers format" },
+                { status: 400 },
+            );
+        }
+
+        // Any "yes" (true) answer means the user has not passed
+        const has_passed_safety_assessment = !answers.some((answer) =>
+            answer === true
         );
+        const safety_assessment_completed_at = new Date().toISOString();
 
-        // Update user profile with safety assessment results
         const { data, error } = await supabase
             .from("profiles")
             .update({
-                has_passed_safety_assessment: passed,
-                safety_assessment_completed_at: completedAt,
+                has_passed_safety_assessment,
+                safety_assessment_completed_at,
                 safety_assessment_answers: answers,
-                updated_at: new Date().toISOString(),
             })
             .eq("id", userId)
-            .select();
+            .select()
+            .single();
 
         if (error) {
             console.error("❌ Failed to update safety assessment:", error);
             return NextResponse.json(
-                { error: "Failed to save assessment" },
+                { error: "Failed to update safety assessment" },
                 { status: 500 },
             );
         }
 
-        if (!data || data.length === 0) {
-            console.error("❌ User profile not found:", userId);
-            return NextResponse.json(
-                { error: "User profile not found" },
-                { status: 404 },
-            );
-        }
-
-        console.log(`✅ Safety assessment saved for user ${userId}`);
+        console.log(`✅ Safety assessment updated for ${userId}:`, {
+            has_passed_safety_assessment: data.has_passed_safety_assessment,
+        });
 
         return NextResponse.json({
-            success: true,
-            passed,
-            message: passed
-                ? "Safety assessment completed successfully"
-                : "Safety assessment indicates need for professional support",
+            message: "Safety assessment submitted successfully",
+            has_passed_safety_assessment: data.has_passed_safety_assessment,
         });
     } catch (error) {
-        console.error("❌ Safety assessment error:", error);
+        console.error("❌ Safety assessment API error:", error);
         return NextResponse.json(
             { error: "Internal server error" },
             { status: 500 },
