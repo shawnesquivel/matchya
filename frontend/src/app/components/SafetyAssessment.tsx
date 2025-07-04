@@ -114,13 +114,13 @@ export default function SafetyAssessment({ onComplete, onSkip }: SafetyAssessmen
   const progress = ((currentQuestion + 1) / SAFETY_QUESTIONS.length) * 100;
 
   return (
-    <div className="min-h-screen bg-beige-extralight flex items-center justify-center p-4">
-      <div className="max-w-2xl w-full bg-white rounded-lg shadow-sm border border-grey-light p-8">
+    <div className="flex-1 flex items-start md:items-center justify-center p-4 md:p-8 min-h-full bg-beige-extralight">
+      <div className="w-full max-w-2xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-orange/20 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg
-              className="w-8 h-8 text-red-600"
+              className="w-8 h-8 text-orange"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -129,92 +129,98 @@ export default function SafetyAssessment({ onComplete, onSkip }: SafetyAssessmen
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
               />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-mblack mb-2">Safety Assessment</h1>
-          <p className="text-grey text-sm">
+          <h1 className="text-3xl font-light text-mblack mb-4 font-new-spirit">
+            Safety Assessment
+          </h1>
+          <p className="text-grey-medium max-w-xl mx-auto text-base leading-relaxed">
             Before we begin, we need to ensure this service is appropriate for your current needs.
-            This assessment helps us determine if you might benefit from immediate professional
-            support.
+            This brief assessment helps us provide you with the most suitable support.
           </p>
         </div>
 
-        {/* Progress Bar */}
-        <div className="mb-8">
-          <div className="flex justify-between text-sm text-grey mb-2">
-            <span>
-              Question {currentQuestion + 1} of {SAFETY_QUESTIONS.length}
-            </span>
-            <span>{Math.round(progress)}% complete</span>
-          </div>
-          <div className="w-full bg-grey-light rounded-full h-2">
-            <div
-              className="bg-brand-accent h-2 rounded-full transition-all duration-300"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </div>
-
-        {/* Question */}
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold text-mblack mb-6">{currentQ.question}</h2>
-
-          <div className="space-y-3">
-            <button
-              onClick={() => handleAnswer(false)}
-              disabled={isSubmitting}
-              className="w-full p-4 text-left border border-grey-light rounded-lg hover:border-green hover:bg-green-50 transition-colors disabled:opacity-50"
-            >
-              <div className="flex items-center">
-                <div className="w-4 h-4 border-2 border-grey rounded-full mr-3 flex items-center justify-center">
-                  <div className="w-2 h-2 bg-green rounded-full opacity-0 hover:opacity-100 transition-opacity" />
-                </div>
-                <span className="text-mblack font-medium">No</span>
-              </div>
-            </button>
-
-            <button
-              onClick={() => handleAnswer(true)}
-              disabled={isSubmitting}
-              className="w-full p-4 text-left border border-grey-light rounded-lg hover:border-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
-            >
-              <div className="flex items-center">
-                <div className="w-4 h-4 border-2 border-grey rounded-full mr-3 flex items-center justify-center">
-                  <div className="w-2 h-2 bg-red-500 rounded-full opacity-0 hover:opacity-100 transition-opacity" />
-                </div>
-                <span className="text-mblack font-medium">Yes</span>
-              </div>
-            </button>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="text-center text-sm text-grey">
-          <p className="mb-2">
-            Your responses are confidential and used only to ensure your safety.
-          </p>
-          {onSkip && (
-            <button
-              onClick={onSkip}
-              className="text-brand-accent hover:underline"
-              disabled={isSubmitting}
-            >
-              Skip assessment (not recommended)
-            </button>
-          )}
-        </div>
-
-        {/* Loading State */}
-        {isSubmitting && (
-          <div className="absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-accent mx-auto mb-2"></div>
-              <p className="text-grey">Submitting assessment...</p>
+        {/* Main Card */}
+        <div className="bg-white rounded-lg p-6 md:p-8 border border-grey-light shadow-sm mb-6">
+          {/* Progress Bar */}
+          <div className="mb-8">
+            <div className="flex justify-between text-sm text-grey-medium mb-2">
+              <span>
+                Question {currentQuestion + 1} of {SAFETY_QUESTIONS.length}
+              </span>
+              <span>{Math.round(progress)}% complete</span>
+            </div>
+            <div className="w-full bg-grey-light rounded-full h-2">
+              <div
+                className="bg-green h-2 rounded-full transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              />
             </div>
           </div>
-        )}
+
+          {/* Question */}
+          <div className="mb-8">
+            <h2 className="text-xl font-medium text-mblack mb-6">{currentQ.question}</h2>
+
+            <div className="space-y-3">
+              <button
+                onClick={() => handleAnswer(false)}
+                disabled={isSubmitting}
+                className="w-full p-4 text-left border border-grey-light rounded-lg hover:border-green-light hover:bg-green/5 transition-all duration-200 group disabled:opacity-50"
+              >
+                <div className="flex items-center">
+                  <div className="w-4 h-4 border-2 border-grey-light rounded-full mr-3 flex items-center justify-center group-hover:border-green transition-colors">
+                    <div className="w-2 h-2 bg-green rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                  <span className="text-mblack group-hover:text-green-dark transition-colors">
+                    No
+                  </span>
+                </div>
+              </button>
+
+              <button
+                onClick={() => handleAnswer(true)}
+                disabled={isSubmitting}
+                className="w-full p-4 text-left border border-grey-light rounded-lg hover:border-orange hover:bg-orange/5 transition-all duration-200 group disabled:opacity-50"
+              >
+                <div className="flex items-center">
+                  <div className="w-4 h-4 border-2 border-grey-light rounded-full mr-3 flex items-center justify-center group-hover:border-orange transition-colors">
+                    <div className="w-2 h-2 bg-orange rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                  </div>
+                  <span className="text-mblack group-hover:text-orange transition-colors">Yes</span>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="text-center text-sm text-grey-medium">
+            <p className="mb-2">
+              Your responses are confidential and used only to ensure your safety.
+            </p>
+            {onSkip && (
+              <button
+                onClick={onSkip}
+                className="text-green hover:text-green-dark transition-colors hover:underline"
+                disabled={isSubmitting}
+              >
+                Skip assessment (not recommended)
+              </button>
+            )}
+          </div>
+
+          {/* Loading State */}
+          {isSubmitting && (
+            <div className="absolute inset-0 bg-white bg-opacity-90 flex items-center justify-center rounded-lg">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green mx-auto mb-2"></div>
+                <p className="text-grey-medium">Submitting assessment...</p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
