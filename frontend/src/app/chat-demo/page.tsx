@@ -54,12 +54,26 @@ function ChatDemoContent() {
         const response = await fetch("/api/user-profile");
         if (response.ok) {
           const profile = await response.json();
-          if (profile.has_passed_safety_assessment === true) {
-            setSafetyAssessmentStatus("passed");
-          } else if (profile.has_passed_safety_assessment === false) {
-            setSafetyAssessmentStatus("failed");
-          } else {
+
+          console.log("🔍 Safety Assessment Status Check:", {
+            has_passed_safety_assessment: profile.has_passed_safety_assessment,
+            safety_assessment_completed_at: profile.safety_assessment_completed_at,
+            user_id: profile.id,
+          });
+
+          // Check if user has actually completed the assessment
+          if (!profile.safety_assessment_completed_at) {
+            // User hasn't taken the assessment yet
+            console.log("✅ User needs to take assessment");
             setSafetyAssessmentStatus("needed");
+          } else if (profile.has_passed_safety_assessment === true) {
+            // User took assessment and passed
+            console.log("✅ User passed assessment");
+            setSafetyAssessmentStatus("passed");
+          } else {
+            // User took assessment and failed
+            console.log("❌ User failed assessment");
+            setSafetyAssessmentStatus("failed");
           }
         } else {
           setSafetyAssessmentStatus("needed");
@@ -118,6 +132,11 @@ function ChatDemoContent() {
   };
 
   const handleReturnFromCrisis = () => {
+    setShowCrisisResources(false);
+  };
+
+  const handleRetakeAssessment = () => {
+    setSafetyAssessmentStatus("needed");
     setShowCrisisResources(false);
   };
 
@@ -200,7 +219,10 @@ function ChatDemoContent() {
         {/* Main Content Area */}
         <div className="flex-1 overflow-y-auto">
           {showCrisisResources ? (
-            <CrisisResources onReturn={handleReturnFromCrisis} />
+            <CrisisResources
+              onReturn={handleReturnFromCrisis}
+              onRetakeAssessment={handleRetakeAssessment}
+            />
           ) : safetyAssessmentStatus === "loading" ? (
             <div className="h-full flex items-center justify-center">
               <div className="text-center">
@@ -235,12 +257,25 @@ function ChatDemoContent() {
                   Based on your responses, we recommend seeking immediate professional support. Our
                   AI therapy chat is not appropriate for crisis situations.
                 </p>
-                <button
-                  onClick={() => setShowCrisisResources(true)}
-                  className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors"
-                >
-                  View Crisis Resources
-                </button>
+                <div className="space-y-3">
+                  <button
+                    onClick={() => setShowCrisisResources(true)}
+                    className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors w-full sm:w-auto"
+                  >
+                    View Crisis Resources
+                  </button>
+                  <div className="text-center">
+                    <p className="text-sm text-grey mb-2">
+                      If your situation has changed, you may retake the assessment:
+                    </p>
+                    <button
+                      onClick={handleRetakeAssessment}
+                      className="text-brand-accent hover:underline text-sm font-medium"
+                    >
+                      Retake Safety Assessment
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           ) : currentView === "dashboard" ? (

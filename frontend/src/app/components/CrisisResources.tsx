@@ -2,6 +2,7 @@ import React from "react";
 
 interface CrisisResourcesProps {
   onReturn?: () => void;
+  onRetakeAssessment?: () => void;
 }
 
 const CRISIS_RESOURCES = [
@@ -62,7 +63,7 @@ const IMMEDIATE_ACTIONS = [
   },
 ];
 
-export default function CrisisResources({ onReturn }: CrisisResourcesProps) {
+export default function CrisisResources({ onReturn, onRetakeAssessment }: CrisisResourcesProps) {
   return (
     <div className="min-h-screen bg-red-50 p-4">
       <div className="max-w-4xl mx-auto">
@@ -209,17 +210,30 @@ export default function CrisisResources({ onReturn }: CrisisResourcesProps) {
           </div>
         </div>
 
-        {/* Return Button */}
-        {onReturn && (
-          <div className="text-center">
+        {/* Action Buttons */}
+        <div className="text-center space-y-4">
+          {onReturn && (
             <button
               onClick={onReturn}
-              className="bg-grey-light text-mblack px-6 py-3 rounded-lg hover:bg-grey transition-colors"
+              className="bg-grey-light text-mblack px-6 py-3 rounded-lg hover:bg-grey transition-colors mr-4"
             >
               ← Return to Previous Page
             </button>
-          </div>
-        )}
+          )}
+          {onRetakeAssessment && (
+            <div>
+              <p className="text-sm text-grey mb-2">
+                If your situation has improved, you may retake the safety assessment:
+              </p>
+              <button
+                onClick={onRetakeAssessment}
+                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Retake Safety Assessment
+              </button>
+            </div>
+          )}
+        </div>
 
         {/* Footer */}
         <div className="text-center mt-8 text-sm text-grey">
