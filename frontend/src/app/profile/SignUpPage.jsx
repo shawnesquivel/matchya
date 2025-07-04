@@ -66,8 +66,8 @@ const SignUpPage = () => {
             <div className="flex flex-col md:gap-6 gap-2 lg:text-left text-center">
               <h1 className="lg:text-7xl text-3xl">Go Live, Get Clients</h1>
               <h2 className="lg:text-2xl text-md">
-                Get your profile live in ~3 minutes and let our system handle
-                client acquisition for you.
+                Get your profile live in ~3 minutes and let our system handle client acquisition for
+                you.
               </h2>
             </div>
             {/* <input type="text" placeholder="Your Email" />

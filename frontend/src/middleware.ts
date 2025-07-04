@@ -28,8 +28,14 @@ export default clerkMiddleware((auth, request) => {
     return NextResponse.next();
   }
 
-  // Allow API routes to pass through
+  // Allow API routes to pass through, but ensure webhooks are explicitly public
   if (pathname.startsWith("/api/")) {
+    // Special handling for webhook routes - these must be public
+    if (pathname.startsWith("/api/webhooks")) {
+      console.log(`[Middleware] Allowing public webhook route: ${pathname}`);
+      return NextResponse.next();
+    }
+
     console.log(`[Middleware] Allowing API route: ${pathname}`);
     return NextResponse.next();
   }
