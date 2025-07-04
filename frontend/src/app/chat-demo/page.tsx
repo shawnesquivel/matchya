@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import LotusPanel from "./LotusPanel";
 import TherapySelector from "./TherapySelector";
 import Dashboard from "./Dashboard";
@@ -8,6 +8,9 @@ import { useLotus, LotusProvider } from "./LotusContext";
 import "./styles/markdown.css";
 import Image from "next/image";
 import VoiceSession from "./voice/VoiceSession";
+import SafetyAssessment from "../components/SafetyAssessment";
+import CrisisResources from "../components/CrisisResources";
+import { useUser } from "@clerk/nextjs";
 
 // Custom scrollbar styles copied from main page.js
 const scrollbarStyles = `
@@ -34,8 +37,41 @@ const scrollbarStyles = `
 
 function ChatDemoContent() {
   const { state, setTherapyType, setVoiceMode } = useLotus();
+  const { user } = useUser();
   const [currentView, setCurrentView] = useState<"chat" | "dashboard">("chat");
   const [isConversationPanelVisible, setIsConversationPanelVisible] = useState(false);
+  const [safetyAssessmentStatus, setSafetyAssessmentStatus] = useState<
+    "loading" | "needed" | "passed" | "failed"
+  >("loading");
+  const [showCrisisResources, setShowCrisisResources] = useState(false);
+
+  // Check safety assessment status on mount
+  useEffect(() => {
+    if (!user) return;
+
+    const checkSafetyAssessment = async () => {
+      try {
+        const response = await fetch("/api/user-profile");
+        if (response.ok) {
+          const profile = await response.json();
+          if (profile.has_passed_safety_assessment === true) {
+            setSafetyAssessmentStatus("passed");
+          } else if (profile.has_passed_safety_assessment === false) {
+            setSafetyAssessmentStatus("failed");
+          } else {
+            setSafetyAssessmentStatus("needed");
+          }
+        } else {
+          setSafetyAssessmentStatus("needed");
+        }
+      } catch (error) {
+        console.error("Error checking safety assessment:", error);
+        setSafetyAssessmentStatus("needed");
+      }
+    };
+
+    checkSafetyAssessment();
+  }, [user]);
 
   const handleTherapySelect = (selection: { therapyType: string; voiceMode: boolean }) => {
     setTherapyType(selection.therapyType);
@@ -69,6 +105,20 @@ function ChatDemoContent() {
     setTherapyType("");
     setVoiceMode(false);
     setCurrentView("chat");
+  };
+
+  const handleSafetyAssessmentComplete = (passed: boolean) => {
+    console.log("🔍 Safety Assessment Complete:", { passed });
+    if (passed) {
+      setSafetyAssessmentStatus("passed");
+    } else {
+      setSafetyAssessmentStatus("failed");
+      setShowCrisisResources(true);
+    }
+  };
+
+  const handleReturnFromCrisis = () => {
+    setShowCrisisResources(false);
   };
 
   // Check if user is in an active therapy session
@@ -149,7 +199,51 @@ function ChatDemoContent() {
 
         {/* Main Content Area */}
         <div className="flex-1 overflow-y-auto">
-          {currentView === "dashboard" ? (
+          {showCrisisResources ? (
+            <CrisisResources onReturn={handleReturnFromCrisis} />
+          ) : safetyAssessmentStatus === "loading" ? (
+            <div className="h-full flex items-center justify-center">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-accent mx-auto mb-4"></div>
+                <p className="text-grey">Loading...</p>
+              </div>
+            </div>
+          ) : safetyAssessmentStatus === "needed" ? (
+            <SafetyAssessment onComplete={handleSafetyAssessmentComplete} />
+          ) : safetyAssessmentStatus === "failed" ? (
+            <div className="h-full flex items-center justify-center p-4">
+              <div className="max-w-2xl text-center">
+                <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg
+                    className="w-8 h-8 text-red-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
+                    />
+                  </svg>
+                </div>
+                <h2 className="text-2xl font-bold text-red-800 mb-4">
+                  Professional Support Recommended
+                </h2>
+                <p className="text-red-700 mb-6">
+                  Based on your responses, we recommend seeking immediate professional support. Our
+                  AI therapy chat is not appropriate for crisis situations.
+                </p>
+                <button
+                  onClick={() => setShowCrisisResources(true)}
+                  className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  View Crisis Resources
+                </button>
+              </div>
+            </div>
+          ) : currentView === "dashboard" ? (
             <Dashboard onBackToChat={handleBackToChat} />
           ) : !state.therapyType ? (
             <TherapySelector onTherapySelect={handleTherapySelect} />

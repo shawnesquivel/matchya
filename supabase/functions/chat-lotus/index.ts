@@ -44,10 +44,10 @@ async function verifyClerkJWT(authHeader: string): Promise<string> {
       throw new Error("NO_USER_ID_IN_JWT");
     }
 
-    // Verify user exists in our profiles table
+    // Verify user exists in our profiles table and check safety assessment
     const { data: profile, error } = await supabase
       .from("profiles")
-      .select("id")
+      .select("id, has_passed_safety_assessment")
       .eq("id", userId)
       .single();
 
@@ -58,6 +58,16 @@ async function verifyClerkJWT(authHeader: string): Promise<string> {
 
     if (!profile) {
       throw new Error(`PROFILE_NOT_FOUND: ${userId}`);
+    }
+
+    // Check safety assessment status
+    if (profile.has_passed_safety_assessment !== true) {
+      console.log(
+        `[chat-lotus]: User ${userId} has not passed safety assessment`,
+      );
+      throw new Error(
+        `SAFETY_ASSESSMENT_REQUIRED: User must complete safety assessment before accessing chat`,
+      );
     }
 
     return userId;

@@ -264,6 +264,8 @@ function LotusContent() {
           );
         } else if (errorData.code === "PROFILE_LOOKUP_FAILED") {
           throw new Error("Unable to verify your profile. Please try again in a moment.");
+        } else if (errorData.code === "SAFETY_ASSESSMENT_REQUIRED") {
+          throw new Error("Please complete the safety assessment before accessing the chat.");
         } else if (errorData.code === "DB_SESSION_FAILED") {
           throw new Error("Database error. Please try again.");
         } else {

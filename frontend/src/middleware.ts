@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
 // Export combined middleware for both Clerk auth and therapist redirects
-export default clerkMiddleware((auth, request) => {
+export default clerkMiddleware(async (auth, request) => {
   // Get the pathname from the request
   const pathname = request.nextUrl.pathname;
 
@@ -26,6 +26,12 @@ export default clerkMiddleware((auth, request) => {
       `[Middleware] Skipping known path: ${pathname.split("/")[1] || pathname}`,
     );
     return NextResponse.next();
+  }
+
+  // Protect chat-demo route - requires authentication
+  if (pathname.startsWith("/chat-demo")) {
+    console.log(`[Middleware] Protecting chat-demo route: ${pathname}`);
+    await auth.protect();
   }
 
   // Allow API routes to pass through, but ensure webhooks are explicitly public
